@@ -1,1 +1,144 @@
-[]
+[
+  {
+    "id": "generation.age.mean",
+    "value": 36,
+    "unit": "歳",
+    "basis": "assumption",
+    "source": "労働力調査（就業者の年齢構成）を参考に仮置き。TODO: 要確認（e-Statで確認）"
+  },
+  {
+    "id": "generation.age.sd",
+    "value": 9,
+    "unit": "歳",
+    "basis": "assumption",
+    "source": "仮置き"
+  },
+  {
+    "id": "generation.age.min",
+    "value": 20,
+    "unit": "歳",
+    "basis": "assumption",
+    "source": "仮置き。新卒の下限"
+  },
+  {
+    "id": "generation.age.max",
+    "value": 64,
+    "unit": "歳",
+    "basis": "assumption",
+    "source": "仮置き。定年・継続雇用の上限付近"
+  },
+  {
+    "id": "generation.ability.mean",
+    "value": 50,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "能力は0〜100の尺度。平均50は定義上の基準"
+  },
+  {
+    "id": "generation.ability.sd",
+    "value": 15,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き"
+  },
+  {
+    "id": "generation.engagement.mean",
+    "value": 60,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。入社直後はやや高めとする"
+  },
+  {
+    "id": "generation.engagement.sd",
+    "value": 10,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き"
+  },
+  {
+    "id": "generation.values.alpha",
+    "value": 1.0,
+    "unit": "集中度",
+    "basis": "assumption",
+    "source": "仮置き。価値観4つの配分をディリクレ分布で抽選する際の集中度（1.0で一様）"
+  },
+  {
+    "id": "generation.gender.female_share",
+    "value": 0.4,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "労働力調査（卸売業の女性比率）を参考に仮置き。TODO: 要確認（e-Statで確認）",
+    "note": "業種ごとに持たせるかは後で検討"
+  },
+  {
+    "id": "generation.gender.x_share",
+    "value": 0.01,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。性別を答えない／その他"
+  },
+  {
+    "id": "generation.salary.noise_sd",
+    "value": 0.08,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。同じ職種・年齢でも給与にばらつきを持たせる"
+  },
+  {
+    "id": "generation.salary.noise_floor",
+    "value": 0.7,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。給与のばらつきの下限"
+  },
+  {
+    "id": "generation.salary.age_slope",
+    "value": 0.012,
+    "unit": "比/年",
+    "basis": "assumption",
+    "source": "賃金構造基本統計調査（年齢階級別の賃金カーブ）を参考に仮置き。TODO: 要確認（e-Statで確認）",
+    "note": "年齢の下限からの年数×この値だけ相場に上乗せ"
+  },
+  {
+    "id": "generation.salary.rounding_unit",
+    "value": 1000,
+    "unit": "円",
+    "basis": "assumption",
+    "source": "仮置き。月給を千円単位に丸める"
+  },
+  {
+    "id": "generation.secondee.salary_premium",
+    "value": 1.2,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。親会社の給与水準が子会社の相場より高い想定"
+  },
+  {
+    "id": "labor.scheduled_hours_monthly",
+    "value": 160,
+    "unit": "時間/月",
+    "basis": "assumption",
+    "source": "仮置き。週40時間×約4週"
+  },
+  {
+    "id": "labor.parttime_hours_monthly",
+    "value": 80,
+    "unit": "時間/月",
+    "basis": "assumption",
+    "source": "仮置き"
+  },
+  {
+    "id": "labor.parttime_wage_premium",
+    "value": 1.05,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。パートの時給は最低賃金の少し上"
+  },
+  {
+    "id": "generation.cash.rounding_unit",
+    "value": 1000000,
+    "unit": "円",
+    "basis": "assumption",
+    "source": "仮置き。創業資金を百万円単位に丸める"
+  }
+]

@@ -1,0 +1,314 @@
+[
+  {
+    "id": "solo",
+    "name": "個人で創業",
+    "description": "創業社長が社員1人を雇って始める。資金は少ない",
+    "selectionWeight": {
+      "value": 0.35,
+      "unit": "重み",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "headcountRange": {
+      "value": {
+        "min": 1,
+        "max": 1
+      },
+      "unit": "人",
+      "basis": "assumption",
+      "source": "DESIGN.md §3.4"
+    },
+    "initialCashRange": {
+      "value": {
+        "min": 5000000,
+        "max": 20000000
+      },
+      "unit": "円",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "keyPersonCountRange": {
+      "value": {
+        "min": 1,
+        "max": 1
+      },
+      "unit": "人",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "secondeeShareRange": {
+      "value": {
+        "min": 0,
+        "max": 0
+      },
+      "unit": "比",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "parentRevenueShareRange": {
+      "value": {
+        "min": 0,
+        "max": 0
+      },
+      "unit": "比",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "ageShift": {
+      "value": 0,
+      "unit": "年",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "inheritedTenureRange": {
+      "value": {
+        "min": 0,
+        "max": 0
+      },
+      "unit": "月",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "engagementBonus": {
+      "value": 5,
+      "unit": "点",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "legalObligationsAtStart": false
+  },
+  {
+    "id": "cofounders",
+    "name": "仲間と共同創業",
+    "description": "創業メンバー2〜4人で始める。全員が主要人物",
+    "selectionWeight": {
+      "value": 0.35,
+      "unit": "重み",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "headcountRange": {
+      "value": {
+        "min": 2,
+        "max": 4
+      },
+      "unit": "人",
+      "basis": "assumption",
+      "source": "DESIGN.md §3.4"
+    },
+    "initialCashRange": {
+      "value": {
+        "min": 10000000,
+        "max": 50000000
+      },
+      "unit": "円",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "keyPersonCountRange": {
+      "value": {
+        "min": 4,
+        "max": 4
+      },
+      "unit": "人",
+      "basis": "assumption",
+      "source": "仮置き。人数の上限（4人）にして、創業メンバー全員を主要人物にする"
+    },
+    "secondeeShareRange": {
+      "value": {
+        "min": 0,
+        "max": 0
+      },
+      "unit": "比",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "parentRevenueShareRange": {
+      "value": {
+        "min": 0,
+        "max": 0
+      },
+      "unit": "比",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "ageShift": {
+      "value": 0,
+      "unit": "年",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "inheritedTenureRange": {
+      "value": {
+        "min": 0,
+        "max": 0
+      },
+      "unit": "月",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "engagementBonus": {
+      "value": 15,
+      "unit": "点",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "legalObligationsAtStart": false
+  },
+  {
+    "id": "subsidiary",
+    "name": "大企業の子会社として設立",
+    "description": "親会社からの出向者を含む10人前後で始める。資金と親会社向けの売上がある",
+    "selectionWeight": {
+      "value": 0.15,
+      "unit": "重み",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "headcountRange": {
+      "value": {
+        "min": 8,
+        "max": 12
+      },
+      "unit": "人",
+      "basis": "assumption",
+      "source": "DESIGN.md §3.4"
+    },
+    "initialCashRange": {
+      "value": {
+        "min": 100000000,
+        "max": 300000000
+      },
+      "unit": "円",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "keyPersonCountRange": {
+      "value": {
+        "min": 1,
+        "max": 2
+      },
+      "unit": "人",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "secondeeShareRange": {
+      "value": {
+        "min": 0.3,
+        "max": 0.6
+      },
+      "unit": "比",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "parentRevenueShareRange": {
+      "value": {
+        "min": 0.3,
+        "max": 0.6
+      },
+      "unit": "比",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "ageShift": {
+      "value": 3,
+      "unit": "年",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "inheritedTenureRange": {
+      "value": {
+        "min": 0,
+        "max": 0
+      },
+      "unit": "月",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "engagementBonus": {
+      "value": 0,
+      "unit": "点",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "legalObligationsAtStart": true
+  },
+  {
+    "id": "carveout",
+    "name": "事業の切り出し",
+    "description": "他社の一事業が独立して始まる。年齢と勤続が高めで、当初から売上がある",
+    "selectionWeight": {
+      "value": 0.15,
+      "unit": "重み",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "headcountRange": {
+      "value": {
+        "min": 20,
+        "max": 30
+      },
+      "unit": "人",
+      "basis": "assumption",
+      "source": "DESIGN.md §3.4"
+    },
+    "initialCashRange": {
+      "value": {
+        "min": 100000000,
+        "max": 500000000
+      },
+      "unit": "円",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "keyPersonCountRange": {
+      "value": {
+        "min": 2,
+        "max": 3
+      },
+      "unit": "人",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "secondeeShareRange": {
+      "value": {
+        "min": 0,
+        "max": 0
+      },
+      "unit": "比",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "parentRevenueShareRange": {
+      "value": {
+        "min": 0,
+        "max": 0
+      },
+      "unit": "比",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "ageShift": {
+      "value": 7,
+      "unit": "年",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "inheritedTenureRange": {
+      "value": {
+        "min": 12,
+        "max": 240
+      },
+      "unit": "月",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "engagementBonus": {
+      "value": -5,
+      "unit": "点",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "legalObligationsAtStart": true
+  }
+]

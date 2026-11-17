@@ -27,6 +27,8 @@ export interface Rng {
   weightedPick<T>(items: readonly T[], weights: readonly number[]): T;
   /** 正規乱数（Box–Muller） */
   normal(mean?: number, sd?: number): number;
+  /** ガンマ乱数（shape > 0, scale = 1）。ディリクレ分布の抽選に使う */
+  gamma(shape: number): number;
   /** 配列をシャッフルした新しい配列を返す（元の配列は変えない） */
   shuffle<T>(items: readonly T[]): T[];
   /** 現在の状態を取り出す（セーブ用） */
@@ -121,6 +123,25 @@ export function createRng(seed: number, fromState?: number): Rng {
       const u2 = next();
       const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
       return mean + z * sd;
+    },
+    gamma(shape) {
+      if (!(shape > 0)) throw new RangeError(`gamma: shape は正の数 (${shape})`);
+      // Marsaglia–Tsang 法。shape < 1 は shape+1 で引いて補正する
+      if (shape < 1) return rng.gamma(shape + 1) * Math.pow(1 - next(), 1 / shape);
+      const d = shape - 1 / 3;
+      const c = 1 / Math.sqrt(9 * d);
+      for (;;) {
+        let x: number;
+        let v: number;
+        do {
+          x = rng.normal();
+          v = 1 + c * x;
+        } while (v <= 0);
+        v = v * v * v;
+        const u = 1 - next();
+        if (u < 1 - 0.0331 * x * x * x * x) return d * v;
+        if (Math.log(u) < 0.5 * x * x + d * (1 - v + Math.log(v))) return d * v;
+      }
     },
     shuffle(items) {
       const out = items.slice();

@@ -1,0 +1,13 @@
+{
+  "note": "創業時と「同期創業の他社」が使う標準の制度（§6.6）。仮置き",
+  "default": {
+    "grade": "none",
+    "evaluation": "ceo",
+    "pay": "market",
+    "bonus": "none",
+    "hiring": "mid_career",
+    "workHours": "standard",
+    "training": "0",
+    "workStyle": "office"
+  }
+}

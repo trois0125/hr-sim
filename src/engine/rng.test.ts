@@ -80,6 +80,17 @@ describe('createRng', () => {
     expect(sd).toBeLessThan(10.3);
   });
 
+  it('gamma の平均がおよそ shape になる', () => {
+    const r = createRng(13);
+    for (const shape of [0.5, 1, 3]) {
+      const xs = take(20000, () => r.gamma(shape));
+      const mean = xs.reduce((s, x) => s + x, 0) / xs.length;
+      expect(Math.min(...xs)).toBeGreaterThan(0);
+      expect(mean).toBeGreaterThan(shape * 0.95);
+      expect(mean).toBeLessThan(shape * 1.05);
+    }
+  });
+
   it('shuffle は元の配列を変えず、同じ要素を返す', () => {
     const r = createRng(5);
     const src = [1, 2, 3, 4, 5, 6, 7, 8];

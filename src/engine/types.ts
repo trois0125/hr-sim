@@ -55,6 +55,8 @@ export type RoleData = {
   productivityMonthly: Sourced<number>;
   /** 採用難度（1.0 が標準） */
   hiringDifficulty: Sourced<number>;
+  /** 職種構成の重み（会社ごとに範囲から抽選し、合計1.0に正規化する） */
+  mixWeightRange: Sourced<Range>;
 };
 
 /** 業種の中の要素（商材など、§3.3） */
@@ -75,6 +77,10 @@ export type GrowthCurve = {
 export type IndustryData = {
   id: IndustryId;
   name: string;
+  /** おまかせで業種を抽選するときの重み */
+  selectionWeight: Sourced<number>;
+  /** 社名の末尾（例：商事、物産） */
+  companyNameSuffixes: string[];
   roles: RoleData[];
   partTimeRatioRange: Sourced<Range>;
   /** 年間の基本離職率（0〜1） */
@@ -89,6 +95,55 @@ export type IndustryData = {
   /** 業種ごとのイベントID（イベントの型はステップ8で定義） */
   specialEvents: string[];
   variants: IndustryVariant[];
+};
+
+// ---------------------------------------------------------------------------
+// 創業パターン（§3.4 `src/data/foundings.json`）
+// ---------------------------------------------------------------------------
+
+export const FOUNDING_PATTERN_IDS = ['solo', 'cofounders', 'subsidiary', 'carveout'] as const;
+export type FoundingPatternId = (typeof FOUNDING_PATTERN_IDS)[number];
+
+export type FoundingPattern = {
+  id: FoundingPatternId;
+  name: string;
+  description: string;
+  selectionWeight: Sourced<number>;
+  headcountRange: Sourced<Range>;
+  initialCashRange: Sourced<Range>;
+  /** 主要人物の人数。能力の高い順に選ぶ（共同創業は全員） */
+  keyPersonCountRange: Sourced<Range>;
+  /** 親会社からの出向者の割合 */
+  secondeeShareRange: Sourced<Range>;
+  /** 売上のうち親会社向けで安定している割合（ステップ3で使う） */
+  parentRevenueShareRange: Sourced<Range>;
+  /** 年齢の平均の上乗せ（年） */
+  ageShift: Sourced<number>;
+  /** 前の会社から引き継ぐ勤続月数 */
+  inheritedTenureRange: Sourced<Range>;
+  /** 納得感の初期値の上乗せ */
+  engagementBonus: Sourced<number>;
+  /** 法令の義務が初月から発生するか（判定はステップ7） */
+  legalObligationsAtStart: boolean;
+};
+
+// ---------------------------------------------------------------------------
+// 所在地（`src/data/locations.json`）
+// ---------------------------------------------------------------------------
+
+export type LocationType = 'urban' | 'rural';
+
+export type LocationData = {
+  id: string;
+  name: string;
+  type: LocationType;
+  selectionWeight: Sourced<number>;
+  /** 地域別最低賃金（円／時） */
+  minimumWageHourly: Sourced<number>;
+  /** 賃金水準の地域差（全国=1.0） */
+  wageIndex: Sourced<number>;
+  /** 採用難度の地域差（1.0 が標準） */
+  hiringDifficulty: Sourced<number>;
 };
 
 // ---------------------------------------------------------------------------
@@ -130,6 +185,8 @@ export type PolicySet = {
 
 export type Gender = 'M' | 'F' | 'X';
 export type EmploymentType = 'full' | 'part' | 'contract';
+/** 所属：プロパー社員か、親会社からの出向者か（§3.4 の拡張） */
+export type Affiliation = 'proper' | 'secondee';
 
 /** 価値観。4つの合計が 1.0 */
 export type Values = { growth: number; stability: number; money: number; balance: number };
@@ -141,6 +198,7 @@ export type Employee = {
   gender: Gender;
   role: RoleId;
   employmentType: EmploymentType;
+  affiliation: Affiliation;
   /** 等級（制度がなければ0） */
   grade: number;
   /** 円 */
@@ -166,20 +224,24 @@ export type AttritionReason = (typeof ATTRITION_REASONS)[number];
 // 会社の状態
 // ---------------------------------------------------------------------------
 
-export type LocationType = 'urban' | 'rural';
-
-/** 会社のプロフィール（§3.3、§10 のプロフィールカード） */
+/** 会社のプロフィール（§3.3、§3.4、§10 のプロフィールカード） */
 export type CompanyProfile = {
   name: string;
+  /** 創業社長。役員なので社員としては持たない */
   founderName: string;
-  location: { prefecture: string; type: LocationType };
+  locationId: string;
   industryId: IndustryId;
   variantId: string;
-  /** 抽選で決まった中の要素 */
+  foundingPatternId: FoundingPatternId;
+  /** 以下は抽選で決まった中の要素 */
   grossMargin: number;
   cyclicality: number;
+  partTimeRatio: number;
   /** 職種ごとの構成比（合計1.0） */
   roleMix: Record<RoleId, number>;
+  /** 売上のうち親会社向けの割合（子会社以外は0） */
+  parentRevenueShare: number;
+  legalObligationsAtStart: boolean;
   initialCash: number;
 };
 
@@ -193,6 +255,8 @@ export type CompanyState = {
   /** 手元資金（円） */
   cash: number;
   employees: Employee[];
+  /** 次に採番する社員番号 */
+  nextEmployeeId: number;
   rng: RngStreamsState;
 };
 

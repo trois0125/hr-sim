@@ -1,0 +1,263 @@
+[
+  {
+    "id": "tokyo",
+    "name": "東京都",
+    "type": "urban",
+    "selectionWeight": {
+      "value": 0.3,
+      "unit": "重み",
+      "basis": "assumption",
+      "source": "仮置き。事業所数の多さを目安"
+    },
+    "minimumWageHourly": {
+      "value": 1226,
+      "unit": "円/時",
+      "basis": "assumption",
+      "source": "令和7年度地域別最低賃金（厚生労働省）の値を記憶から仮置き。TODO: 要確認（発効日も都道府県ごとに確認）"
+    },
+    "wageIndex": {
+      "value": 1.2,
+      "unit": "倍",
+      "basis": "assumption",
+      "source": "賃金構造基本統計調査（都道府県別の所定内給与）を参考に仮置き。TODO: 要確認（e-Statで確認）"
+    },
+    "hiringDifficulty": {
+      "value": 1.0,
+      "unit": "倍",
+      "basis": "assumption",
+      "source": "仮置き。地方は母集団が小さく採用しにくい"
+    }
+  },
+  {
+    "id": "kanagawa",
+    "name": "神奈川県",
+    "type": "urban",
+    "selectionWeight": {
+      "value": 0.1,
+      "unit": "重み",
+      "basis": "assumption",
+      "source": "仮置き。事業所数の多さを目安"
+    },
+    "minimumWageHourly": {
+      "value": 1225,
+      "unit": "円/時",
+      "basis": "assumption",
+      "source": "令和7年度地域別最低賃金（厚生労働省）の値を記憶から仮置き。TODO: 要確認（発効日も都道府県ごとに確認）"
+    },
+    "wageIndex": {
+      "value": 1.08,
+      "unit": "倍",
+      "basis": "assumption",
+      "source": "賃金構造基本統計調査（都道府県別の所定内給与）を参考に仮置き。TODO: 要確認（e-Statで確認）"
+    },
+    "hiringDifficulty": {
+      "value": 1.0,
+      "unit": "倍",
+      "basis": "assumption",
+      "source": "仮置き。地方は母集団が小さく採用しにくい"
+    }
+  },
+  {
+    "id": "osaka",
+    "name": "大阪府",
+    "type": "urban",
+    "selectionWeight": {
+      "value": 0.15,
+      "unit": "重み",
+      "basis": "assumption",
+      "source": "仮置き。事業所数の多さを目安"
+    },
+    "minimumWageHourly": {
+      "value": 1177,
+      "unit": "円/時",
+      "basis": "assumption",
+      "source": "令和7年度地域別最低賃金（厚生労働省）の値を記憶から仮置き。TODO: 要確認（発効日も都道府県ごとに確認）"
+    },
+    "wageIndex": {
+      "value": 1.05,
+      "unit": "倍",
+      "basis": "assumption",
+      "source": "賃金構造基本統計調査（都道府県別の所定内給与）を参考に仮置き。TODO: 要確認（e-Statで確認）"
+    },
+    "hiringDifficulty": {
+      "value": 1.0,
+      "unit": "倍",
+      "basis": "assumption",
+      "source": "仮置き。地方は母集団が小さく採用しにくい"
+    }
+  },
+  {
+    "id": "aichi",
+    "name": "愛知県",
+    "type": "urban",
+    "selectionWeight": {
+      "value": 0.1,
+      "unit": "重み",
+      "basis": "assumption",
+      "source": "仮置き。事業所数の多さを目安"
+    },
+    "minimumWageHourly": {
+      "value": 1140,
+      "unit": "円/時",
+      "basis": "assumption",
+      "source": "令和7年度地域別最低賃金（厚生労働省）の値を記憶から仮置き。TODO: 要確認（発効日も都道府県ごとに確認）"
+    },
+    "wageIndex": {
+      "value": 1.02,
+      "unit": "倍",
+      "basis": "assumption",
+      "source": "賃金構造基本統計調査（都道府県別の所定内給与）を参考に仮置き。TODO: 要確認（e-Statで確認）"
+    },
+    "hiringDifficulty": {
+      "value": 1.05,
+      "unit": "倍",
+      "basis": "assumption",
+      "source": "仮置き。地方は母集団が小さく採用しにくい"
+    }
+  },
+  {
+    "id": "fukuoka",
+    "name": "福岡県",
+    "type": "urban",
+    "selectionWeight": {
+      "value": 0.08,
+      "unit": "重み",
+      "basis": "assumption",
+      "source": "仮置き。事業所数の多さを目安"
+    },
+    "minimumWageHourly": {
+      "value": 1057,
+      "unit": "円/時",
+      "basis": "assumption",
+      "source": "令和7年度地域別最低賃金（厚生労働省）の値を記憶から仮置き。TODO: 要確認（発効日も都道府県ごとに確認）"
+    },
+    "wageIndex": {
+      "value": 0.95,
+      "unit": "倍",
+      "basis": "assumption",
+      "source": "賃金構造基本統計調査（都道府県別の所定内給与）を参考に仮置き。TODO: 要確認（e-Statで確認）"
+    },
+    "hiringDifficulty": {
+      "value": 1.1,
+      "unit": "倍",
+      "basis": "assumption",
+      "source": "仮置き。地方は母集団が小さく採用しにくい"
+    }
+  },
+  {
+    "id": "miyagi",
+    "name": "宮城県",
+    "type": "rural",
+    "selectionWeight": {
+      "value": 0.06,
+      "unit": "重み",
+      "basis": "assumption",
+      "source": "仮置き。事業所数の多さを目安"
+    },
+    "minimumWageHourly": {
+      "value": 1038,
+      "unit": "円/時",
+      "basis": "assumption",
+      "source": "令和7年度地域別最低賃金（厚生労働省）の値を記憶から仮置き。TODO: 要確認（発効日も都道府県ごとに確認）"
+    },
+    "wageIndex": {
+      "value": 0.93,
+      "unit": "倍",
+      "basis": "assumption",
+      "source": "賃金構造基本統計調査（都道府県別の所定内給与）を参考に仮置き。TODO: 要確認（e-Statで確認）"
+    },
+    "hiringDifficulty": {
+      "value": 1.2,
+      "unit": "倍",
+      "basis": "assumption",
+      "source": "仮置き。地方は母集団が小さく採用しにくい"
+    }
+  },
+  {
+    "id": "hiroshima",
+    "name": "広島県",
+    "type": "rural",
+    "selectionWeight": {
+      "value": 0.06,
+      "unit": "重み",
+      "basis": "assumption",
+      "source": "仮置き。事業所数の多さを目安"
+    },
+    "minimumWageHourly": {
+      "value": 1085,
+      "unit": "円/時",
+      "basis": "assumption",
+      "source": "令和7年度地域別最低賃金（厚生労働省）の値を記憶から仮置き。TODO: 要確認（発効日も都道府県ごとに確認）"
+    },
+    "wageIndex": {
+      "value": 0.95,
+      "unit": "倍",
+      "basis": "assumption",
+      "source": "賃金構造基本統計調査（都道府県別の所定内給与）を参考に仮置き。TODO: 要確認（e-Statで確認）"
+    },
+    "hiringDifficulty": {
+      "value": 1.2,
+      "unit": "倍",
+      "basis": "assumption",
+      "source": "仮置き。地方は母集団が小さく採用しにくい"
+    }
+  },
+  {
+    "id": "niigata",
+    "name": "新潟県",
+    "type": "rural",
+    "selectionWeight": {
+      "value": 0.07,
+      "unit": "重み",
+      "basis": "assumption",
+      "source": "仮置き。事業所数の多さを目安"
+    },
+    "minimumWageHourly": {
+      "value": 1050,
+      "unit": "円/時",
+      "basis": "assumption",
+      "source": "令和7年度地域別最低賃金（厚生労働省）の値を記憶から仮置き。TODO: 要確認（発効日も都道府県ごとに確認）"
+    },
+    "wageIndex": {
+      "value": 0.9,
+      "unit": "倍",
+      "basis": "assumption",
+      "source": "賃金構造基本統計調査（都道府県別の所定内給与）を参考に仮置き。TODO: 要確認（e-Statで確認）"
+    },
+    "hiringDifficulty": {
+      "value": 1.3,
+      "unit": "倍",
+      "basis": "assumption",
+      "source": "仮置き。地方は母集団が小さく採用しにくい"
+    }
+  },
+  {
+    "id": "kochi",
+    "name": "高知県",
+    "type": "rural",
+    "selectionWeight": {
+      "value": 0.08,
+      "unit": "重み",
+      "basis": "assumption",
+      "source": "仮置き。事業所数の多さを目安"
+    },
+    "minimumWageHourly": {
+      "value": 1023,
+      "unit": "円/時",
+      "basis": "assumption",
+      "source": "令和7年度地域別最低賃金（厚生労働省）の値を記憶から仮置き。TODO: 要確認（発効日も都道府県ごとに確認）"
+    },
+    "wageIndex": {
+      "value": 0.86,
+      "unit": "倍",
+      "basis": "assumption",
+      "source": "賃金構造基本統計調査（都道府県別の所定内給与）を参考に仮置き。TODO: 要確認（e-Statで確認）"
+    },
+    "hiringDifficulty": {
+      "value": 1.4,
+      "unit": "倍",
+      "basis": "assumption",
+      "source": "仮置き。地方は母集団が小さく採用しにくい"
+    }
+  }
+]
