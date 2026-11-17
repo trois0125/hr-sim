@@ -69,25 +69,46 @@ export type SalaryInput = {
   affiliation: Affiliation;
 };
 
-/** 入社時の月給。相場×地域差×年齢×ばらつき。最低賃金を下回らない */
+/** 年齢による賃金カーブ（年齢の下限で1.0） */
+export function ageSalaryFactor(age: number): number {
+  const a = clamp(age, coef('generation.age.min'), coef('generation.age.max'));
+  return 1 + coef('generation.salary.age_slope') * (a - coef('generation.age.min'));
+}
+
+/** 相場の月給（職種×地域差×年齢）。パートは最低賃金の少し上の時給×時間。最低賃金を下回らない */
+export function marketSalaryFor(
+  industry: IndustryData,
+  location: LocationData,
+  role: RoleId,
+  age: number,
+  employmentType: EmploymentType,
+): number {
+  if (employmentType === 'part') {
+    return (
+      location.minimumWageHourly.value * coef('labor.parttime_wage_premium') * coef('labor.parttime_hours_monthly')
+    );
+  }
+  const roleData = industry.roles.find((r) => r.id === role);
+  if (!roleData) throw new Error(`職種がありません: ${industry.id}/${role}`);
+  return Math.max(
+    roleData.marketSalaryMonthly.value * location.wageIndex.value * ageSalaryFactor(age),
+    minimumMonthlyWage(location),
+  );
+}
+
+/** 入社時の月給。相場×ばらつき（出向者は親会社の水準）。最低賃金を下回らない */
 export function sampleSalary(input: SalaryInput): number {
   const { rng, industry, location, role, age, employmentType, affiliation } = input;
   const unit = coef('generation.salary.rounding_unit');
+  const market = marketSalaryFor(industry, location, role, age, employmentType);
+  if (employmentType === 'part') return Math.ceil(market / unit) * unit;
 
-  if (employmentType === 'part') {
-    const hourly = location.minimumWageHourly.value * coef('labor.parttime_wage_premium');
-    return Math.ceil((hourly * coef('labor.parttime_hours_monthly')) / unit) * unit;
-  }
-
-  const roleData = industry.roles.find((r) => r.id === role);
-  if (!roleData) throw new Error(`職種がありません: ${industry.id}/${role}`);
-  const ageFactor = 1 + coef('generation.salary.age_slope') * (age - coef('generation.age.min'));
   const noise = Math.max(
     coef('generation.salary.noise_floor'),
     rng.normal(1, coef('generation.salary.noise_sd')),
   );
   const premium = affiliation === 'secondee' ? coef('generation.secondee.salary_premium') : 1;
-  const raw = roleData.marketSalaryMonthly.value * location.wageIndex.value * ageFactor * noise * premium;
+  const raw = market * noise * premium;
   const floor = minimumMonthlyWage(location);
   return Math.ceil(Math.max(raw, floor) / unit) * unit;
 }
@@ -151,5 +172,7 @@ export function createEmployee(input: CreateEmployeeInput): Employee {
     tenureMonths: input.tenureMonths ?? 0,
     overtimeHours: 0,
     isKeyPerson: input.isKeyPerson ?? false,
+    factorScores: null,
+    secondmentEndsAt: null,
   };
 }

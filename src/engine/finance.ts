@@ -11,10 +11,13 @@ import type { Employee, LaborCost, PolicySet } from './types';
 /** 割合（%）で持っている値を比に直すときの分母 */
 const PERCENT = 100;
 
-/** 残業代（円）。月給を所定労働時間で割った時給に、割増率を掛ける */
+/** 残業代（円）。月給を所定労働時間で割った時給に割増率を掛ける。月60時間を超えたぶんは5割増し */
 export function overtimePay(e: Pick<Employee, 'salaryMonthly' | 'overtimeHours'>): number {
   const hourly = e.salaryMonthly / coef('labor.scheduled_hours_monthly');
-  return hourly * coef('labor.overtime_premium') * e.overtimeHours;
+  const threshold = coef('labor.overtime_premium_threshold');
+  const normal = Math.min(e.overtimeHours, threshold);
+  const over = Math.max(0, e.overtimeHours - threshold);
+  return hourly * (normal * coef('labor.overtime_premium') + over * coef('labor.overtime_premium_over60'));
 }
 
 export type FinanceInput = {

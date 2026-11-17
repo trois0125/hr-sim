@@ -115,6 +115,13 @@ export function generateCompany(options: GenerateOptions): CompanyState {
     });
   });
 
+  // 出向者は3〜5年で親会社に戻る
+  for (const e of employees) {
+    if (e.affiliation === 'secondee') {
+      e.secondmentEndsAt = rng.int(coef('secondment.term_months_min'), coef('secondment.term_months_max'));
+    }
+  }
+
   // 主要人物：フルタイムの中から能力の高い順
   const eligible = employees
     .filter((e) => e.employmentType === 'full')
@@ -162,6 +169,7 @@ export function generateCompany(options: GenerateOptions): CompanyState {
     market,
     hiring: { intensity: 1 },
     history: [],
+    departures: [],
     rng: getStreamsState(streams),
   };
 }

@@ -268,13 +268,6 @@
     "source": "仮置き。社員が少なくても1か月に1件は求人を出せる"
   },
   {
-    "id": "labor.overtime_max_hours",
-    "value": 45,
-    "unit": "時間/月",
-    "basis": "assumption",
-    "source": "仮置き。労基法36条の限度時間（月45時間）を上限にした"
-  },
-  {
     "id": "labor.overtime_premium",
     "value": 1.25,
     "unit": "倍",
@@ -343,5 +336,327 @@
     "unit": "人",
     "basis": "assumption",
     "source": "仮置き。社長自身が営業1人分の売上をつくる（役員なので給与・社員数には数えない）"
+  },
+  {
+    "id": "policy.overtime.cap.none",
+    "value": 0,
+    "unit": "時間/月",
+    "basis": "assumption",
+    "source": "残業をさせない方針"
+  },
+  {
+    "id": "policy.overtime.cap.limit20",
+    "value": 20,
+    "unit": "時間/月",
+    "basis": "assumption",
+    "source": "仮置き。残業を抑える方針の目安"
+  },
+  {
+    "id": "policy.overtime.cap.limit45",
+    "value": 45,
+    "unit": "時間/月",
+    "basis": "assumption",
+    "source": "労基法36条4項の限度時間（月45時間）"
+  },
+  {
+    "id": "policy.overtime.cap.special",
+    "value": 80,
+    "unit": "時間/月",
+    "basis": "assumption",
+    "source": "仮置き。特別条項つき36協定の上限（月100時間未満・複数月平均80時間以内・年720時間以内、月45時間超は年6か月まで）を月80時間に単純化。TODO: 要確認（年6か月の制限をゲームでどう扱うかはステップ7で決める）"
+  },
+  {
+    "id": "labor.overtime_premium_over60",
+    "value": 1.5,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "労基法37条1項ただし書（月60時間を超える時間外労働は50%以上の割増）"
+  },
+  {
+    "id": "labor.overtime_premium_threshold",
+    "value": 60,
+    "unit": "時間/月",
+    "basis": "assumption",
+    "source": "労基法37条1項ただし書"
+  },
+  {
+    "id": "engagement.adjust_rate",
+    "value": 0.2,
+    "unit": "比/月",
+    "basis": "assumption",
+    "source": "DESIGN.md §4.3（1か月で差の20%だけ動かす）"
+  },
+  {
+    "id": "engagement.external_pay.slope",
+    "value": 150,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。給与が相場の0.8倍で20点、1.2倍で80点（50点が相場どおり）"
+  },
+  {
+    "id": "engagement.internal_fairness.slope",
+    "value": 50,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。実力の順位に対して給与の順位が最下位まで離れると0点"
+  },
+  {
+    "id": "engagement.internal_fairness.gain_ratio",
+    "value": 0.5,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。もらいすぎの嬉しさは、もらえなさの不満の半分（損失に敏感）"
+  },
+  {
+    "id": "engagement.internal_fairness.min_peers",
+    "value": 3,
+    "unit": "人",
+    "basis": "assumption",
+    "source": "仮置き。同じ職種のフルタイムがこの人数未満なら比べようがなく中立（50点）"
+  },
+  {
+    "id": "engagement.evaluation.slope_under",
+    "value": 2.0,
+    "unit": "点/点",
+    "basis": "assumption",
+    "source": "仮置き。評価が実力より1点低いごとに2点下がる"
+  },
+  {
+    "id": "engagement.evaluation.slope_over",
+    "value": 0.5,
+    "unit": "点/点",
+    "basis": "assumption",
+    "source": "仮置き。評価が実力より1点高いごとに0.5点上がる"
+  },
+  {
+    "id": "engagement.workload.at0",
+    "value": 70,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。残業なし"
+  },
+  {
+    "id": "engagement.workload.at20",
+    "value": 55,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。残業20時間"
+  },
+  {
+    "id": "engagement.workload.at45",
+    "value": 25,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。残業45時間（限度時間いっぱい）"
+  },
+  {
+    "id": "engagement.workload.at80",
+    "value": 0,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。残業80時間（過労死ラインとされる水準）"
+  },
+  {
+    "id": "engagement.growth.training_0",
+    "value": 35,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。育成投資なし"
+  },
+  {
+    "id": "engagement.growth.training_0.5",
+    "value": 55,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。育成投資 売上比0.5%"
+  },
+  {
+    "id": "engagement.growth.training_1",
+    "value": 70,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。育成投資 売上比1%"
+  },
+  {
+    "id": "engagement.growth.company_growth_slope",
+    "value": 40,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。社員数が1年で2倍になると+40点ぶん（昇格の見込み）"
+  },
+  {
+    "id": "engagement.growth.company_growth_max",
+    "value": 20,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。会社の成長による上乗せの上限"
+  },
+  {
+    "id": "engagement.stability.profitable",
+    "value": 70,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。直近3か月が黒字"
+  },
+  {
+    "id": "engagement.stability.loss_runway0",
+    "value": 15,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。赤字で手元資金が尽きかけている"
+  },
+  {
+    "id": "engagement.stability.loss_runway12",
+    "value": 50,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。赤字だが12か月ぶんの資金がある"
+  },
+  {
+    "id": "engagement.stability.profit_window_months",
+    "value": 3,
+    "unit": "か月",
+    "basis": "assumption",
+    "source": "仮置き。黒字かどうかを見る期間"
+  },
+  {
+    "id": "engagement.weight.base",
+    "value": 0.15,
+    "unit": "重み",
+    "basis": "assumption",
+    "source": "仮置き。価値観に関係なく、どの要因にもかかる重み"
+  },
+  {
+    "id": "engagement.weight.externalPay.money",
+    "value": 1.0,
+    "unit": "重み",
+    "basis": "assumption",
+    "source": "仮置き。DESIGN.md §4.3 の「主に効く価値観」"
+  },
+  {
+    "id": "engagement.weight.internalFairness.money",
+    "value": 0.5,
+    "unit": "重み",
+    "basis": "assumption",
+    "source": "仮置き。DESIGN.md §4.3"
+  },
+  {
+    "id": "engagement.weight.internalFairness.growth",
+    "value": 0.3,
+    "unit": "重み",
+    "basis": "assumption",
+    "source": "仮置き。DESIGN.md §4.3"
+  },
+  {
+    "id": "engagement.weight.evaluation.growth",
+    "value": 0.6,
+    "unit": "重み",
+    "basis": "assumption",
+    "source": "仮置き。DESIGN.md §4.3"
+  },
+  {
+    "id": "engagement.weight.workload.balance",
+    "value": 1.0,
+    "unit": "重み",
+    "basis": "assumption",
+    "source": "仮置き。DESIGN.md §4.3"
+  },
+  {
+    "id": "engagement.weight.growthOpportunity.growth",
+    "value": 0.8,
+    "unit": "重み",
+    "basis": "assumption",
+    "source": "仮置き。DESIGN.md §4.3"
+  },
+  {
+    "id": "engagement.weight.stability.stability",
+    "value": 1.0,
+    "unit": "重み",
+    "basis": "assumption",
+    "source": "仮置き。DESIGN.md §4.3"
+  },
+  {
+    "id": "attrition.engagement_multiplier.at20",
+    "value": 3.0,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "DESIGN.md §4.4 の仮置き。エンゲージメントと離職意向の関係に関する研究知見を参考に調整予定"
+  },
+  {
+    "id": "attrition.engagement_multiplier.at50",
+    "value": 1.0,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "DESIGN.md §4.4 の仮置き"
+  },
+  {
+    "id": "attrition.engagement_multiplier.at80",
+    "value": 0.5,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "DESIGN.md §4.4 の仮置き"
+  },
+  {
+    "id": "attrition.market_gap_multiplier.at0.8",
+    "value": 1.5,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。給与が相場の0.8倍以下"
+  },
+  {
+    "id": "attrition.market_gap_multiplier.at1.0",
+    "value": 1.0,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。給与が相場どおり"
+  },
+  {
+    "id": "attrition.market_gap_multiplier.at1.2",
+    "value": 0.8,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。給与が相場の1.2倍以上"
+  },
+  {
+    "id": "attrition.unrelated_share",
+    "value": 0.3,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。基本離職率のうち、制度や納得感と関係なく起きる割合。TODO: 要確認（雇用動向調査の離職理由別の内訳で確認）"
+  },
+  {
+    "id": "attrition.unrelated.family_share",
+    "value": 0.5,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。制度と関係ない退職のうち「家庭の事情」の割合（残りは「人間関係」）。TODO: 要確認（雇用動向調査の離職理由）"
+  },
+  {
+    "id": "secondment.term_months_min",
+    "value": 36,
+    "unit": "月",
+    "basis": "assumption",
+    "source": "仮置き。出向期間は3〜5年"
+  },
+  {
+    "id": "secondment.term_months_max",
+    "value": 60,
+    "unit": "月",
+    "basis": "assumption",
+    "source": "仮置き。出向期間は3〜5年"
+  },
+  {
+    "id": "secondment.early_return_engagement",
+    "value": 30,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。納得感がこれを下回ると早く戻りたがる"
+  },
+  {
+    "id": "secondment.early_return_rate",
+    "value": 0.05,
+    "unit": "確率/月",
+    "basis": "assumption",
+    "source": "仮置き。納得感が低い出向者が、その月に帰任する確率"
   }
 ]

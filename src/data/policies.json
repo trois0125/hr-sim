@@ -8,6 +8,7 @@
     "hiring": "mid_career",
     "workHours": "standard",
     "training": "0",
-    "workStyle": "office"
+    "workStyle": "office",
+    "overtime": "limit45"
   }
 }

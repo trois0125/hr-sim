@@ -170,6 +170,8 @@ export const HIRING_POLICIES = ['new_grad', 'mid_career', 'part_time'] as const;
 export const WORK_HOUR_SYSTEMS = ['standard', 'fixed_overtime', 'variable', 'flex'] as const;
 export const TRAINING_INVESTMENTS = ['0', '0.5', '1'] as const; // 売上比（%）
 export const WORK_STYLES = ['office', 'hybrid', 'remote'] as const;
+/** 残業の方針：なし／月20時間まで／月45時間まで（限度時間）／特別条項つき */
+export const OVERTIME_POLICIES = ['none', 'limit20', 'limit45', 'special'] as const;
 
 export type GradeSystem = (typeof GRADE_SYSTEMS)[number];
 export type EvaluationSystem = (typeof EVALUATION_SYSTEMS)[number];
@@ -179,6 +181,7 @@ export type HiringPolicy = (typeof HIRING_POLICIES)[number];
 export type WorkHourSystem = (typeof WORK_HOUR_SYSTEMS)[number];
 export type TrainingInvestment = (typeof TRAINING_INVESTMENTS)[number];
 export type WorkStyle = (typeof WORK_STYLES)[number];
+export type OvertimePolicy = (typeof OVERTIME_POLICIES)[number];
 
 export type PolicySet = {
   grade: GradeSystem;
@@ -189,6 +192,7 @@ export type PolicySet = {
   workHours: WorkHourSystem;
   training: TrainingInvestment;
   workStyle: WorkStyle;
+  overtime: OvertimePolicy;
 };
 
 // ---------------------------------------------------------------------------
@@ -226,11 +230,54 @@ export type Employee = {
   /** 月の残業時間 */
   overtimeHours: number;
   isKeyPerson: boolean;
+  /** 納得感の6要因の点数（0〜100、50が中立）。最初の月の計算までは null */
+  factorScores: FactorScores | null;
+  /** 出向者が親会社に戻る予定の月（創業からの経過月）。出向者でなければ null */
+  secondmentEndsAt: number | null;
 };
 
-/** 退職理由（§4.4） */
-export const ATTRITION_REASONS = ['pay', 'evaluation', 'workload', 'growth', 'relationships', 'family'] as const;
+/** 納得感の6要因（§4.3） */
+export const ENGAGEMENT_FACTORS = [
+  'externalPay', // 報酬の社外比較
+  'internalFairness', // 報酬の社内公平性
+  'evaluation', // 評価の正確さ
+  'workload', // 働く負荷
+  'growthOpportunity', // 成長の機会
+  'stability', // 雇用の安定
+] as const;
+export type EngagementFactor = (typeof ENGAGEMENT_FACTORS)[number];
+export type FactorScores = Record<EngagementFactor, number>;
+
+/** 退職理由（§4.4）。outlook（会社の将来への不安）は「雇用の安定」に対応する理由として足した */
+export const ATTRITION_REASONS = [
+  'pay',
+  'evaluation',
+  'workload',
+  'growth',
+  'outlook',
+  'relationships',
+  'family',
+] as const;
 export type AttritionReason = (typeof ATTRITION_REASONS)[number];
+
+/** 会社を去った人の記録。社史レポートの「従業員の声」と退職理由の内訳に使う */
+export type Departure = {
+  employeeId: string;
+  name: string;
+  role: RoleId;
+  /** 去った月（創業からの経過月） */
+  month: number;
+  /** resignation＝退職、return＝出向者の帰任（離職率には数えない） */
+  kind: 'resignation' | 'return';
+  /** 退職理由。帰任のときは null */
+  reason: AttritionReason | null;
+  age: number;
+  tenureMonths: number;
+  salaryMonthly: number;
+  engagement: number;
+  isKeyPerson: boolean;
+  factorScores: FactorScores | null;
+};
 
 // ---------------------------------------------------------------------------
 // 会社の状態
@@ -296,6 +343,12 @@ export type MonthlyRecord = {
   month: number;
   headcount: number;
   hires: number;
+  /** 退職した人数（出向者の帰任は含まない） */
+  resignations: number;
+  /** 親会社に戻った出向者の人数 */
+  returns: number;
+  /** 月末に在籍している社員の納得感の平均 */
+  avgEngagement: number;
   /** 景気 */
   economy: number;
   /** 市場の需要上限（円） */
@@ -333,6 +386,7 @@ export type CompanyState = {
   market: MarketState;
   hiring: HiringState;
   history: MonthlyRecord[];
+  departures: Departure[];
   rng: RngStreamsState;
 };
 

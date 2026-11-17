@@ -1,15 +1,19 @@
 /**
  * ティック処理（§2.1）。1ティック＝1か月。
  *
- * ステップ3で入っているのは 1 市場と景気、2 採用、3 稼働と成果、4 売上・コスト・利益、10 記録。
- * 5 納得感、6 退職（ステップ4）、7 昇給と評価（ステップ5）、8 法令（ステップ7）、9 イベント（ステップ8）は後で足す。
+ * 入っているのは 1 市場と景気、2 採用、3 稼働と成果、4 売上・コスト・利益、5 納得感、6 退職、
+ * 7 昇給（仮の昇給。評価はステップ5）、10 記録。
+ * 8 法令（ステップ7）、9 イベント（ステップ8）は後で足す。
  */
 import { coef } from './coefficients';
 import { getIndustry, getLocation } from './data';
+import { runAttrition } from './attrition';
+import { updateEngagement } from './engagement';
 import { computeFinance } from './finance';
 import { runHiring } from './hiring';
 import { demandAt, stepEconomy } from './market';
-import { computeOvertime, computePerformance } from './performance';
+import { computeOvertime, computePerformance, overtimeCap } from './performance';
+import { applyProvisionalRaise } from './raises';
 import { getStreamsState, restoreStreams } from './rng';
 import { MONTHS_PER_YEAR, type CompanyState, type CompanyStatus, type MonthlyRecord } from './types';
 
@@ -81,7 +85,7 @@ export function tickInPlace(state: CompanyState): CompanyState {
 
   // 3. 社員ごとの稼働と成果（足りないぶんは、売上を生むフルタイム社員の残業で埋める）
   const perf = computePerformance(state.employees, industry, variant);
-  const overtime = computeOvertime(demand, perf);
+  const overtime = computeOvertime(demand, perf, overtimeCap(state.policies.overtime));
   const revenueRoles = new Set(industry.roles.filter((r) => r.kind === 'revenue').map((r) => r.id));
   for (const e of state.employees) {
     e.overtimeHours = revenueRoles.has(e.role) && e.employmentType !== 'part' ? overtime.hours : 0;
@@ -100,11 +104,14 @@ export function tickInPlace(state: CompanyState): CompanyState {
   state.cash += fin.operatingProfit;
   state.negativeCashMonths = state.cash < 0 ? state.negativeCashMonths + 1 : 0;
 
-  // 10. 記録
+  // 10. 記録（納得感の計算で今月の業績を使うので、先につくっておく）
   const record: MonthlyRecord = {
     month: state.month,
     headcount: state.employees.length,
     hires: hiring.hires.length,
+    resignations: 0,
+    returns: 0,
+    avgEngagement: 0,
     economy: state.market.economy,
     demand,
     capacity: perf.capacity,
@@ -118,9 +125,37 @@ export function tickInPlace(state: CompanyState): CompanyState {
   };
   state.history.push(record);
 
-  // 月を進める（勤続と年齢）
+  // 5. 納得感
+  updateEngagement(state.employees, {
+    industry,
+    location,
+    policies: state.policies,
+    history: state.history,
+    cash: state.cash,
+    headcount: state.employees.length,
+  });
+
+  // 6. 退職（と出向者の帰任）
+  const attrition = runAttrition(state.employees, {
+    rng: streams.attrition,
+    industry,
+    location,
+    month: state.month,
+  });
+  state.employees = attrition.stay;
+  state.departures.push(...attrition.departures);
+  record.resignations = attrition.departures.filter((d) => d.kind === 'resignation').length;
+  record.returns = attrition.departures.filter((d) => d.kind === 'return').length;
+  record.headcount = state.employees.length;
+  record.avgEngagement =
+    state.employees.length > 0
+      ? state.employees.reduce((s, e) => s + e.engagement, 0) / state.employees.length
+      : 0;
+
+  // 月を進める（勤続と年齢）。1年ごとに全員が1歳年をとり、7. 仮の昇給をする
   state.month += 1;
   const birthday = state.month % MONTHS_PER_YEAR === 0;
+  if (birthday) applyProvisionalRaise(state.employees);
   for (const e of state.employees) {
     e.tenureMonths += 1;
     if (birthday) e.age += 1;

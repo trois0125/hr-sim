@@ -7,6 +7,7 @@ import {
   engagementFactor,
   founderOutput,
   fte,
+  overtimeCap,
   rampFactor,
 } from './performance';
 import { chemicals, makeEmployee, staff, trading } from './testHelpers';
@@ -98,19 +99,30 @@ describe('残業', () => {
   const p = perf([...staff('sales', 4), ...staff('admin', 2)]);
 
   it('需要が上限以下なら残業は0', () => {
-    expect(computeOvertime(p.capacity * 0.9, p)).toEqual({ hours: 0, extraCapacity: 0 });
+    expect(computeOvertime(p.capacity * 0.9, p, 45)).toEqual({ hours: 0, extraCapacity: 0 });
   });
 
   it('需要が上限を少し超えると、そのぶんだけ残業する', () => {
-    const o = computeOvertime(p.capacity * 1.05, p);
+    const o = computeOvertime(p.capacity * 1.05, p, 45);
     expect(o.hours).toBeGreaterThan(0);
-    expect(o.hours).toBeLessThan(coef('labor.overtime_max_hours'));
+    expect(o.hours).toBeLessThan(45);
     expect(p.capacity + o.extraCapacity).toBeCloseTo(p.capacity * 1.05);
   });
 
+  it('残業の方針の上限が低いほど、残業も売上の上積みも小さい', () => {
+    const caps = ['none', 'limit20', 'limit45', 'special'] as const;
+    const results = caps.map((c) => computeOvertime(p.capacity * 3, p, overtimeCap(c)));
+    expect(results[0]).toEqual({ hours: 0, extraCapacity: 0 });
+    for (let i = 1; i < results.length; i++) {
+      expect(results[i]?.hours).toBeGreaterThan(results[i - 1]?.hours ?? 0);
+      expect(results[i]?.extraCapacity).toBeGreaterThan(results[i - 1]?.extraCapacity ?? 0);
+    }
+    expect(overtimeCap('limit45')).toBe(45);
+  });
+
   it('需要が大きく超えても、残業は上限で止まる', () => {
-    const o = computeOvertime(p.capacity * 3, p);
-    expect(o.hours).toBe(coef('labor.overtime_max_hours'));
+    const o = computeOvertime(p.capacity * 3, p, 45);
+    expect(o.hours).toBe(45);
     expect(p.capacity + o.extraCapacity).toBeLessThan(p.capacity * 3);
   });
 });

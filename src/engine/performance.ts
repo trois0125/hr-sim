@@ -8,7 +8,7 @@
  */
 import { coef } from './coefficients';
 import { SCORE_MAX, clamp } from './employees';
-import type { Employee, IndustryData, IndustryVariant, RoleKind } from './types';
+import type { Employee, IndustryData, IndustryVariant, OvertimePolicy, RoleKind } from './types';
 
 /** 能力の基準点（0〜100 の中央） */
 const SCORE_MID = SCORE_MAX / 2;
@@ -154,16 +154,22 @@ export function computePerformance(
   };
 }
 
-/** 需要が上限を超えたぶんを埋めるのに必要な残業時間（上限あり）と、それで増える売上の上限 */
+/** 残業の方針ごとの月の上限（時間） */
+export function overtimeCap(policy: OvertimePolicy): number {
+  return coef(`policy.overtime.cap.${policy}`);
+}
+
+/** 需要が上限を超えたぶんを埋めるのに必要な残業時間（方針の上限まで）と、それで増える売上の上限 */
 export function computeOvertime(
   demand: number,
   perf: PerformanceResult,
+  capHours: number,
 ): { hours: number; extraCapacity: number } {
   const shortage = demand - perf.capacity;
   if (shortage <= 0 || perf.overtimeEligibleOutput <= 0) return { hours: 0, extraCapacity: 0 };
   const scheduled = coef('labor.scheduled_hours_monthly');
   const hours = Math.min(
-    coef('labor.overtime_max_hours'),
+    capHours,
     (shortage / perf.overtimeEligibleOutput) * scheduled,
   );
   return { hours, extraCapacity: perf.overtimeEligibleOutput * (hours / scheduled) };
