@@ -72,7 +72,8 @@ describe('generateCompany', () => {
       expect(c.employees.length).toBeGreaterThanOrEqual(8);
       expect(c.employees.length).toBeLessThanOrEqual(12);
       expect(c.employees.some((e) => e.affiliation === 'secondee')).toBe(true);
-      expect(c.profile.parentRevenueShare).toBeGreaterThan(0);
+      expect(c.profile.stableDemandShare).toBeGreaterThan(0);
+      expect(c.market.stableDemandMonthly).toBeGreaterThan(0);
       expect(c.profile.legalObligationsAtStart).toBe(true);
       const sec = c.employees.filter((e) => e.affiliation === 'secondee' && e.employmentType === 'full');
       const pro = c.employees.filter((e) => e.affiliation === 'proper' && e.employmentType === 'full');

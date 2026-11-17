@@ -45,15 +45,6 @@
       "basis": "assumption",
       "source": "仮置き"
     },
-    "parentRevenueShareRange": {
-      "value": {
-        "min": 0,
-        "max": 0
-      },
-      "unit": "比",
-      "basis": "assumption",
-      "source": "仮置き"
-    },
     "ageShift": {
       "value": 0,
       "unit": "年",
@@ -75,7 +66,16 @@
       "basis": "assumption",
       "source": "仮置き"
     },
-    "legalObligationsAtStart": false
+    "legalObligationsAtStart": false,
+    "stableDemandShareRange": {
+      "value": {
+        "min": 0,
+        "max": 0
+      },
+      "unit": "比",
+      "basis": "assumption",
+      "source": "仮置き"
+    }
   },
   {
     "id": "cofounders",
@@ -123,15 +123,6 @@
       "basis": "assumption",
       "source": "仮置き"
     },
-    "parentRevenueShareRange": {
-      "value": {
-        "min": 0,
-        "max": 0
-      },
-      "unit": "比",
-      "basis": "assumption",
-      "source": "仮置き"
-    },
     "ageShift": {
       "value": 0,
       "unit": "年",
@@ -153,7 +144,16 @@
       "basis": "assumption",
       "source": "仮置き"
     },
-    "legalObligationsAtStart": false
+    "legalObligationsAtStart": false,
+    "stableDemandShareRange": {
+      "value": {
+        "min": 0,
+        "max": 0
+      },
+      "unit": "比",
+      "basis": "assumption",
+      "source": "仮置き"
+    }
   },
   {
     "id": "subsidiary",
@@ -201,15 +201,6 @@
       "basis": "assumption",
       "source": "仮置き"
     },
-    "parentRevenueShareRange": {
-      "value": {
-        "min": 0.3,
-        "max": 0.6
-      },
-      "unit": "比",
-      "basis": "assumption",
-      "source": "仮置き"
-    },
     "ageShift": {
       "value": 3,
       "unit": "年",
@@ -231,7 +222,16 @@
       "basis": "assumption",
       "source": "仮置き"
     },
-    "legalObligationsAtStart": true
+    "legalObligationsAtStart": true,
+    "stableDemandShareRange": {
+      "value": {
+        "min": 0.3,
+        "max": 0.6
+      },
+      "unit": "比",
+      "basis": "assumption",
+      "source": "仮置き。親会社向けの売上の割合"
+    }
   },
   {
     "id": "carveout",
@@ -279,15 +279,6 @@
       "basis": "assumption",
       "source": "仮置き"
     },
-    "parentRevenueShareRange": {
-      "value": {
-        "min": 0,
-        "max": 0
-      },
-      "unit": "比",
-      "basis": "assumption",
-      "source": "仮置き"
-    },
     "ageShift": {
       "value": 7,
       "unit": "年",
@@ -309,6 +300,15 @@
       "basis": "assumption",
       "source": "仮置き"
     },
-    "legalObligationsAtStart": true
+    "legalObligationsAtStart": true,
+    "stableDemandShareRange": {
+      "value": {
+        "min": 0.4,
+        "max": 0.7
+      },
+      "unit": "比",
+      "basis": "assumption",
+      "source": "仮置き。切り出し元から引き継いだ既存顧客の割合"
+    }
   }
 ]

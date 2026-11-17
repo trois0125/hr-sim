@@ -13,6 +13,8 @@ import {
   names,
 } from './data';
 import { createEmployee, sampleGender, sampleName } from './employees';
+import { createMarket } from './market';
+import { computePerformance, nominalOutputPerRevenueStaff } from './performance';
 import { createStreams, getStreamsState, type Rng } from './rng';
 import type {
   Affiliation,
@@ -74,6 +76,7 @@ export function generateCompany(options: GenerateOptions): CompanyState {
   const grossMargin = sampleRange(rng, variant.grossMarginRange.value);
   const cyclicality = sampleRange(rng, variant.cyclicalityRange.value);
   const partTimeRatio = sampleRange(rng, industry.partTimeRatioRange.value);
+  const marketPotential = sampleRange(rng, industry.marketPotentialRange.value);
 
   const rawMix = industry.roles.map((r) => [r.id, sampleRange(rng, r.mixWeightRange.value)] as const);
   const mixTotal = rawMix.reduce((s, [, w]) => s + w, 0);
@@ -81,7 +84,7 @@ export function generateCompany(options: GenerateOptions): CompanyState {
 
   const cashUnit = coef('generation.cash.rounding_unit');
   const initialCash = Math.round(sampleRange(rng, founding.initialCashRange.value) / cashUnit) * cashUnit;
-  const parentRevenueShare = sampleRange(rng, founding.parentRevenueShareRange.value);
+  const stableDemandShare = sampleRange(rng, founding.stableDemandShareRange.value);
 
   // 社員の人数と内訳
   const headcount = sampleIntRange(rng, founding.headcountRange.value);
@@ -130,19 +133,35 @@ export function generateCompany(options: GenerateOptions): CompanyState {
     cyclicality,
     partTimeRatio,
     roleMix,
-    parentRevenueShare,
+    stableDemandShare,
+    marketPotential,
     legalObligationsAtStart: founding.legalObligationsAtStart,
     initialCash,
   };
 
+  // 創業時の需要は、初期社員（と社長）の営業力を基準に決める
+  const initialCapacity = computePerformance(
+    employees.map((e) => ({ ...e, tenureMonths: coef('performance.ramp_months') })),
+    industry,
+    variant,
+  ).capacity;
+  const market = createMarket(initialCapacity, profile, industry, (roleId) =>
+    nominalOutputPerRevenueStaff(industry, variant, roleId),
+  );
+
   return {
     seed: options.seed,
     month: 0,
+    status: 'running',
     profile,
     policies: { ...defaultPolicies },
     cash: initialCash,
+    negativeCashMonths: 0,
     employees,
     nextEmployeeId: headcount + 1,
+    market,
+    hiring: { intensity: 1 },
+    history: [],
     rng: getStreamsState(streams),
   };
 }

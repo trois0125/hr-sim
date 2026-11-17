@@ -140,5 +140,208 @@
     "unit": "円",
     "basis": "assumption",
     "source": "仮置き。創業資金を百万円単位に丸める"
+  },
+  {
+    "id": "market.initial_demand_ratio",
+    "value": 1.3,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。創業時の需要は、初期社員の営業力の1.3倍（人手が足りず採用が始まる）"
+  },
+  {
+    "id": "market.logistic_width_ratio",
+    "value": 8,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。成長期の長さをこの値で割った月数を、S字カーブの立ち上がりの幅にする"
+  },
+  {
+    "id": "market.economy.persistence",
+    "value": 0.97,
+    "unit": "係数",
+    "basis": "assumption",
+    "source": "仮置き。景気の自己相関（毎月の景気がどれだけ前月を引きずるか）"
+  },
+  {
+    "id": "market.economy.shock_sd",
+    "value": 0.015,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。毎月の景気の揺れの大きさ"
+  },
+  {
+    "id": "market.economy.floor",
+    "value": -0.5,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。景気の落ち込みの下限"
+  },
+  {
+    "id": "performance.ability_spread",
+    "value": 0.4,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。実力0で生産性0.6倍、100で1.4倍"
+  },
+  {
+    "id": "performance.engagement_multiplier.at20",
+    "value": 0.8,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "DESIGN.md §6.3 の仮置き"
+  },
+  {
+    "id": "performance.engagement_multiplier.at50",
+    "value": 1.0,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "DESIGN.md §6.3 の仮置き"
+  },
+  {
+    "id": "performance.engagement_multiplier.at80",
+    "value": 1.1,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "DESIGN.md §6.3 の仮置き"
+  },
+  {
+    "id": "performance.ramp_months",
+    "value": 6,
+    "unit": "月",
+    "basis": "assumption",
+    "source": "仮置き。入社から一人前になるまでの月数（採用方針による違いはステップ5）"
+  },
+  {
+    "id": "performance.admin_gap_penalty",
+    "value": 0.25,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。事務の支えがまったく届かない営業は、稼働が25%下がる（届いていない人の割合に比例）"
+  },
+  {
+    "id": "performance.management_gap_penalty",
+    "value": 0.3,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。管理がまったく届かないと全体の効率が30%下がる（社長・管理職が見きれない人の割合に比例）"
+  },
+  {
+    "id": "performance.founder_admin_allowance",
+    "value": 0.5,
+    "unit": "人",
+    "basis": "assumption",
+    "source": "仮置き。社長が兼ねられる事務の量"
+  },
+  {
+    "id": "hiring.fill_rate_base",
+    "value": 0.5,
+    "unit": "確率/月",
+    "basis": "assumption",
+    "source": "仮置き。採用難度1.0の職種で、1つの求人が1か月で埋まる確率"
+  },
+  {
+    "id": "hiring.cost_salary_months",
+    "value": 3,
+    "unit": "か月分",
+    "basis": "assumption",
+    "source": "仮置き。1人あたり採用費は月給の3か月分（紹介手数料・広告費の目安）"
+  },
+  {
+    "id": "hiring.cash_runway_months",
+    "value": 6,
+    "unit": "か月",
+    "basis": "assumption",
+    "source": "仮置き。採用後も人件費の6か月分の資金が残るときだけ採用する"
+  },
+  {
+    "id": "hiring.max_openings_ratio",
+    "value": 0.1,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。1か月に出せる求人は社員数の10%まで"
+  },
+  {
+    "id": "hiring.min_openings",
+    "value": 1,
+    "unit": "件",
+    "basis": "assumption",
+    "source": "仮置き。社員が少なくても1か月に1件は求人を出せる"
+  },
+  {
+    "id": "labor.overtime_max_hours",
+    "value": 45,
+    "unit": "時間/月",
+    "basis": "assumption",
+    "source": "仮置き。労基法36条の限度時間（月45時間）を上限にした"
+  },
+  {
+    "id": "labor.overtime_premium",
+    "value": 1.25,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。労基法37条の時間外割増（25%）。月60時間超の50%は扱わない"
+  },
+  {
+    "id": "labor.legal_welfare_rate",
+    "value": 0.15,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "DESIGN.md §6.3 の仮置き（給与の約15%）。TODO: 要確認（社会保険料率の合計で確認）"
+  },
+  {
+    "id": "cost.office_per_employee",
+    "value": 60000,
+    "unit": "円/人/月",
+    "basis": "assumption",
+    "source": "仮置き。賃料・設備・通信など社員1人あたりの固定費"
+  },
+  {
+    "id": "cost.company_base",
+    "value": 300000,
+    "unit": "円/月",
+    "basis": "assumption",
+    "source": "仮置き。会社として最低限かかる固定費"
+  },
+  {
+    "id": "end.max_months",
+    "value": 300,
+    "unit": "月",
+    "basis": "assumption",
+    "source": "DESIGN.md §2.3（25年）"
+  },
+  {
+    "id": "end.bankruptcy_months",
+    "value": 6,
+    "unit": "か月",
+    "basis": "assumption",
+    "source": "DESIGN.md §2.3"
+  },
+  {
+    "id": "end.maturity_growth_threshold",
+    "value": 0.05,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "DESIGN.md §2.3"
+  },
+  {
+    "id": "end.maturity_years",
+    "value": 3,
+    "unit": "年",
+    "basis": "assumption",
+    "source": "DESIGN.md §2.3"
+  },
+  {
+    "id": "performance.ramp_start",
+    "value": 0.5,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。入社直後の生産性は一人前の50%"
+  },
+  {
+    "id": "performance.founder_revenue_fte",
+    "value": 1.0,
+    "unit": "人",
+    "basis": "assumption",
+    "source": "仮置き。社長自身が営業1人分の売上をつくる（役員なので給与・社員数には数えない）"
   }
 ]

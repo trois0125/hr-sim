@@ -18,6 +18,7 @@
     {
       "id": "sales",
       "name": "営業",
+      "kind": "revenue",
       "marketSalaryMonthly": {
         "value": 350000,
         "unit": "円/月",
@@ -25,11 +26,11 @@
         "source": "賃金構造基本統計調査（卸売業・営業職）を参考に仮置き。TODO: 要確認（e-Statで確認）"
       },
       "productivityMonthly": {
-        "value": 8000000,
+        "value": 12000000,
         "unit": "円/月",
         "basis": "assumption",
         "source": "法人企業統計（卸売業の1人あたり売上高）を参考に仮置き。TODO: 要確認（e-Statで確認）",
-        "note": "営業1人あたりの月の売上（取扱高）"
+        "note": "営業1人あたりの月の売上（取扱高）。8百万円では粗利率の低い商材が構造的に赤字になったため12百万円に上げた（売上高人件費率が統計の水準に近づく方向）"
       },
       "hiringDifficulty": {
         "value": 1.0,
@@ -50,6 +51,7 @@
     {
       "id": "admin",
       "name": "事務",
+      "kind": "admin",
       "marketSalaryMonthly": {
         "value": 260000,
         "unit": "円/月",
@@ -81,6 +83,7 @@
     {
       "id": "management",
       "name": "管理",
+      "kind": "management",
       "marketSalaryMonthly": {
         "value": 420000,
         "unit": "円/月",
@@ -187,6 +190,12 @@
     {
       "id": "food",
       "name": "食品",
+      "productivityMultiplier": {
+        "value": 1.8,
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。粗利率の低い商材ほど1人あたりの取扱高が大きい。TODO: 要確認（法人企業統計・商業動態統計の業種別1人あたり売上）"
+      },
       "grossMarginRange": {
         "value": {
           "min": 0.05,
@@ -209,6 +218,12 @@
     {
       "id": "machinery",
       "name": "機械",
+      "productivityMultiplier": {
+        "value": 0.8,
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。粗利率の低い商材ほど1人あたりの取扱高が大きい。TODO: 要確認（法人企業統計・商業動態統計の業種別1人あたり売上）"
+      },
       "grossMarginRange": {
         "value": {
           "min": 0.1,
@@ -231,6 +246,12 @@
     {
       "id": "chemicals",
       "name": "化学品",
+      "productivityMultiplier": {
+        "value": 1.1,
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。粗利率の低い商材ほど1人あたりの取扱高が大きい。TODO: 要確認（法人企業統計・商業動態統計の業種別1人あたり売上）"
+      },
       "grossMarginRange": {
         "value": {
           "min": 0.08,
@@ -253,6 +274,12 @@
     {
       "id": "it_equipment",
       "name": "IT機器",
+      "productivityMultiplier": {
+        "value": 1.0,
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。粗利率の低い商材ほど1人あたりの取扱高が大きい。TODO: 要確認（法人企業統計・商業動態統計の業種別1人あたり売上）"
+      },
       "grossMarginRange": {
         "value": {
           "min": 0.08,
@@ -272,5 +299,26 @@
         "source": "仮置き"
       }
     }
-  ]
+  ],
+  "adminPerRevenueStaff": {
+    "value": 0.5,
+    "unit": "人/人",
+    "basis": "assumption",
+    "source": "DESIGN.md §3.3（営業6：事務3）から、営業1人あたり事務0.5人を仮置き"
+  },
+  "managementSpan": {
+    "value": 8,
+    "unit": "人",
+    "basis": "assumption",
+    "source": "仮置き。管理職1人（創業期は社長）が見られる人数"
+  },
+  "marketPotentialRange": {
+    "value": {
+      "min": 0.6,
+      "max": 1.4
+    },
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。DESIGN.md §3.3「市場の成長性（縮小〜高成長）」を、成熟時の需要の倍率で表す"
+  }
 }

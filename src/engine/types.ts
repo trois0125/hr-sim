@@ -46,9 +46,13 @@ export type Range = { min: number; max: number };
 // 業種データ（§6.5 `src/data/industries/*.json`）
 // ---------------------------------------------------------------------------
 
+export type RoleKind = 'revenue' | 'admin' | 'management';
+
 export type RoleData = {
   id: RoleId;
   name: string;
+  /** 売上を生む職種か、それを支える事務・管理か */
+  kind: RoleKind;
   /** 相場の月給（円） */
   marketSalaryMonthly: Sourced<number>;
   /** 1人1か月あたりの売上への寄与（円） */
@@ -63,6 +67,8 @@ export type RoleData = {
 export type IndustryVariant = {
   id: string;
   name: string;
+  /** 1人あたりの取扱高の倍率（粗利率の低い商材ほど量が多い） */
+  productivityMultiplier: Sourced<number>;
   grossMarginRange: Sourced<Range>;
   cyclicalityRange: Sourced<Range>;
 };
@@ -92,6 +98,12 @@ export type IndustryData = {
   cyclicality: Sourced<number>;
   maturityHeadcount: Sourced<number>;
   remoteAllowed: WorkStyle[];
+  /** 売上を生む社員1人あたりに必要な事務の人数 */
+  adminPerRevenueStaff: Sourced<number>;
+  /** 管理職1人（創業期は社長）が見られる人数 */
+  managementSpan: Sourced<number>;
+  /** 市場の成長性（成熟時の需要の倍率。縮小〜高成長） */
+  marketPotentialRange: Sourced<Range>;
   /** 業種ごとのイベントID（イベントの型はステップ8で定義） */
   specialEvents: string[];
   variants: IndustryVariant[];
@@ -115,8 +127,8 @@ export type FoundingPattern = {
   keyPersonCountRange: Sourced<Range>;
   /** 親会社からの出向者の割合 */
   secondeeShareRange: Sourced<Range>;
-  /** 売上のうち親会社向けで安定している割合（ステップ3で使う） */
-  parentRevenueShareRange: Sourced<Range>;
+  /** 創業時の需要のうち、景気に左右されない底堅い部分の割合（親会社向け・既存顧客） */
+  stableDemandShareRange: Sourced<Range>;
   /** 年齢の平均の上乗せ（年） */
   ageShift: Sourced<number>;
   /** 前の会社から引き継ぐ勤続月数 */
@@ -239,24 +251,88 @@ export type CompanyProfile = {
   partTimeRatio: number;
   /** 職種ごとの構成比（合計1.0） */
   roleMix: Record<RoleId, number>;
-  /** 売上のうち親会社向けの割合（子会社以外は0） */
-  parentRevenueShare: number;
+  /** 創業時の需要のうち底堅い部分の割合（親会社向け・既存顧客。無ければ0） */
+  stableDemandShare: number;
+  /** 市場の成長性（成熟時の需要の倍率） */
+  marketPotential: number;
   legalObligationsAtStart: boolean;
   initialCash: number;
 };
+
+/** 1年の月数（暦の定義） */
+export const MONTHS_PER_YEAR = 12;
+
+/** 市場の状態（§2.1 の1） */
+export type MarketState = {
+  /** 景気。0が平常、プラスが好況、マイナスが不況 */
+  economy: number;
+  /** 創業時の需要（円／月）。S字カーブの出発点 */
+  initialDemandMonthly: number;
+  /** 成熟時の需要（円／月）。S字カーブの到達点 */
+  matureDemandMonthly: number;
+  /** 景気に左右されない底堅い需要（円／月） */
+  stableDemandMonthly: number;
+};
+
+/** 採用の状態（§2.1 の2） */
+export type HiringState = {
+  /** 採用の強さ。1.0が標準。イベントや制度で上げ下げする（ステップ5・8） */
+  intensity: number;
+};
+
+/** 人件費の内訳（§6.3） */
+export type LaborCost = {
+  salaries: number;
+  bonus: number;
+  legalWelfare: number;
+  overtime: number;
+  hiring: number;
+  training: number;
+  total: number;
+};
+
+/** 月ごとの記録（§2.1 の10） */
+export type MonthlyRecord = {
+  month: number;
+  headcount: number;
+  hires: number;
+  /** 景気 */
+  economy: number;
+  /** 市場の需要上限（円） */
+  demand: number;
+  /** 残業なしで売れる上限（円） */
+  capacity: number;
+  /** 売上を生む社員（フルタイム）の残業時間 */
+  overtimeHours: number;
+  revenue: number;
+  grossProfit: number;
+  labor: LaborCost;
+  otherFixedCost: number;
+  operatingProfit: number;
+  cash: number;
+};
+
+/** 進行中か、どの終了条件で終わったか（§2.3） */
+export type CompanyStatus = 'running' | 'matured' | 'timeout' | 'bankrupt';
 
 /** エンジンが保持する会社の状態。セーブデータの本体になる。 */
 export type CompanyState = {
   seed: number;
   /** 創業からの経過月（0 始まり） */
   month: number;
+  status: CompanyStatus;
   profile: CompanyProfile;
   policies: PolicySet;
   /** 手元資金（円） */
   cash: number;
+  /** 手元資金がマイナスのまま続いている月数 */
+  negativeCashMonths: number;
   employees: Employee[];
   /** 次に採番する社員番号 */
   nextEmployeeId: number;
+  market: MarketState;
+  hiring: HiringState;
+  history: MonthlyRecord[];
   rng: RngStreamsState;
 };
 
