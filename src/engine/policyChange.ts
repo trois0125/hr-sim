@@ -88,7 +88,13 @@ export function previewChange(state: CompanyState, next: PolicySet): ChangePrevi
       newSalary = Math.min(e.salaryMonthly, targetSalaryUnder(e, next.pay, next.grade, market, p));
     }
     const newBonusMonthly = categories.includes('bonus')
-      ? bonusMonthlyFor({ ...e, salaryMonthly: newSalary }, { policies: next, percentile: p, lastYearProfit, totalSalaries })
+      ? bonusMonthlyFor({ ...e, salaryMonthly: newSalary }, {
+          policies: next,
+          marketBonusMonths: industry.marketBonusMonths.value,
+          percentile: p,
+          lastYearProfit,
+          totalSalaries,
+        })
       : (e.bonusMonthly * newSalary) / e.salaryMonthly;
     const before = e.salaryMonthly + e.bonusMonthly;
     const after = newSalary + newBonusMonthly;
@@ -161,6 +167,7 @@ export function changePolicies(state: CompanyState, next: PolicySet, options: Ch
       const eligible = out.employees.filter((x) => x.employmentType !== 'part');
       e.bonusMonthly = bonusMonthlyFor(e, {
         policies: next,
+        marketBonusMonths: industry.marketBonusMonths.value,
         percentile: pct,
         lastYearProfit: out.history.slice(-MONTHS_PER_YEAR).reduce((s, r) => s + r.operatingProfit, 0),
         totalSalaries: eligible.reduce((s, x) => s + x.salaryMonthly, 0),

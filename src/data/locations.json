@@ -10,16 +10,16 @@
       "source": "仮置き。事業所数の多さを目安"
     },
     "minimumWageHourly": {
-      "value": 1226,
+      "value": 1280,
       "unit": "円/時",
-      "basis": "assumption",
-      "source": "令和7年度地域別最低賃金（厚生労働省）の値を記憶から仮置き。TODO: 要確認（発効日も都道府県ごとに確認）"
+      "basis": "statistic",
+      "source": "令和8年度地域別最低賃金全国一覧（厚生労働省）の答申された改定額（発効日 令和8年10月1日）"
     },
     "wageIndex": {
-      "value": 1.2,
+      "value": 1.228,
       "unit": "倍",
-      "basis": "assumption",
-      "source": "賃金構造基本統計調査（都道府県別の所定内給与）を参考に仮置き。TODO: 要確認（e-Statで確認）"
+      "basis": "statistic",
+      "source": "賃金構造基本統計調査 令和7年 都道府県別 参考表1（男女計）所定内給与額 ÷ 全国計340.6千円（e-Stat 統計表ID 000040421202）：418.3千円"
     },
     "hiringDifficulty": {
       "value": 1.0,
@@ -39,16 +39,16 @@
       "source": "仮置き。事業所数の多さを目安"
     },
     "minimumWageHourly": {
-      "value": 1225,
+      "value": 1279,
       "unit": "円/時",
-      "basis": "assumption",
-      "source": "令和7年度地域別最低賃金（厚生労働省）の値を記憶から仮置き。TODO: 要確認（発効日も都道府県ごとに確認）"
+      "basis": "statistic",
+      "source": "令和8年度地域別最低賃金全国一覧（厚生労働省）の答申された改定額（発効日 令和8年10月1日）"
     },
     "wageIndex": {
-      "value": 1.08,
+      "value": 1.082,
       "unit": "倍",
-      "basis": "assumption",
-      "source": "賃金構造基本統計調査（都道府県別の所定内給与）を参考に仮置き。TODO: 要確認（e-Statで確認）"
+      "basis": "statistic",
+      "source": "賃金構造基本統計調査 令和7年 都道府県別 参考表1（男女計）所定内給与額 ÷ 全国計340.6千円（e-Stat 統計表ID 000040421202）：368.6千円"
     },
     "hiringDifficulty": {
       "value": 1.0,
@@ -68,16 +68,16 @@
       "source": "仮置き。事業所数の多さを目安"
     },
     "minimumWageHourly": {
-      "value": 1177,
+      "value": 1231,
       "unit": "円/時",
-      "basis": "assumption",
-      "source": "令和7年度地域別最低賃金（厚生労働省）の値を記憶から仮置き。TODO: 要確認（発効日も都道府県ごとに確認）"
+      "basis": "statistic",
+      "source": "令和8年度地域別最低賃金全国一覧（厚生労働省）の答申された改定額（発効日 令和8年10月1日）"
     },
     "wageIndex": {
-      "value": 1.05,
+      "value": 1.024,
       "unit": "倍",
-      "basis": "assumption",
-      "source": "賃金構造基本統計調査（都道府県別の所定内給与）を参考に仮置き。TODO: 要確認（e-Statで確認）"
+      "basis": "statistic",
+      "source": "賃金構造基本統計調査 令和7年 都道府県別 参考表1（男女計）所定内給与額 ÷ 全国計340.6千円（e-Stat 統計表ID 000040421202）：348.9千円"
     },
     "hiringDifficulty": {
       "value": 1.0,
@@ -97,16 +97,16 @@
       "source": "仮置き。事業所数の多さを目安"
     },
     "minimumWageHourly": {
-      "value": 1140,
+      "value": 1195,
       "unit": "円/時",
-      "basis": "assumption",
-      "source": "令和7年度地域別最低賃金（厚生労働省）の値を記憶から仮置き。TODO: 要確認（発効日も都道府県ごとに確認）"
+      "basis": "statistic",
+      "source": "令和8年度地域別最低賃金全国一覧（厚生労働省）の答申された改定額（発効日 令和8年10月1日）"
     },
     "wageIndex": {
-      "value": 1.02,
+      "value": 1.003,
       "unit": "倍",
-      "basis": "assumption",
-      "source": "賃金構造基本統計調査（都道府県別の所定内給与）を参考に仮置き。TODO: 要確認（e-Statで確認）"
+      "basis": "statistic",
+      "source": "賃金構造基本統計調査 令和7年 都道府県別 参考表1（男女計）所定内給与額 ÷ 全国計340.6千円（e-Stat 統計表ID 000040421202）：341.6千円"
     },
     "hiringDifficulty": {
       "value": 1.05,
@@ -126,16 +126,16 @@
       "source": "仮置き。事業所数の多さを目安"
     },
     "minimumWageHourly": {
-      "value": 1057,
+      "value": 1114,
       "unit": "円/時",
-      "basis": "assumption",
-      "source": "令和7年度地域別最低賃金（厚生労働省）の値を記憶から仮置き。TODO: 要確認（発効日も都道府県ごとに確認）"
+      "basis": "statistic",
+      "source": "令和8年度地域別最低賃金全国一覧（厚生労働省）の答申された改定額（発効日 令和8年10月4日）"
     },
     "wageIndex": {
-      "value": 0.95,
+      "value": 0.923,
       "unit": "倍",
-      "basis": "assumption",
-      "source": "賃金構造基本統計調査（都道府県別の所定内給与）を参考に仮置き。TODO: 要確認（e-Statで確認）"
+      "basis": "statistic",
+      "source": "賃金構造基本統計調査 令和7年 都道府県別 参考表1（男女計）所定内給与額 ÷ 全国計340.6千円（e-Stat 統計表ID 000040421202）：314.3千円"
     },
     "hiringDifficulty": {
       "value": 1.1,
@@ -155,16 +155,16 @@
       "source": "仮置き。事業所数の多さを目安"
     },
     "minimumWageHourly": {
-      "value": 1038,
+      "value": 1098,
       "unit": "円/時",
-      "basis": "assumption",
-      "source": "令和7年度地域別最低賃金（厚生労働省）の値を記憶から仮置き。TODO: 要確認（発効日も都道府県ごとに確認）"
+      "basis": "statistic",
+      "source": "令和8年度地域別最低賃金全国一覧（厚生労働省）の答申された改定額（発効日 令和8年10月1日）"
     },
     "wageIndex": {
-      "value": 0.93,
+      "value": 0.921,
       "unit": "倍",
-      "basis": "assumption",
-      "source": "賃金構造基本統計調査（都道府県別の所定内給与）を参考に仮置き。TODO: 要確認（e-Statで確認）"
+      "basis": "statistic",
+      "source": "賃金構造基本統計調査 令和7年 都道府県別 参考表1（男女計）所定内給与額 ÷ 全国計340.6千円（e-Stat 統計表ID 000040421202）：313.7千円"
     },
     "hiringDifficulty": {
       "value": 1.2,
@@ -184,16 +184,16 @@
       "source": "仮置き。事業所数の多さを目安"
     },
     "minimumWageHourly": {
-      "value": 1085,
+      "value": 1141,
       "unit": "円/時",
-      "basis": "assumption",
-      "source": "令和7年度地域別最低賃金（厚生労働省）の値を記憶から仮置き。TODO: 要確認（発効日も都道府県ごとに確認）"
+      "basis": "statistic",
+      "source": "令和8年度地域別最低賃金全国一覧（厚生労働省）の答申された改定額（発効日 令和8年10月11日）"
     },
     "wageIndex": {
-      "value": 0.95,
+      "value": 0.94,
       "unit": "倍",
-      "basis": "assumption",
-      "source": "賃金構造基本統計調査（都道府県別の所定内給与）を参考に仮置き。TODO: 要確認（e-Statで確認）"
+      "basis": "statistic",
+      "source": "賃金構造基本統計調査 令和7年 都道府県別 参考表1（男女計）所定内給与額 ÷ 全国計340.6千円（e-Stat 統計表ID 000040421202）：320.2千円"
     },
     "hiringDifficulty": {
       "value": 1.2,
@@ -213,16 +213,16 @@
       "source": "仮置き。事業所数の多さを目安"
     },
     "minimumWageHourly": {
-      "value": 1050,
+      "value": 1108,
       "unit": "円/時",
-      "basis": "assumption",
-      "source": "令和7年度地域別最低賃金（厚生労働省）の値を記憶から仮置き。TODO: 要確認（発効日も都道府県ごとに確認）"
+      "basis": "statistic",
+      "source": "令和8年度地域別最低賃金全国一覧（厚生労働省）の答申された改定額（発効日 令和8年10月1日）"
     },
     "wageIndex": {
-      "value": 0.9,
+      "value": 0.857,
       "unit": "倍",
-      "basis": "assumption",
-      "source": "賃金構造基本統計調査（都道府県別の所定内給与）を参考に仮置き。TODO: 要確認（e-Statで確認）"
+      "basis": "statistic",
+      "source": "賃金構造基本統計調査 令和7年 都道府県別 参考表1（男女計）所定内給与額 ÷ 全国計340.6千円（e-Stat 統計表ID 000040421202）：291.8千円"
     },
     "hiringDifficulty": {
       "value": 1.3,
@@ -242,16 +242,16 @@
       "source": "仮置き。事業所数の多さを目安"
     },
     "minimumWageHourly": {
-      "value": 1023,
+      "value": 1086,
       "unit": "円/時",
-      "basis": "assumption",
-      "source": "令和7年度地域別最低賃金（厚生労働省）の値を記憶から仮置き。TODO: 要確認（発効日も都道府県ごとに確認）"
+      "basis": "statistic",
+      "source": "令和8年度地域別最低賃金全国一覧（厚生労働省）の答申された改定額（発効日 令和8年10月29日）"
     },
     "wageIndex": {
-      "value": 0.86,
+      "value": 0.839,
       "unit": "倍",
-      "basis": "assumption",
-      "source": "賃金構造基本統計調査（都道府県別の所定内給与）を参考に仮置き。TODO: 要確認（e-Statで確認）"
+      "basis": "statistic",
+      "source": "賃金構造基本統計調査 令和7年 都道府県別 参考表1（男女計）所定内給与額 ÷ 全国計340.6千円（e-Stat 統計表ID 000040421202）：285.8千円"
     },
     "hiringDifficulty": {
       "value": 1.4,

@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultPolicies } from './data';
-import { generateCompany } from './generate';
+import { generateCompany, setFoundingPolicies } from './generate';
 import { runToEnd } from './tick';
 import type { CompanyState, PolicySet } from './types';
 
@@ -41,8 +41,10 @@ function outcome(over: Partial<PolicySet>): Outcome {
   let err = 0;
   let errN = 0;
   for (const seed of SEEDS) {
-    const c: CompanyState = generateCompany({ seed, industryId: 'trading', foundingPatternId: 'carveout' });
-    c.policies = { ...defaultPolicies, ...over };
+    const c: CompanyState = setFoundingPolicies(
+      generateCompany({ seed, industryId: 'trading', foundingPatternId: 'carveout' }),
+      { ...defaultPolicies, ...over },
+    );
     const end = runToEnd(c, MONTHS);
     for (const r of end.history) {
       labor += r.labor.total;

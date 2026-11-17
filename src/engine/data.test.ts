@@ -3,6 +3,7 @@ import coefficientsJson from '../data/coefficients.json';
 import foundingsJson from '../data/foundings.json';
 import tradingJson from '../data/industries/trading.json';
 import locationsJson from '../data/locations.json';
+import referencesJson from '../data/references.json';
 import { coef } from './coefficients';
 import { getIndustry } from './data';
 
@@ -34,6 +35,7 @@ describe('データの根拠', () => {
     ['foundings.json', foundingsJson],
     ['industries/trading.json', tradingJson],
     ['locations.json', locationsJson],
+    ['references.json', referencesJson],
   ])('%s の数値はすべて basis と source を持つ', (_name, json) => {
     const out: string[] = [];
     findUnsourced(json, '$', out);

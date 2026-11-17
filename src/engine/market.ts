@@ -35,15 +35,32 @@ export function demandAt(
 ): number {
   const potential = potentialDemand(market, industry, month);
   const stable = Math.min(market.stableDemandMonthly, potential);
-  const cyclical = (potential - stable) * Math.max(0, 1 + profile.cyclicality * market.economy);
+  // 取りこぼしで失った取り分は、景気に左右される部分（新しい顧客・案件）から減る
+  const cyclical =
+    (potential - stable) * market.shareFactor * Math.max(0, 1 + profile.cyclicality * market.economy);
   return stable + cyclical;
 }
 
-/** 景気を1か月進める（平常に戻ろうとしながら、毎月少しずつ揺れる） */
-export function stepEconomy(economy: number, rng: Rng): number {
+/**
+ * 景気を1か月進める（平常に戻ろうとしながら、毎月少しずつ揺れる）。
+ * まれに景気後退が始まり、景気が大きく落ち込む。乱数は毎月決まった回数（2回）だけ引く。
+ */
+export function stepEconomy(economy: number, rng: Rng): { economy: number; recession: boolean } {
+  const shock = rng.normal(0, coef('market.economy.shock_sd'));
+  const recession = rng.next() < coef('market.recession.monthly_probability');
   const next =
-    coef('market.economy.persistence') * economy + rng.normal(0, coef('market.economy.shock_sd'));
-  return Math.max(coef('market.economy.floor'), next);
+    coef('market.economy.persistence') * economy + shock + (recession ? coef('market.recession.shock') : 0);
+  return { economy: Math.max(coef('market.economy.floor'), next), recession };
+}
+
+/**
+ * 需要を取りこぼすと、市場での取り分が下がる（顧客が競合に移る）。取り分は少しずつ戻る。
+ * lostShare は、その月の需要のうち売上にできなかった割合（0〜1）
+ */
+export function updateShareFactor(shareFactor: number, lostShare: number): number {
+  const lost = coef('market.lost_demand.sensitivity') * Math.max(0, Math.min(1, lostShare));
+  const recovered = shareFactor + coef('market.lost_demand.recovery') * (1 - shareFactor);
+  return Math.max(0, recovered - lost);
 }
 
 /** 創業時の市場の状態をつくる */
@@ -65,5 +82,7 @@ export function createMarket(
     initialDemandMonthly,
     matureDemandMonthly: Math.max(mature, initialDemandMonthly),
     stableDemandMonthly: initialDemandMonthly * profile.stableDemandShare,
+    shareFactor: 1,
+    recessionMonths: [],
   };
 }

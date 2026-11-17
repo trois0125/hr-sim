@@ -10,6 +10,8 @@ import {
   fillRateMultiplier,
   fixedOvertimeAllowance,
   hireChannelFor,
+  incentiveStrength,
+  cohesionFactor,
   hrSystemCostPerEmployee,
   monthlyCompensation,
   paidOvertimeHours,
@@ -58,6 +60,7 @@ describe('賞与', () => {
   const e = makeEmployee('sales', { salaryMonthly: 400000 });
   const ctx = (bonus: PolicySet['bonus'], percentile = 0.5, lastYearProfit = 0) => ({
     policies: P({ bonus }),
+    marketBonusMonths: 2,
     percentile,
     lastYearProfit,
     totalSalaries: 4_000_000,
@@ -83,7 +86,7 @@ describe('賞与', () => {
     const big = bonusMonthlyFor(e, ctx('company_linked', 0.5, 50_000_000));
     const huge = bonusMonthlyFor(e, ctx('company_linked', 0.5, 1e12));
     expect(big).toBeGreaterThan(small);
-    expect(huge).toBeCloseTo((400000 * coef('policy.bonus.company_linked.max_months')) / 12);
+    expect(huge).toBeCloseTo((400000 * 2 * coef('policy.bonus.company_linked.max_ratio')) / 12);
   });
 
   it('パートは賞与の対象外', () => {
@@ -165,23 +168,58 @@ describe('育成投資', () => {
 });
 
 describe('働き方', () => {
+  it('ハイブリッドは、新人が多いほど生産性が落ちる（ベテランだけなら出社と同じ）', () => {
+    const office = P({ workStyle: 'office' });
+    const hybrid = P({ workStyle: 'hybrid' });
+    const veterans = staff('sales', 6, { tenureMonths: 36 });
+    const newcomers = staff('sales', 6, { tenureMonths: 3 });
+    const cap = (team: typeof veterans, p: PolicySet) => computePerformance(team, trading, chemicals, p).capacity;
+    expect(cap(veterans, hybrid)).toBeCloseTo(cap(veterans, office));
+    expect(cap(newcomers, hybrid)).toBeLessThan(cap(newcomers, office));
+    expect(cohesionFactor(hybrid, 0.5)).toBeLessThan(cohesionFactor(hybrid, 0.1));
+    expect(cohesionFactor(office, 0.5)).toBe(1);
+  });
+
   it('商社ではフルリモートを選べない', () => {
     expect(() => validatePolicies(P({ workStyle: 'remote' }), trading)).toThrow();
     expect(() => validatePolicies(P({ workStyle: 'hybrid' }), trading)).not.toThrow();
   });
 
-  it('ハイブリッドは採用しやすく、負荷の受け止め方がよく、オフィス代が下がるが、少し生産性が落ちる', () => {
+  it('ハイブリッドは採用しやすく、負荷の受け止め方がよく、オフィス代が下がる', () => {
     const office = P({ workStyle: 'office' });
     const hybrid = P({ workStyle: 'hybrid' });
     expect(fillRateMultiplier('mid_career', hybrid)).toBeGreaterThan(fillRateMultiplier('mid_career', office));
     expect(workloadBonus(hybrid)).toBeGreaterThan(workloadBonus(office));
     const team = staff('sales', 4);
-    expect(computePerformance(team, trading, chemicals, hybrid).capacity).toBeLessThan(
-      computePerformance(team, trading, chemicals, office).capacity,
-    );
     const fin = (p: PolicySet) =>
       computeFinance({ employees: team, policies: p, demand: 0, capacity: 0, overtimeCapacity: 0, grossMargin: 0, hiringCost: 0 })
         .otherFixedCost;
     expect(fin(hybrid)).toBeLessThan(fin(office));
+  });
+});
+
+describe('成果連動の稼働効果', () => {
+  it('成果連動の給与・賞与がなければ効果は0', () => {
+    expect(incentiveStrength(P({ pay: 'market', bonus: 'fixed_months' }), 20, trading)).toBe(0);
+  });
+
+  it('成果連動の給与と個人成果連動の賞与を組み合わせると、片方より強い', () => {
+    const pay = incentiveStrength(P({ pay: 'performance', bonus: 'fixed_months' }), 20, trading);
+    const both = incentiveStrength(P({ pay: 'performance', bonus: 'individual_linked' }), 20, trading);
+    expect(pay).toBeGreaterThan(0);
+    expect(both).toBeGreaterThan(pay);
+  });
+
+  it('評価が正確なほど効果が強い（社長が決めるより360度評価＋職務等級）', () => {
+    const rough = incentiveStrength(P({ pay: 'performance', evaluation: 'ceo', grade: 'none' }), 60, trading);
+    const precise = incentiveStrength(P({ pay: 'performance', evaluation: 'multi_rater', grade: 'job' }), 60, trading);
+    expect(precise).toBeGreaterThan(rough);
+  });
+
+  it('成果連動にすると、同じ人たちでも売れる上限が上がる', () => {
+    const team = staff('sales', 6);
+    const base = computePerformance(team, trading, chemicals, P({})).capacity;
+    const perf = computePerformance(team, trading, chemicals, P({ pay: 'performance', evaluation: 'multi_rater' })).capacity;
+    expect(perf).toBeGreaterThan(base);
   });
 });

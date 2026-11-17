@@ -93,6 +93,8 @@ export type IndustryData = {
   partTimeRatioRange: Sourced<Range>;
   /** 年間の基本離職率（0〜1） */
   baseAttritionRate: Sourced<number>;
+  /** 賞与の相場（所定内給与の何か月分か、年間） */
+  marketBonusMonths: Sourced<number>;
   grossMarginRange: Sourced<Range>;
   revenuePerEmployeeRange: Sourced<Range>;
   laborCostRatioTypical: Sourced<number>;
@@ -336,6 +338,10 @@ export type MarketState = {
   matureDemandMonthly: number;
   /** 景気に左右されない底堅い需要（円／月） */
   stableDemandMonthly: number;
+  /** 市場での取り分（1.0が標準）。需要を取りこぼすと下がり、少しずつ戻る */
+  shareFactor: number;
+  /** 景気後退が始まった月（記録用） */
+  recessionMonths: number[];
 };
 
 /** 採用の状態（§2.1 の2） */

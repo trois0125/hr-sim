@@ -1,10 +1,11 @@
 [
   {
     "id": "generation.age.mean",
-    "value": 36,
+    "value": 45,
     "unit": "歳",
-    "basis": "assumption",
-    "source": "労働力調査（就業者の年齢構成）を参考に仮置き。TODO: 要確認（e-Statで確認）"
+    "basis": "statistic",
+    "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 産業中分類「I50〜55 卸売業」企業規模計（10人以上）、年齢階級別所定内給与額（e-Stat 統計表ID 000040420851）の平均年齢45.1歳",
+    "note": "創業期の会社は若い人が多いので、創業時の社員にはこの平均から下げた値を使ってもよい（未対応）"
   },
   {
     "id": "generation.age.sd",
@@ -18,7 +19,7 @@
     "value": 20,
     "unit": "歳",
     "basis": "assumption",
-    "source": "仮置き。新卒の下限"
+    "source": "賃金カーブの基準年齢。新卒（大卒22歳前後）より少し下"
   },
   {
     "id": "generation.age.max",
@@ -93,11 +94,10 @@
   },
   {
     "id": "generation.salary.age_slope",
-    "value": 0.012,
+    "value": 0.03,
     "unit": "比/年",
-    "basis": "assumption",
-    "source": "賃金構造基本統計調査（年齢階級別の賃金カーブ）を参考に仮置き。TODO: 要確認（e-Statで確認）",
-    "note": "年齢の下限からの年数×この値だけ相場に上乗せ"
+    "basis": "statistic",
+    "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 産業中分類「I50〜55 卸売業」企業規模計（10人以上）、年齢階級別所定内給与額（e-Stat 統計表ID 000040420851）に当てはめた傾き（0.0301）。20歳の賃金に対して1年あたり何割上がるか"
   },
   {
     "id": "generation.salary.rounding_unit",
@@ -241,10 +241,10 @@
   },
   {
     "id": "hiring.cash_runway_months",
-    "value": 6,
+    "value": 1,
     "unit": "か月",
     "basis": "assumption",
-    "source": "仮置き。採用後も人件費の6か月分の資金が残るときだけ採用する"
+    "source": "仮置き。採用後も人件費の1か月分の資金が残るときだけ採用する。借入（融資）を扱わないかわりに緩くしている（3か月では、粗利の薄い会社の約3割が20〜30人で成長できなくなった）"
   },
   {
     "id": "hiring.max_openings_ratio",
@@ -269,10 +269,10 @@
   },
   {
     "id": "labor.legal_welfare_rate",
-    "value": 0.15,
+    "value": 0.16,
     "unit": "比",
     "basis": "assumption",
-    "source": "DESIGN.md §6.3 の仮置き（給与の約15%）。TODO: 要確認（社会保険料率の合計で確認）"
+    "source": "事業主負担の合計の目安：厚生年金 9.15%（保険料率18.3%の半分）＋健康保険 約5%＋介護保険（40歳以上）約0.8%＋雇用保険 約0.9%＋労災保険 約0.3%＋子ども・子育て拠出金 0.36%。TODO: 要確認（健康保険・介護保険は協会けんぽの都道府県別料率、雇用保険・労災保険は年度と業種で変わる）"
   },
   {
     "id": "cost.office_per_employee",
@@ -612,17 +612,18 @@
   },
   {
     "id": "attrition.unrelated_share",
-    "value": 0.3,
+    "value": 0.27,
     "unit": "比",
-    "basis": "assumption",
-    "source": "仮置き。基本離職率のうち、制度や納得感と関係なく起きる割合。TODO: 要確認（雇用動向調査の離職理由別の内訳で確認）"
+    "basis": "statistic",
+    "source": "雇用動向調査 令和7年 表5「転職入職者が前職を辞めた理由別割合」（男女の単純平均）。給料・労働条件・仕事内容・能力を生かせない・会社の将来・人間関係・結婚・出産育児・介護の合計のうち、人間関係と家庭の事情（結婚・出産育児・介護）が占める割合 27.2%",
+    "note": "「その他の個人的理由」「定年・契約期間の満了」「会社都合」「出向等」は除いて計算した"
   },
   {
     "id": "attrition.unrelated.family_share",
-    "value": 0.5,
+    "value": 0.22,
     "unit": "比",
-    "basis": "assumption",
-    "source": "仮置き。制度と関係ない退職のうち「家庭の事情」の割合（残りは「人間関係」）。TODO: 要確認（雇用動向調査の離職理由）"
+    "basis": "statistic",
+    "source": "雇用動向調査 令和7年 表5。人間関係と家庭の事情のうち、家庭の事情（結婚・出産育児・介護）の割合 22.1%"
   },
   {
     "id": "secondment.term_months_min",
@@ -892,10 +893,10 @@
   },
   {
     "id": "policy.pay.performance.base_raise",
-    "value": 0.01,
+    "value": 0,
     "unit": "比/年",
     "basis": "assumption",
-    "source": "仮置き。平均的な評価の人の昇給率"
+    "source": "仮置き。平均的な評価の人の、年齢カーブ（相場の伸び）に上乗せする昇給率。0なら平均は相場どおりに伸びる"
   },
   {
     "id": "policy.pay.performance.spread",
@@ -933,23 +934,9 @@
     "source": "仮置き"
   },
   {
-    "id": "compensation.market_bonus_months",
-    "value": 2,
-    "unit": "か月分",
-    "basis": "assumption",
-    "source": "賃金構造基本統計調査（年間賞与その他特別給与額）を参考に仮置き。TODO: 要確認（業種別の賞与の月数）"
-  },
-  {
     "id": "policy.bonus.none.stability_bonus",
     "value": 0,
     "unit": "点",
-    "basis": "assumption",
-    "source": "仮置き"
-  },
-  {
-    "id": "policy.bonus.fixed_months.months",
-    "value": 2,
-    "unit": "か月分",
     "basis": "assumption",
     "source": "仮置き"
   },
@@ -968,25 +955,11 @@
     "source": "仮置き。前年の営業利益のうち賞与に回す割合"
   },
   {
-    "id": "policy.bonus.company_linked.max_months",
-    "value": 4,
-    "unit": "か月分",
-    "basis": "assumption",
-    "source": "仮置き。業績連動賞与の1人あたりの上限"
-  },
-  {
     "id": "policy.bonus.company_linked.stability_bonus",
     "value": -3,
     "unit": "点",
     "basis": "assumption",
     "source": "仮置き。業績次第で賞与が変わる不安"
-  },
-  {
-    "id": "policy.bonus.individual_linked.months",
-    "value": 2,
-    "unit": "か月分",
-    "basis": "assumption",
-    "source": "仮置き。平均の月数"
   },
   {
     "id": "policy.bonus.individual_linked.spread",
@@ -1032,10 +1005,10 @@
   },
   {
     "id": "policy.hiring.new_grad.early_attrition_mult",
-    "value": 1.3,
+    "value": 1.4,
     "unit": "倍",
-    "basis": "assumption",
-    "source": "新規学卒就職者の離職状況（大卒3年以内33.8%）を参考に仮置き。TODO: 要確認。入社3年以内の退職のしやすさ"
+    "basis": "statistic",
+    "source": "新規学卒就職者の離職状況（厚生労働省）大学 令和5年3月卒の3年以内離職率31.2%を年率に直した11.7% ÷ 卸売業，小売業 一般労働者の離職率8.5%（雇用動向調査 令和7年）＝ 1.38。入社3年以内の退職のしやすさ"
   },
   {
     "id": "policy.hiring.new_grad.part_share",
@@ -1158,10 +1131,10 @@
   },
   {
     "id": "labor.parttime_attrition_mult",
-    "value": 1.5,
+    "value": 2.1,
     "unit": "倍",
-    "basis": "assumption",
-    "source": "仮置き。パートは辞めやすい。TODO: 要確認（雇用動向調査のパートタイム労働者の離職率）"
+    "basis": "statistic",
+    "source": "雇用動向調査 令和7年 卸売業，小売業 パートタイム労働者の離職率17.6% ÷ 一般労働者8.5% ＝ 2.07"
   },
   {
     "id": "policy.workHours.fixed_overtime.included_hours",
@@ -1245,7 +1218,7 @@
     "value": 1.0,
     "unit": "倍",
     "basis": "assumption",
-    "source": "仮置き。一体感・連携のしやすさ"
+    "source": "仮置き。一体感・連携のしやすさ（新人の割合による低下は cohesion_penalty で別に掛ける）"
   },
   {
     "id": "policy.workStyle.office.ramp_mult",
@@ -1277,10 +1250,10 @@
   },
   {
     "id": "policy.workStyle.hybrid.productivity",
-    "value": 0.98,
+    "value": 1.0,
     "unit": "倍",
     "basis": "assumption",
-    "source": "仮置き。一体感・連携のしやすさ"
+    "source": "仮置き。一体感・連携のしやすさ（新人の割合による低下は cohesion_penalty で別に掛ける）"
   },
   {
     "id": "policy.workStyle.hybrid.ramp_mult",
@@ -1312,10 +1285,10 @@
   },
   {
     "id": "policy.workStyle.remote.productivity",
-    "value": 0.95,
+    "value": 0.97,
     "unit": "倍",
     "basis": "assumption",
-    "source": "仮置き。一体感・連携のしやすさ"
+    "source": "仮置き。一体感・連携のしやすさ（新人の割合による低下は cohesion_penalty で別に掛ける）"
   },
   {
     "id": "policy.workStyle.remote.ramp_mult",
@@ -1396,10 +1369,10 @@
   },
   {
     "id": "policy_change.reasonableness.cut_per_pct",
-    "value": 0.03,
+    "value": 0.015,
     "unit": "点/%",
     "basis": "assumption",
-    "source": "仮置き。下げ幅（平均）が大きいほど合理性が下がる"
+    "source": "仮置き。下げ幅（平均、%）が大きいほど合理性が下がる。賞与の廃止（年収の約25%減）で、激変緩和を付けなければ合理性がほぼ0になる程度"
   },
   {
     "id": "labor.parttime_productivity",
@@ -1407,5 +1380,208 @@
     "unit": "倍",
     "basis": "assumption",
     "source": "仮置き。パートの時間あたりの生産性（任される仕事の範囲が狭い）"
+  },
+  {
+    "id": "generation.salary.age_peak",
+    "value": 57,
+    "unit": "歳",
+    "basis": "statistic",
+    "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 産業中分類「I50〜55 卸売業」企業規模計（10人以上）、年齢階級別所定内給与額（e-Stat 統計表ID 000040420851）。55〜59歳（平均57.3歳）が最も高い"
+  },
+  {
+    "id": "generation.salary.post60_age",
+    "value": 60,
+    "unit": "歳",
+    "basis": "assumption",
+    "source": "賃金構造基本統計調査の年齢階級「60〜64歳」の始まり（定年後の継続雇用を想定）"
+  },
+  {
+    "id": "generation.salary.post60_ratio",
+    "value": 0.78,
+    "unit": "倍",
+    "basis": "statistic",
+    "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 産業中分類「I50〜55 卸売業」企業規模計（10人以上）、年齢階級別所定内給与額（e-Stat 統計表ID 000040420851）。60〜64歳 379.6千円 ÷ 55〜59歳 485.5千円 ＝ 0.782"
+  },
+  {
+    "id": "policy.bonus.fixed_months.months_ratio",
+    "value": 1.0,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。一律の賞与は業種の相場の月数と同じ"
+  },
+  {
+    "id": "policy.bonus.individual_linked.months_ratio",
+    "value": 1.0,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。個人成果連動の平均は業種の相場の月数と同じ"
+  },
+  {
+    "id": "policy.bonus.company_linked.max_ratio",
+    "value": 1.5,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。業績連動賞与の上限は相場の月数の1.5倍"
+  },
+  {
+    "id": "market.recession.monthly_probability",
+    "value": 0.01,
+    "unit": "確率/月",
+    "basis": "assumption",
+    "source": "仮置き。景気後退が始まる確率（平均で約8年に1回）。TODO: 要確認（景気基準日付の後退局面の頻度）"
+  },
+  {
+    "id": "market.recession.shock",
+    "value": -0.15,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。景気後退が始まった月に景気が落ち込む量（その後は平常に戻ろうとする）"
+  },
+  {
+    "id": "market.lost_demand.sensitivity",
+    "value": 0.01,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。その月の需要をすべて取りこぼすと、将来の需要（市場での取り分）が1%減る"
+  },
+  {
+    "id": "market.lost_demand.recovery",
+    "value": 0.02,
+    "unit": "比/月",
+    "basis": "assumption",
+    "source": "仮置き。減った取り分が毎月どれだけ戻るか"
+  },
+  {
+    "id": "policy.incentive.max_effect",
+    "value": 0.08,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。報酬と評価が強く結びつき、評価が完全に正確なときの稼働の上がり幅（money型の人ほど大きい）"
+  },
+  {
+    "id": "policy.incentive.link.pay.performance",
+    "value": 0.5,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。成果連動の給与の結びつきの強さ"
+  },
+  {
+    "id": "policy.incentive.link.bonus.individual_linked",
+    "value": 0.5,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。個人成果連動の賞与の結びつきの強さ"
+  },
+  {
+    "id": "policy.incentive.link.bonus.company_linked",
+    "value": 0.15,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。業績連動の賞与の結びつきの強さ（個人の努力が報酬に届きにくい）"
+  },
+  {
+    "id": "policy.workStyle.office.cohesion_penalty",
+    "value": 0,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。入社1年未満の人の割合に掛けて、全体の生産性を下げる（教わりにくく、連携しにくい）"
+  },
+  {
+    "id": "policy.workStyle.office.newcomer_relationship_mult",
+    "value": 1.0,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。入社1年未満の人の「人間関係」による退職の倍率（職場になじみにくい）"
+  },
+  {
+    "id": "policy.workStyle.hybrid.cohesion_penalty",
+    "value": 0.08,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。入社1年未満の人の割合に掛けて、全体の生産性を下げる（教わりにくく、連携しにくい）"
+  },
+  {
+    "id": "policy.workStyle.hybrid.newcomer_relationship_mult",
+    "value": 1.5,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。入社1年未満の人の「人間関係」による退職の倍率（職場になじみにくい）"
+  },
+  {
+    "id": "policy.workStyle.remote.cohesion_penalty",
+    "value": 0.15,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。入社1年未満の人の割合に掛けて、全体の生産性を下げる（教わりにくく、連携しにくい）"
+  },
+  {
+    "id": "policy.workStyle.remote.newcomer_relationship_mult",
+    "value": 2.0,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。入社1年未満の人の「人間関係」による退職の倍率（職場になじみにくい）"
+  },
+  {
+    "id": "policy.workStyle.newcomer_months",
+    "value": 12,
+    "unit": "月",
+    "basis": "assumption",
+    "source": "仮置き。「新人」とみなす勤続月数"
+  },
+  {
+    "id": "hiring.pay_elasticity",
+    "value": 2,
+    "unit": "乗",
+    "basis": "assumption",
+    "source": "仮置き。会社の報酬水準（相場に対する比）の何乗で求人の埋まりやすさが変わるか。相場の0.9倍なら0.81倍、1.1倍なら1.21倍"
+  },
+  {
+    "id": "hiring.pay_ratio_max",
+    "value": 1.5,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。報酬水準による埋まりやすさの上限"
+  },
+  {
+    "id": "policy.hiring.new_grad.batch_month",
+    "value": 0,
+    "unit": "月目",
+    "basis": "assumption",
+    "source": "仮置き。新卒の正社員が入社する月（毎年の最初の月＝決算月の翌月を4月とみなす）"
+  },
+  {
+    "id": "policy.hiring.new_grad.batch_multiplier",
+    "value": 6,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。新卒の入社月に出せる求人の数の倍率（1年分をまとめて採る）"
+  },
+  {
+    "id": "performance.experience_elasticity",
+    "value": 0.7,
+    "unit": "乗",
+    "basis": "assumption",
+    "source": "仮置き。経験（年齢）による生産性の伸びは、賃金カーブの0.7乗（賃金ほどは上がらない。若いうちは賃金より生産性が高く、中高年は逆になる）"
+  },
+  {
+    "id": "performance.experience_reference_age",
+    "value": 40,
+    "unit": "歳",
+    "basis": "assumption",
+    "source": "仮置き。経験による生産性の補正が1.0になる年齢"
+  },
+  {
+    "id": "policy.hiring.new_grad.offcycle_ratio",
+    "value": 0.5,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。新卒中心でも、入社月以外に中途で採れる求人の数（通常の何倍か）"
+  },
+  {
+    "id": "policy.hiring.new_grad.projection_months",
+    "value": 12,
+    "unit": "月",
+    "basis": "assumption",
+    "source": "仮置き。新卒の入社月には、この月数先の需要を見込んで採る"
   }
 ]

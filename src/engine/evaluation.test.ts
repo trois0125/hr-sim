@@ -96,7 +96,7 @@ describe('賞与の決定・実力の伸び・激変緩和', () => {
   it('業績連動の賞与は、前年の利益が大きいほど多い', () => {
     const team = staff('sales', 5);
     const total = (profit: number) => {
-      assignBonuses(team, { policies: P({ bonus: 'company_linked' }), lastYearProfit: profit }, evaluationPercentiles(team));
+      assignBonuses(team, { policies: P({ bonus: 'company_linked' }), lastYearProfit: profit, industry: trading }, evaluationPercentiles(team));
       return team.reduce((s, e) => s + e.bonusMonthly, 0);
     };
     expect(total(30_000_000)).toBeGreaterThan(total(5_000_000));

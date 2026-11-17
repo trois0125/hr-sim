@@ -14,12 +14,14 @@ import {
 } from './data';
 import { createEmployee, sampleGender, sampleName } from './employees';
 import { createMarket } from './market';
+import { bonusMonthlyFor, validatePolicies } from './policies';
 import { computePerformance, nominalOutputPerRevenueStaff } from './performance';
 import { createStreams, getStreamsState, type Rng } from './rng';
 import type {
   Affiliation,
   CompanyProfile,
   CompanyState,
+  PolicySet,
   Employee,
   EmploymentType,
   FoundingPatternId,
@@ -157,7 +159,7 @@ export function generateCompany(options: GenerateOptions): CompanyState {
     nominalOutputPerRevenueStaff(industry, variant, roleId),
   );
 
-  return {
+  const state: CompanyState = {
     seed: options.seed,
     month: 0,
     status: 'running',
@@ -175,4 +177,30 @@ export function generateCompany(options: GenerateOptions): CompanyState {
     disputeSeeds: [],
     rng: getStreamsState(streams),
   };
+  return setFoundingPolicies(state, state.policies);
+}
+
+/**
+ * 創業時の制度を決める（状態を書き換えて返す）。制度に合わせて、創業時の社員の賞与（月割り）も決める。
+ * 創業時に制度を選び直すとき（画面の会社の生成、大量シミュレーション）はこれを使う。
+ * 創業後に制度を変えるときは policyChange.ts の changePolicies を使う（反応が起きる）
+ */
+export function setFoundingPolicies(state: CompanyState, policies: PolicySet): CompanyState {
+  validatePolicies(policies, getIndustry(state.profile.industryId));
+  state.policies = { ...policies };
+  const industry = getIndustry(state.profile.industryId);
+  const eligible = state.employees.filter((e) => e.employmentType !== 'part');
+  const totalSalaries = eligible.reduce((s, e) => s + e.salaryMonthly, 0);
+  for (const e of state.employees) {
+    // 出向者の賞与は親会社の水準（相場の月数）で出る
+    const bonusPolicies = e.affiliation === 'secondee' ? { ...policies, bonus: 'fixed_months' as const } : policies;
+    e.bonusMonthly = bonusMonthlyFor(e, {
+      policies: bonusPolicies,
+      marketBonusMonths: industry.marketBonusMonths.value,
+      percentile: 0.5,
+      lastYearProfit: 0,
+      totalSalaries,
+    });
+  }
+  return state;
 }

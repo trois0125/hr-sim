@@ -21,10 +21,11 @@
       "kind": "revenue",
       "partTimeAllowed": false,
       "marketSalaryMonthly": {
-        "value": 350000,
-        "unit": "円/月",
-        "basis": "assumption",
-        "source": "賃金構造基本統計調査（卸売業・営業職）を参考に仮置き。TODO: 要確認（e-Statで確認）"
+        "value": 234000,
+        "unit": "円/月（20歳）",
+        "basis": "statistic",
+        "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 産業中分類「I50〜55 卸売業」企業規模計（10人以上）、年齢階級別所定内給与額（e-Stat 統計表ID 000040420851）。20〜59歳の年齢階級の値に「20歳の値×(1＋傾き×(年齢−20))」を当てはめた20歳の値（234.2千円）",
+        "note": "営業と卸売業全体の差は扱っていない"
       },
       "productivityMonthly": {
         "value": 12000000,
@@ -55,10 +56,10 @@
       "kind": "admin",
       "partTimeAllowed": true,
       "marketSalaryMonthly": {
-        "value": 260000,
-        "unit": "円/月",
+        "value": 211000,
+        "unit": "円/月（20歳）",
         "basis": "assumption",
-        "source": "賃金構造基本統計調査（事務従事者）を参考に仮置き。TODO: 要確認（e-Statで確認）"
+        "source": "仮置き。卸売業の賃金カーブ（賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 産業中分類「I50〜55 卸売業」企業規模計（10人以上）、年齢階級別所定内給与額（e-Stat 統計表ID 000040420851））の0.9倍。TODO: 要確認（職種別の事務従事者の賃金）"
       },
       "productivityMonthly": {
         "value": 0,
@@ -88,10 +89,10 @@
       "kind": "management",
       "partTimeAllowed": false,
       "marketSalaryMonthly": {
-        "value": 420000,
-        "unit": "円/月",
+        "value": 285000,
+        "unit": "円/月（20歳）",
         "basis": "assumption",
-        "source": "賃金構造基本統計調査（管理的職業従事者）を参考に仮置き。TODO: 要確認（e-Statで確認）"
+        "source": "仮置き。管理職の49.5歳（課長級の平均年齢）で賃金構造基本統計調査 令和7年 第8表「課長級」529.2千円になるよう逆算"
       },
       "productivityMonthly": {
         "value": 0,
@@ -126,11 +127,11 @@
     "source": "労働力調査（卸売業の非正規比率）を参考に仮置き。TODO: 要確認（e-Statで確認）"
   },
   "baseAttritionRate": {
-    "value": 0.13,
+    "value": 0.085,
     "unit": "年率",
-    "basis": "assumption",
-    "source": "雇用動向調査（卸売業，小売業の離職率）を参考に仮置き。TODO: 要確認（e-Statで確認）",
-    "note": "統計は小売業と合算の区分。卸売だけの値に近づけるか検討"
+    "basis": "statistic",
+    "source": "雇用動向調査 令和7年（厚生労働省）結果の概要 表「産業別入職率・離職率」卸売業，小売業 一般労働者の離職率 8.5%",
+    "note": "卸売業だけの値ではなく小売業を含む。パートの辞めやすさは labor.parttime_attrition_mult で別に掛ける"
   },
   "grossMarginRange": {
     "value": {
@@ -323,5 +324,11 @@
     "unit": "倍",
     "basis": "assumption",
     "source": "仮置き。DESIGN.md §3.3「市場の成長性（縮小〜高成長）」を、成熟時の需要の倍率で表す"
+  },
+  "marketBonusMonths": {
+    "value": 4.0,
+    "unit": "か月分",
+    "basis": "statistic",
+    "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 産業中分類「I50〜55 卸売業」企業規模計（10人以上）、年齢階級別所定内給与額（e-Stat 統計表ID 000040420851）。年間賞与その他特別給与額 1,581.4千円 ÷ 所定内給与額 391.9千円 ＝ 4.04か月"
   }
 }

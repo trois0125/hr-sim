@@ -8,8 +8,8 @@
  * - それ以外は納得感と給与の相場との差で増減し、理由は納得感をいちばん引き下げている要因になる
  * - 出向者は退職せず、出向期間が終わると親会社に戻る（納得感が低いと早く戻ることがある）
  */
-import { coef } from './coefficients';
-import { biggestDrag, piecewise } from './engagement';
+import { coef, coefGroup } from './coefficients';
+import { piecewise, sampleDrag } from './engagement';
 import { marketSalaryFor } from './employees';
 import { marketCompensation, monthlyCompensation, policyEffect } from './policies';
 import type { Rng } from './rng';
@@ -24,22 +24,47 @@ import type {
 } from './types';
 import { MONTHS_PER_YEAR } from './types';
 
+const K = coefGroup({
+  eng20: 'attrition.engagement_multiplier.at20',
+  eng50: 'attrition.engagement_multiplier.at50',
+  eng80: 'attrition.engagement_multiplier.at80',
+  gap08: 'attrition.market_gap_multiplier.at0.8',
+  gap10: 'attrition.market_gap_multiplier.at1.0',
+  gap12: 'attrition.market_gap_multiplier.at1.2',
+  unrelatedShare: 'attrition.unrelated_share',
+  earlyMonths: 'policy.hiring.early_attrition_months',
+  newcomerMonths: 'policy.workStyle.newcomer_months',
+  partMult: 'labor.parttime_attrition_mult',
+});
+
+/** 折れ線の点（係数の ID に書いてある点：納得感20・50・80、給与÷相場0.8・1.0・1.2） */
+let engagementPoints: [number, number][] | undefined;
+let gapPoints: [number, number][] | undefined;
+
 /** 納得感の倍率（§4.4：50で1.0、20で3.0、80で0.5。間は直線） */
 export function engagementMultiplier(engagement: number): number {
-  return piecewise(engagement, [
-    [20, coef('attrition.engagement_multiplier.at20')],
-    [50, coef('attrition.engagement_multiplier.at50')],
-    [80, coef('attrition.engagement_multiplier.at80')],
-  ]);
+  if (!engagementPoints) {
+    const k = K();
+    engagementPoints = [
+      [20, k.eng20],
+      [50, k.eng50],
+      [80, k.eng80],
+    ];
+  }
+  return piecewise(engagement, engagementPoints);
 }
 
 /** 相場との差の倍率（給与 ÷ 相場） */
 export function marketGapMultiplier(ratio: number): number {
-  return piecewise(ratio, [
-    [0.8, coef('attrition.market_gap_multiplier.at0.8')],
-    [1.0, coef('attrition.market_gap_multiplier.at1.0')],
-    [1.2, coef('attrition.market_gap_multiplier.at1.2')],
-  ]);
+  if (!gapPoints) {
+    const k = K();
+    gapPoints = [
+      [0.8, k.gap08],
+      [1.0, k.gap10],
+      [1.2, k.gap12],
+    ];
+  }
+  return piecewise(ratio, gapPoints);
 }
 
 /** 要因と退職理由の対応 */
@@ -66,17 +91,20 @@ export function resignationProbability(
   ctx: Omit<AttritionContext, 'rng' | 'month'>,
 ): { unrelated: number; related: number } {
   const monthlyBase = ctx.industry.baseAttritionRate.value / MONTHS_PER_YEAR;
-  const unrelatedShare = coef('attrition.unrelated_share');
+  const { unrelatedShare, earlyMonths, partMult } = K();
   const market = marketSalaryFor(ctx.industry, ctx.location, e.role, e.age, e.employmentType);
-  const compRatio = monthlyCompensation(e, ctx.policies) / marketCompensation(market, e.employmentType);
+  const compRatio = monthlyCompensation(e, ctx.policies) / marketCompensation(market, e.employmentType, ctx.industry);
   // 新卒などの入社3年以内の辞めやすさと、パートの辞めやすさ
   const early =
-    e.hireChannel !== 'founding' && e.tenureMonths < coef('policy.hiring.early_attrition_months')
+    e.hireChannel !== 'founding' && e.tenureMonths < earlyMonths
       ? policyEffect('hiring', e.hireChannel, 'early_attrition_mult')
       : 1;
-  const part = e.employmentType === 'part' ? coef('labor.parttime_attrition_mult') : 1;
+  const part = e.employmentType === 'part' ? partMult : 1;
+  // 制度と関係ない退職のうち「人間関係」は、在宅が多い職場の新人ほど増える
+  const family = coef('attrition.unrelated.family_share');
+  const unrelatedMult = family + (1 - family) * newcomerRelationshipMult(e, ctx.policies);
   return {
-    unrelated: monthlyBase * unrelatedShare * part,
+    unrelated: monthlyBase * unrelatedShare * part * unrelatedMult,
     related:
       monthlyBase *
       (1 - unrelatedShare) *
@@ -85,6 +113,12 @@ export function resignationProbability(
       early *
       part,
   };
+}
+
+/** 新人の「人間関係」による退職の倍率（働き方による。新人でなければ1） */
+function newcomerRelationshipMult(e: Employee, policies: PolicySet): number {
+  if (e.tenureMonths >= K().newcomerMonths) return 1;
+  return policyEffect('workStyle', policies.workStyle, 'newcomer_relationship_mult');
 }
 
 function toDeparture(e: Employee, month: number, kind: Departure['kind'], reason: AttritionReason | null): Departure {
@@ -129,11 +163,15 @@ export function runAttrition(
 
     const p = resignationProbability(e, ctx);
     if (roll < p.unrelated) {
-      const reason: AttritionReason =
-        reasonRoll < coef('attrition.unrelated.family_share') ? 'family' : 'relationships';
+      // 家庭の事情か人間関係か。人間関係による退職は、在宅が多い職場の新人ほど起きやすい
+      // （その倍率は resignationProbability の unrelated に入っているので、理由の割合も合わせて決める）
+      const family = coef('attrition.unrelated.family_share');
+      const rel = (1 - family) * newcomerRelationshipMult(e, ctx.policies);
+      const reason: AttritionReason = reasonRoll < family / (family + rel) ? 'family' : 'relationships';
       departures.push(toDeparture(e, ctx.month, 'resignation', reason));
     } else if (roll < p.unrelated + p.related) {
-      const reason = e.factorScores ? REASON_OF[biggestDrag(e.factorScores, e.values)] : 'growth';
+      // 理由は、足を引っ張っている度合いに比例した確率で選ぶ（いちばん大きい要因が選ばれやすい）
+      const reason = e.factorScores ? REASON_OF[sampleDrag(e.factorScores, e.values, reasonRoll)] : 'growth';
       departures.push(toDeparture(e, ctx.month, 'resignation', reason));
     } else {
       stay.push(e);

@@ -1,0 +1,40 @@
+{
+  "note": "シミュレーション結果と比べるための参照値（ゲームの計算には使わない）。scripts/simulate.ts の集計で使う",
+  "industries": {
+    "trading": {
+      "attritionRate": {
+        "value": 0.085,
+        "unit": "年率",
+        "basis": "statistic",
+        "source": "雇用動向調査 令和7年 卸売業，小売業 一般労働者の離職率 8.5%",
+        "note": "パート（17.6%）を含めた卸売業，小売業 全体では11.9%"
+      },
+      "laborCostRatio": {
+        "value": 0.06,
+        "unit": "比",
+        "basis": "assumption",
+        "source": "法人企業統計（卸売業の売上高人件費率）を参考に仮置き。TODO: 要確認（業種別の人件費・売上高は e-Stat の API（アプリケーションID）か財務省の年報（画像PDF）からしか取れなかった）"
+      },
+      "overtimeHours": {
+        "value": 8,
+        "unit": "時間/月",
+        "basis": "statistic",
+        "source": "賃金構造基本統計調査 令和7年 産業中分類 卸売業 企業規模計 超過実労働時間数 8時間"
+      }
+    }
+  },
+  "attritionReasons": {
+    "value": {
+      "pay": 0.192,
+      "workload": 0.222,
+      "growth": 0.196,
+      "outlook": 0.116,
+      "relationships": 0.212,
+      "family": 0.06
+    },
+    "unit": "比",
+    "basis": "statistic",
+    "source": "雇用動向調査 令和7年 表5「転職入職者が前職を辞めた理由別割合」男女の単純平均。給料等収入→pay、労働時間・休日等→workload、仕事の内容に興味＋能力・個性・資格を生かせない→growth、会社の将来が不安→outlook、職場の人間関係→relationships、結婚・出産育児・介護→family。その他の個人的理由・定年・会社都合・出向等は除き、合計が1になるよう割り戻した",
+    "note": "ゲームの「評価」を理由とする退職に当たる項目は統計にない"
+  }
+}

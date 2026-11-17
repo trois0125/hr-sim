@@ -87,9 +87,12 @@ export function raisedSalary(
       return e.salaryMonthly * ageCurve * (1 + coef('policy.pay.seniority.extra_raise'));
     case 'performance': {
       const flex = policyEffect('grade', policies.grade, 'raise_flex');
+      // 年齢カーブ（相場の伸び）を基準に、評価の順位で上下させる。評価の低い人は降給もある
       const rate = Math.max(
         coef('policy.pay.performance.min_raise'),
-        coef('policy.pay.performance.base_raise') + coef('policy.pay.performance.spread') * flex * (percentile - MIDDLE),
+        ageCurve * (1 + coef('policy.pay.performance.base_raise')) -
+          1 +
+          coef('policy.pay.performance.spread') * flex * (percentile - MIDDLE),
       );
       return e.salaryMonthly * (1 + rate);
     }
@@ -125,7 +128,7 @@ export function applyRaises(
 /** 翌年の賞与（月割り）を決める（社員を書き換える） */
 export function assignBonuses(
   employees: Employee[],
-  ctx: Pick<EvaluationContext, 'policies' | 'lastYearProfit'>,
+  ctx: Pick<EvaluationContext, 'policies' | 'lastYearProfit' | 'industry'>,
   pct: Map<string, number>,
 ): void {
   const totalSalaries = employees
@@ -134,6 +137,7 @@ export function assignBonuses(
   for (const e of employees) {
     e.bonusMonthly = bonusMonthlyFor(e, {
       policies: ctx.policies,
+      marketBonusMonths: ctx.industry.marketBonusMonths.value,
       percentile: pct.get(e.id) ?? MIDDLE,
       lastYearProfit: ctx.lastYearProfit,
       totalSalaries,

@@ -39,7 +39,7 @@ describe('倍率', () => {
     const e = makeEmployee('sales', { age: 30, engagement: 50 });
     const market = marketSalaryFor(trading, tokyo, 'sales', 30, 'full');
     // 相場どおり＝給与も賞与も相場の水準
-    const bonusMonthly = (market * coef('compensation.market_bonus_months')) / MONTHS_PER_YEAR;
+    const bonusMonthly = (market * trading.marketBonusMonths.value) / MONTHS_PER_YEAR;
     const p = resignationProbability({ ...e, salaryMonthly: market, bonusMonthly }, base);
     expect(p.unrelated + p.related).toBeCloseTo(trading.baseAttritionRate.value / MONTHS_PER_YEAR);
     expect(p.unrelated / (p.unrelated + p.related)).toBeCloseTo(coef('attrition.unrelated_share'));
@@ -70,7 +70,7 @@ describe('退職の判定', () => {
     expect(reasons.has('relationships')).toBe(true);
   });
 
-  it('退職理由は、納得感をいちばん引き下げている要因になる', () => {
+  it('退職理由は、納得感をいちばん引き下げている要因が最も多くなる', () => {
     const scores: FactorScores = {
       externalPay: 50,
       internalFairness: 50,
@@ -85,7 +85,11 @@ describe('退職の判定', () => {
     );
     const related = departures.filter((d) => d.reason !== 'family' && d.reason !== 'relationships');
     expect(related.length).toBeGreaterThan(0);
-    expect(related.every((d) => d.reason === 'workload')).toBe(true);
+    const counts = new Map<string, number>();
+    for (const d of related) counts.set(d.reason ?? '', (counts.get(d.reason ?? '') ?? 0) + 1);
+    const top = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+    expect(top).toBe('workload');
+    expect((counts.get('workload') ?? 0) / related.length).toBeGreaterThan(0.4);
   });
 
   it('辞めた人の記録には、辞めた月・勤続・納得感・要因の内訳が残る', () => {

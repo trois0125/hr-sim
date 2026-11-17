@@ -1,7 +1,7 @@
 /**
  * 社員の生成（§4.2）。
  */
-import { coef } from './coefficients';
+import { coef, coefGroup } from './coefficients';
 import { names } from './data';
 import type { Rng } from './rng';
 import type {
@@ -57,8 +57,20 @@ export function sampleAge(rng: Rng, ageShift: number): number {
 
 /** 最低賃金を月給に直した額（フルタイム） */
 export function minimumMonthlyWage(location: LocationData): number {
-  return location.minimumWageHourly.value * coef('labor.scheduled_hours_monthly');
+  return location.minimumWageHourly.value * SALARY().scheduledHours;
 }
+
+const SALARY = coefGroup({
+  scheduledHours: 'labor.scheduled_hours_monthly',
+  ageMin: 'generation.age.min',
+  ageMax: 'generation.age.max',
+  ageSlope: 'generation.salary.age_slope',
+  agePeak: 'generation.salary.age_peak',
+  post60Age: 'generation.salary.post60_age',
+  post60Ratio: 'generation.salary.post60_ratio',
+  partPremium: 'labor.parttime_wage_premium',
+  partHours: 'labor.parttime_hours_monthly',
+});
 
 export type SalaryInput = {
   rng: Rng;
@@ -70,10 +82,13 @@ export type SalaryInput = {
   affiliation: Affiliation;
 };
 
-/** 年齢による賃金カーブ（年齢の下限で1.0） */
+/** 年齢による賃金カーブ（年齢の下限で1.0。賃金構造基本統計調査の卸売業に合わせた形） */
 export function ageSalaryFactor(age: number): number {
-  const a = clamp(age, coef('generation.age.min'), coef('generation.age.max'));
-  return 1 + coef('generation.salary.age_slope') * (a - coef('generation.age.min'));
+  const k = SALARY();
+  // 57歳前後で頭打ちになり、60歳以降（定年後の継続雇用）は下がる
+  const a = clamp(age, k.ageMin, k.agePeak);
+  const curve = 1 + k.ageSlope * (a - k.ageMin);
+  return age >= k.post60Age ? curve * k.post60Ratio : curve;
 }
 
 /** 相場の月給（職種×地域差×年齢）。パートは最低賃金の少し上の時給×時間。最低賃金を下回らない */
@@ -85,9 +100,8 @@ export function marketSalaryFor(
   employmentType: EmploymentType,
 ): number {
   if (employmentType === 'part') {
-    return (
-      location.minimumWageHourly.value * coef('labor.parttime_wage_premium') * coef('labor.parttime_hours_monthly')
-    );
+    const k = SALARY();
+    return location.minimumWageHourly.value * k.partPremium * k.partHours;
   }
   const roleData = industry.roles.find((r) => r.id === role);
   if (!roleData) throw new Error(`職種がありません: ${industry.id}/${role}`);

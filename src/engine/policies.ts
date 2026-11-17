@@ -4,14 +4,25 @@
  * 効果の数値はすべて係数台帳に `policy.<カテゴリ>.<選択肢>.<効果>` の形で置いてある。
  * エンジンの各所は、制度の選択肢を直接見ずに、ここの関数を通して効果を受け取る。
  */
-import { coef } from './coefficients';
+import { coef, coefPath } from './coefficients';
 import { SCORE_MAX, clamp } from './employees';
 import type { Employee, HiringPolicy, IndustryData, PolicySet } from './types';
 import { MONTHS_PER_YEAR } from './types';
 
-/** 制度の効果を1つ取り出す */
+const effectCache = new Map<string, Map<string, Map<string, number>>>();
+
+/** 制度の効果を1つ取り出す（一度読んだ値は覚えておく） */
 export function policyEffect<K extends keyof PolicySet>(category: K, option: PolicySet[K], field: string): number {
-  return coef(`policy.${category}.${option}.${field}`);
+  let byOption = effectCache.get(category);
+  if (!byOption) effectCache.set(category, (byOption = new Map()));
+  let byField = byOption.get(option);
+  if (!byField) byOption.set(option, (byField = new Map()));
+  let value = byField.get(field);
+  if (value === undefined) {
+    value = coefPath('policy', category, option, field);
+    byField.set(field, value);
+  }
+  return value;
 }
 
 /** 業種で選べない制度を選んでいないか確かめる（選べなければエラー） */
@@ -31,8 +42,9 @@ export function evaluationNoise(policies: PolicySet, headcount: number, industry
   if (policies.evaluation === 'ceo') {
     noise += coef('policy.evaluation.ceo.noise_per_head') * Math.max(0, headcount - industry.managementSpan.value);
   }
+  // 上限で抑えてから等級制度の効果を掛ける（上限が先でないと、大きな会社で等級制度の効果が消える）
   const accuracy = policyEffect('grade', policies.grade, 'accuracy_bonus');
-  return Math.min(coef('policy.evaluation.max_noise'), noise * (1 - accuracy));
+  return Math.min(coef('policy.evaluation.max_noise'), noise) * (1 - accuracy);
 }
 
 /** 等級・評価の制度を運用するコスト（円／人／月） */
@@ -47,8 +59,6 @@ export function hrSystemCostPerEmployee(policies: PolicySet): number {
 // 報酬（給与の決め方・賞与・労働時間）
 // ---------------------------------------------------------------------------
 
-/** 賞与の月数の相場（年間） */
-export const marketBonusMonths = () => coef('compensation.market_bonus_months');
 
 /** 固定残業代（円／月）。固定残業代の制度でなければ0 */
 export function fixedOvertimeAllowance(e: Pick<Employee, 'salaryMonthly' | 'employmentType'>, policies: PolicySet): number {
@@ -65,14 +75,20 @@ export function monthlyCompensation(
   return e.salaryMonthly + e.bonusMonthly + fixedOvertimeAllowance(e, policies);
 }
 
-/** 相場の報酬（相場の月給＋相場の賞与の月割り） */
-export function marketCompensation(marketSalary: number, employmentType: Employee['employmentType']): number {
+/** 相場の報酬（相場の月給＋業種の相場の賞与の月割り）。パートは賞与なし */
+export function marketCompensation(
+  marketSalary: number,
+  employmentType: Employee['employmentType'],
+  industry: Pick<IndustryData, 'marketBonusMonths'>,
+): number {
   if (employmentType === 'part') return marketSalary;
-  return marketSalary * (1 + marketBonusMonths() / MONTHS_PER_YEAR);
+  return marketSalary * (1 + industry.marketBonusMonths.value / MONTHS_PER_YEAR);
 }
 
 export type BonusContext = {
   policies: PolicySet;
+  /** 業種の相場の賞与の月数（年間） */
+  marketBonusMonths: number;
   /** 評価の順位（0＝最下位、1＝最上位） */
   percentile: number;
   /** 前年の営業利益の合計（業績連動賞与の原資） */
@@ -91,17 +107,18 @@ export function bonusMonthlyFor(e: Pick<Employee, 'salaryMonthly' | 'employmentT
       months = 0;
       break;
     case 'fixed_months':
-      months = coef('policy.bonus.fixed_months.months');
+      months = ctx.marketBonusMonths * coef('policy.bonus.fixed_months.months_ratio');
       break;
     case 'company_linked': {
       if (ctx.totalSalaries <= 0) break;
       const pool = Math.max(0, ctx.lastYearProfit) * coef('policy.bonus.company_linked.profit_share');
-      months = Math.min(coef('policy.bonus.company_linked.max_months'), pool / ctx.totalSalaries);
+      months = Math.min(ctx.marketBonusMonths * coef('policy.bonus.company_linked.max_ratio'), pool / ctx.totalSalaries);
       break;
     }
     case 'individual_linked':
       months =
-        coef('policy.bonus.individual_linked.months') *
+        ctx.marketBonusMonths *
+        coef('policy.bonus.individual_linked.months_ratio') *
         (1 + coef('policy.bonus.individual_linked.spread') * (ctx.percentile - 0.5));
       break;
   }
@@ -135,6 +152,25 @@ export function paidOvertimeHours(hours: number, policies: PolicySet): number {
 // ---------------------------------------------------------------------------
 // 働き方・採用・育成
 // ---------------------------------------------------------------------------
+
+/**
+ * 成果連動の稼働効果の強さ（0〜最大）。報酬と評価の結びつき × 評価の正確さ。
+ * 評価がずれているほど「頑張っても報われない」ので効果が薄れる。社員の価値観（money）は呼ぶ側で掛ける
+ */
+export function incentiveStrength(policies: PolicySet, headcount: number, industry: IndustryData): number {
+  const link =
+    (policies.pay === 'performance' ? coef('policy.incentive.link.pay.performance') : 0) +
+    (policies.bonus === 'individual_linked' ? coef('policy.incentive.link.bonus.individual_linked') : 0) +
+    (policies.bonus === 'company_linked' ? coef('policy.incentive.link.bonus.company_linked') : 0);
+  if (link <= 0) return 0;
+  const accuracy = 1 - evaluationNoise(policies, headcount, industry) / coef('policy.evaluation.max_noise');
+  return coef('policy.incentive.max_effect') * Math.min(1, link) * Math.max(0, accuracy);
+}
+
+/** 入社1年未満の人の割合による生産性の低下（働き方による。出社なら0） */
+export function cohesionFactor(policies: PolicySet, newcomerShare: number): number {
+  return 1 - policyEffect('workStyle', policies.workStyle, 'cohesion_penalty') * newcomerShare;
+}
 
 /** 「働く負荷」の上乗せ（フレックス・在宅） */
 export function workloadBonus(policies: PolicySet): number {

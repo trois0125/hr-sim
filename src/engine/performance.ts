@@ -6,10 +6,10 @@
  * - 管理が足りないと、全体の効率が下がる（社長が見られる人数まではかからない）
  * - 需要が上限を超えたぶんは、売上を生むフルタイム社員の残業で埋める
  */
-import { coef } from './coefficients';
-import { SCORE_MAX, clamp } from './employees';
+import { coef, coefGroup, coefPath } from './coefficients';
+import { SCORE_MAX, ageSalaryFactor, clamp } from './employees';
 import { defaultPolicies } from './data';
-import { policyEffect, rampParams } from './policies';
+import { cohesionFactor, incentiveStrength, policyEffect, rampParams } from './policies';
 import type { Employee, IndustryData, IndustryVariant, OvertimePolicy, PolicySet, RoleKind } from './types';
 
 /** 能力の基準点（0〜100 の中央） */
@@ -18,39 +18,51 @@ const SCORE_MID = SCORE_MAX / 2;
 const ENGAGEMENT_LOW = 20;
 const ENGAGEMENT_HIGH = 80;
 
+const K = coefGroup({
+  partHours: 'labor.parttime_hours_monthly',
+  scheduledHours: 'labor.scheduled_hours_monthly',
+  partProductivity: 'labor.parttime_productivity',
+  rampMonths: 'performance.ramp_months',
+  rampStart: 'performance.ramp_start',
+  abilitySpread: 'performance.ability_spread',
+  engLo: 'performance.engagement_multiplier.at20',
+  engMid: 'performance.engagement_multiplier.at50',
+  engHi: 'performance.engagement_multiplier.at80',
+  expElasticity: 'performance.experience_elasticity',
+  expRefAge: 'performance.experience_reference_age',
+});
+
+/** 経験（年齢）による生産性（基準の年齢で1.0）。賃金カーブより緩やかに伸びる */
+export function experienceFactor(age: number): number {
+  const k = K();
+  return Math.pow(ageSalaryFactor(age) / ageSalaryFactor(k.expRefAge), k.expElasticity);
+}
+
 /** 稼働の量（フルタイム＝1.0） */
 export function fte(e: Employee): number {
-  if (e.employmentType === 'part') {
-    return coef('labor.parttime_hours_monthly') / coef('labor.scheduled_hours_monthly');
-  }
+  if (e.employmentType === 'part') return K().partHours / K().scheduledHours;
   return 1;
 }
 
 /** 時間あたりの生産性（パートは任される仕事の範囲が狭い） */
 export function hourlyProductivity(e: Employee): number {
-  return e.employmentType === 'part' ? coef('labor.parttime_productivity') : 1;
+  return e.employmentType === 'part' ? K().partProductivity : 1;
 }
 
 /** 入社からの立ち上がり（一人前で1.0）。months・start を省くと創業メンバーの値 */
-export function rampFactor(
-  tenureMonths: number,
-  months = coef('performance.ramp_months'),
-  start = coef('performance.ramp_start'),
-): number {
+export function rampFactor(tenureMonths: number, months = K().rampMonths, start = K().rampStart): number {
   const progress = clamp(tenureMonths / months, 0, 1);
   return start + (1 - start) * progress;
 }
 
 /** 実力による補正（実力50で1.0） */
 export function abilityFactor(ability: number): number {
-  return 1 + (coef('performance.ability_spread') * (ability - SCORE_MID)) / SCORE_MID;
+  return 1 + (K().abilitySpread * (ability - SCORE_MID)) / SCORE_MID;
 }
 
 /** 納得感による補正（§6.3：50で1.0、80で1.1、20で0.8。間は直線で補う） */
 export function engagementFactor(engagement: number): number {
-  const lo = coef('performance.engagement_multiplier.at20');
-  const mid = coef('performance.engagement_multiplier.at50');
-  const hi = coef('performance.engagement_multiplier.at80');
+  const { engLo: lo, engMid: mid, engHi: hi } = K();
   const [x0, x1, x2] = [ENGAGEMENT_LOW, SCORE_MID, ENGAGEMENT_HIGH];
   if (engagement <= x0) return lo;
   if (engagement >= x2) return hi;
@@ -58,10 +70,16 @@ export function engagementFactor(engagement: number): number {
   return mid + ((hi - mid) * (engagement - x1)) / (x2 - x1);
 }
 
-/** 社員1人の実効的な稼働（稼働量×立ち上がり×実力×納得感×働き方） */
-export function effectiveWork(e: Employee, policies: PolicySet = defaultPolicies): number {
+/**
+ * 社員1人の実効的な稼働（稼働量×立ち上がり×実力×納得感×働き方×成果連動の効果）。
+ * incentive は incentiveStrength の値（会社全体で共通）。money を重視する人ほど強く効く
+ */
+export function effectiveWork(e: Employee, policies: PolicySet = defaultPolicies, incentive = 0): number {
   const ramp = rampParams(e, policies);
+  const motivation = 1 + incentive * (SCORE_MID / SCORE_MAX + e.values.money);
   return (
+    motivation *
+    experienceFactor(e.age) *
     fte(e) *
     hourlyProductivity(e) *
     rampFactor(e.tenureMonths, ramp.months, ramp.start) *
@@ -130,6 +148,10 @@ export function computePerformance(
   variant: IndustryVariant,
   policies: PolicySet = defaultPolicies,
 ): PerformanceResult {
+  const incentive = incentiveStrength(policies, employees.length, industry);
+  const newcomerMonths = coef('policy.workStyle.newcomer_months');
+  const newcomers = employees.filter((e) => e.tenureMonths < newcomerMonths).length;
+  const cohesion = cohesionFactor(policies, employees.length > 0 ? newcomers / employees.length : 0);
   const kinds = roleKindMap(industry);
   let revenueOutput = 0;
   let overtimeEligible = 0;
@@ -139,7 +161,7 @@ export function computePerformance(
 
   for (const e of employees) {
     const kind = kinds.get(e.role);
-    const work = effectiveWork(e, policies);
+    const work = effectiveWork(e, policies, incentive) * cohesion;
     if (kind === 'revenue') {
       const out = work * nominalOutputPerRevenueStaff(industry, variant, e.role);
       revenueOutput += out;
@@ -175,7 +197,7 @@ export function computePerformance(
 
 /** 残業の方針ごとの月の上限（時間） */
 export function overtimeCap(policy: OvertimePolicy): number {
-  return coef(`policy.overtime.cap.${policy}`);
+  return coefPath('policy', 'overtime', 'cap', policy);
 }
 
 /** 需要が上限を超えたぶんを埋めるのに必要な残業時間（方針の上限まで）と、それで増える売上の上限 */

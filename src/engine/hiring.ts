@@ -13,9 +13,18 @@
 import { coef } from './coefficients';
 import { createEmployee } from './employees';
 import { fte, nominalOutputPerRevenueStaff, supportRequirement } from './performance';
-import { bonusMonthlyFor, fillRateMultiplier, hireChannelFor, policyEffect } from './policies';
+import { marketSalaryFor } from './employees';
+import {
+  bonusMonthlyFor,
+  fillRateMultiplier,
+  hireChannelFor,
+  marketCompensation,
+  monthlyCompensation,
+  policyEffect,
+} from './policies';
 import type { Rng } from './rng';
 import type { Employee, EmploymentType, IndustryData, IndustryVariant, LocationData, PolicySet, RoleId } from './types';
+import { MONTHS_PER_YEAR } from './types';
 
 export type HiringInput = {
   rng: Rng;
@@ -32,7 +41,37 @@ export type HiringInput = {
   intensity: number;
   nextEmployeeId: number;
   policies: PolicySet;
+  /** 創業からの経過月（新卒の入社月の判定に使う） */
+  month: number;
+  /** 少し先（新卒を見込みで採るときの月数先）の需要（円）。省略すると今月の需要 */
+  projectedDemand?: number;
 };
+
+/**
+ * 会社の報酬水準（フルタイムのプロパー社員の「報酬 ÷ 相場の報酬」の平均）。
+ * 社員がいなければ1.0（相場どおり）とみなす
+ */
+export function payCompetitiveness(
+  employees: readonly Employee[],
+  industry: IndustryData,
+  location: LocationData,
+  policies: PolicySet,
+): number {
+  let sum = 0;
+  let n = 0;
+  for (const e of employees) {
+    if (e.employmentType === 'part' || e.affiliation !== 'proper') continue;
+    const market = marketSalaryFor(industry, location, e.role, e.age, e.employmentType);
+    sum += monthlyCompensation(e, policies) / marketCompensation(market, e.employmentType, industry);
+    n++;
+  }
+  return n > 0 ? sum / n : 1;
+}
+
+/** 報酬水準による求人の埋まりやすさの倍率（相場どおりで1.0） */
+export function payAttraction(competitiveness: number): number {
+  return Math.min(coef('hiring.pay_ratio_max'), Math.pow(competitiveness, coef('hiring.pay_elasticity')));
+}
 
 export type HiringResult = {
   hires: Employee[];
@@ -79,17 +118,30 @@ export function desiredOpenings(
 
 export function runHiring(input: HiringInput): HiringResult {
   const { rng, employees, industry, location, intensity, policies } = input;
+  // 新卒中心では、正社員は年1回の入社月にまとめて、少し先の需要を見込んで採る。
+  // 入社月以外は、足りないぶんを中途で少しだけ採る
+  const newGradPolicy = policies.hiring === 'new_grad';
+  const batchMonth = input.month % MONTHS_PER_YEAR === coef('policy.hiring.new_grad.batch_month');
+  const newGradBatch = newGradPolicy && batchMonth;
+  const batchMult = newGradPolicy
+    ? batchMonth
+      ? coef('policy.hiring.new_grad.batch_multiplier')
+      : coef('policy.hiring.new_grad.offcycle_ratio')
+    : 1;
+  const desiredInput = newGradBatch ? { ...input, demand: input.projectedDemand ?? input.demand } : input;
   const policyPartShare = policyEffect('hiring', policies.hiring, 'part_share');
   // 採用のうちパートの割合（-1 は業種・会社のパート比率に従う）
   const partShare = policyPartShare < 0 ? input.partTimeRatio : policyPartShare;
-  const desired = desiredOpenings(input);
+  const desired = desiredOpenings(desiredInput);
 
   // 1か月に出せる求人の上限
   const cap = Math.max(
     coef('hiring.min_openings'),
     Math.floor(employees.length * coef('hiring.max_openings_ratio')),
   );
-  const maxOpenings = Math.round(cap * intensity);
+  const maxOpenings = Math.round(cap * intensity * batchMult);
+  // 報酬が相場より低い会社は、求人が埋まりにくい
+  const attraction = payAttraction(payCompetitiveness(employees, industry, location, policies));
 
   // 不足の大きい職種から順に、上限まで求人を割り当てる
   const openings: Record<RoleId, number> = {};
@@ -119,11 +171,12 @@ export function runHiring(input: HiringInput): HiringResult {
       const partRoll = rng.next();
       const fillRoll = rng.next();
       const employmentType: EmploymentType = partRoll < partShare && role.partTimeAllowed ? 'part' : 'full';
-      const channel = hireChannelFor(policies, employmentType);
+      // 新卒中心でも、入社月以外の正社員は中途で採る
+      const channel = newGradPolicy && !batchMonth && employmentType === 'full' ? 'mid_career' : hireChannelFor(policies, employmentType);
       const newGrad = channel === 'new_grad';
       const fillRate = Math.min(
         1,
-        (coef('hiring.fill_rate_base') * intensity * fillRateMultiplier(channel, policies)) /
+        (coef('hiring.fill_rate_base') * intensity * fillRateMultiplier(channel, policies) * attraction) /
           (role.hiringDifficulty.value * location.hiringDifficulty.value),
       );
       if (fillRoll >= fillRate) continue;
@@ -144,6 +197,7 @@ export function runHiring(input: HiringInput): HiringResult {
       // 賞与は次の評価まで「平均的な評価」として決める（業績連動は次の決算までなし）
       candidate.bonusMonthly = bonusMonthlyFor(candidate, {
         policies,
+        marketBonusMonths: industry.marketBonusMonths.value,
         percentile: 0.5,
         lastYearProfit: 0,
         totalSalaries: 0,

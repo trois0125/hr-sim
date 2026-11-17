@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { coef } from './coefficients';
-import { demandAt, growthProgress, stepEconomy } from './market';
+import { demandAt, growthProgress, stepEconomy, updateShareFactor } from './market';
 import { createRng } from './rng';
 import { trading } from './testHelpers';
 import type { MarketState } from './types';
@@ -10,6 +10,8 @@ const market = (over: Partial<MarketState> = {}): MarketState => ({
   initialDemandMonthly: 20_000_000,
   matureDemandMonthly: 2_000_000_000,
   stableDemandMonthly: 0,
+  shareFactor: 1,
+  recessionMonths: [],
   ...over,
 });
 const profile = (cyclicality: number) => ({ cyclicality });
@@ -70,7 +72,7 @@ describe('景気の動き', () => {
       const rng = createRng(seed);
       let e = 0;
       const xs: number[] = [];
-      for (let i = 0; i < 5000; i++) xs.push((e = stepEconomy(e, rng)));
+      for (let i = 0; i < 5000; i++) xs.push((e = stepEconomy(e, rng).economy));
       return xs;
     };
     const a = run(1);
@@ -79,5 +81,51 @@ describe('景気の動き', () => {
     expect(Math.abs(mean)).toBeLessThan(0.05);
     expect(Math.min(...a)).toBeGreaterThanOrEqual(coef('market.economy.floor'));
     expect(Math.max(...a) - Math.min(...a)).toBeGreaterThan(0.05); // 動いている
+  });
+});
+
+describe('景気後退', () => {
+  it('まれに景気後退が始まり、その月に景気が大きく落ち込む', () => {
+    const rng = createRng(3);
+    let e = 0;
+    let recessions = 0;
+    const months = 12000;
+    for (let i = 0; i < months; i++) {
+      const before = e;
+      const r = stepEconomy(e, rng);
+      e = r.economy;
+      if (r.recession) {
+        recessions++;
+        expect(e).toBeLessThan(before);
+      }
+    }
+    const expected = months * coef('market.recession.monthly_probability');
+    expect(recessions).toBeGreaterThan(expected * 0.7);
+    expect(recessions).toBeLessThan(expected * 1.3);
+  });
+});
+
+describe('取りこぼした需要', () => {
+  it('取りこぼすと市場での取り分が下がり、取りこぼさなければ戻っていく', () => {
+    const down = updateShareFactor(1, 0.5);
+    expect(down).toBeLessThan(1);
+    expect(updateShareFactor(1, 0)).toBe(1);
+    let s = 0.8;
+    for (let i = 0; i < 200; i++) s = updateShareFactor(s, 0);
+    expect(s).toBeGreaterThan(0.99);
+  });
+
+  it('取りこぼし続けると、取り分は一定の水準まで下がる（なくなりはしない）', () => {
+    let s = 1;
+    for (let i = 0; i < 500; i++) s = updateShareFactor(s, 0.2);
+    expect(s).toBeLessThan(0.95);
+    expect(s).toBeGreaterThan(0.8);
+  });
+
+  it('取り分が下がると、景気に左右される部分の需要が減る（底堅い需要は減らない）', () => {
+    const full = demandAt(market({ stableDemandMonthly: 5_000_000 }), profile(1), trading, 60);
+    const less = demandAt(market({ stableDemandMonthly: 5_000_000, shareFactor: 0.8 }), profile(1), trading, 60);
+    expect(less).toBeLessThan(full);
+    expect(less).toBeGreaterThan(5_000_000);
   });
 });

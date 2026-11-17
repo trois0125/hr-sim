@@ -4,7 +4,7 @@
  * 6つの要因をそれぞれ 0〜100 の点数（50が中立）にし、価値観で重み付けした平均を「目標値」にする。
  * 現在値は、目標値との差の一定割合（§4.3 では20%）だけ毎月近づく。
  */
-import { coef } from './coefficients';
+import { coef, coefGroup, coefPath } from './coefficients';
 import { SCORE_MAX, SCORE_MIN, clamp, marketSalaryFor } from './employees';
 import {
   growthBonus,
@@ -49,9 +49,30 @@ export function piecewise(x: number, points: readonly (readonly [number, number]
 // 6つの要因
 // ---------------------------------------------------------------------------
 
+const K = coefGroup({
+  externalSlope: 'engagement.external_pay.slope',
+  fairSlope: 'engagement.internal_fairness.slope',
+  fairGain: 'engagement.internal_fairness.gain_ratio',
+  fairMinPeers: 'engagement.internal_fairness.min_peers',
+  evalUnder: 'engagement.evaluation.slope_under',
+  evalOver: 'engagement.evaluation.slope_over',
+  wl0: 'engagement.workload.at0',
+  wl20: 'engagement.workload.at20',
+  wl45: 'engagement.workload.at45',
+  wl80: 'engagement.workload.at80',
+  cap20: 'policy.overtime.cap.limit20',
+  cap45: 'policy.overtime.cap.limit45',
+  capSpecial: 'policy.overtime.cap.special',
+  weightBase: 'engagement.weight.base',
+  adjustRate: 'engagement.adjust_rate',
+});
+
+/** 働く負荷の点数の折れ線（残業時間 → 点数）。係数から1回だけつくる */
+let workloadPoints: [number, number][] | undefined;
+
 /** 報酬の社外比較：自分の報酬（給与＋賞与の月割り＋固定残業代）÷ 同じ職種・年齢の相場の報酬 */
 export function externalPayScore(compensation: number, marketComp: number): number {
-  return score(NEUTRAL + coef('engagement.external_pay.slope') * (compensation / marketComp - 1));
+  return score(NEUTRAL + K().externalSlope * (compensation / marketComp - 1));
 }
 
 /** 順位を 0（最下位）〜1（最上位）に直す。同じ値は同じ順位（平均順位） */
@@ -80,12 +101,13 @@ export function internalFairnessScores(employees: readonly Employee[], policies?
   const byRole = new Map<string, Employee[]>();
   for (const e of employees) {
     if (e.employmentType === 'part') continue;
-    byRole.set(e.role, [...(byRole.get(e.role) ?? []), e]);
+    const group = byRole.get(e.role);
+    if (group) group.push(e);
+    else byRole.set(e.role, [e]);
   }
-  const slope = coef('engagement.internal_fairness.slope');
-  const gain = coef('engagement.internal_fairness.gain_ratio');
+  const { fairSlope: slope, fairGain: gain, fairMinPeers: minPeers } = K();
   for (const group of byRole.values()) {
-    if (group.length < coef('engagement.internal_fairness.min_peers')) {
+    if (group.length < minPeers) {
       for (const e of group) out.set(e.id, NEUTRAL);
       continue;
     }
@@ -103,23 +125,27 @@ export function internalFairnessScores(employees: readonly Employee[], policies?
 /** 評価の正確さ：評価で見える成果と本当の実力のずれ。低く見られるほうが強く効く */
 export function evaluationScore(perceived: number, ability: number): number {
   const diff = perceived - ability;
-  const slope = diff < 0 ? coef('engagement.evaluation.slope_under') : coef('engagement.evaluation.slope_over');
+  const slope = diff < 0 ? K().evalUnder : K().evalOver;
   return score(NEUTRAL + slope * diff);
 }
 
 /** 働く負荷：月の残業時間 */
 export function workloadScore(overtimeHours: number): number {
-  return piecewise(overtimeHours, [
-    [0, coef('engagement.workload.at0')],
-    [coef('policy.overtime.cap.limit20'), coef('engagement.workload.at20')],
-    [coef('policy.overtime.cap.limit45'), coef('engagement.workload.at45')],
-    [coef('policy.overtime.cap.special'), coef('engagement.workload.at80')],
-  ]);
+  if (!workloadPoints) {
+    const k = K();
+    workloadPoints = [
+      [0, k.wl0],
+      [k.cap20, k.wl20],
+      [k.cap45, k.wl45],
+      [k.capSpecial, k.wl80],
+    ];
+  }
+  return piecewise(overtimeHours, workloadPoints);
 }
 
 /** 成長の機会：育成投資 ＋ 会社が伸びていること（昇格の見込み） */
 export function growthOpportunityScore(training: PolicySet['training'], headcountGrowth: number): number {
-  const base = coef(`engagement.growth.training_${training}`);
+  const base = coefPath('engagement', 'growth', `training_${training}`);
   const bonus = Math.min(
     coef('engagement.growth.company_growth_max'),
     Math.max(0, coef('engagement.growth.company_growth_slope') * headcountGrowth),
@@ -152,10 +178,10 @@ const FACTOR_VALUES: Record<EngagementFactor, (keyof Values)[]> = {
 };
 
 export function factorWeights(values: Values): FactorScores {
-  const base = coef('engagement.weight.base');
+  const base = K().weightBase;
   const out = {} as FactorScores;
   for (const f of ENGAGEMENT_FACTORS) {
-    out[f] = base + FACTOR_VALUES[f].reduce((s, v) => s + coef(`engagement.weight.${f}.${v}`) * values[v], 0);
+    out[f] = base + FACTOR_VALUES[f].reduce((s, v) => s + coefPath('engagement', 'weight', f, v) * values[v], 0);
   }
   return out;
 }
@@ -175,6 +201,22 @@ export function targetEngagement(scores: FactorScores, values: Values): number {
     total += w[f];
   }
   return sum / total;
+}
+
+/**
+ * 退職理由の抽選：足を引っ張っている度合い（重み×(100−点数)）に比例した確率で要因を選ぶ。
+ * roll は 0〜1 の乱数。
+ */
+export function sampleDrag(scores: FactorScores, values: Values, roll: number): EngagementFactor {
+  const w = factorWeights(values);
+  let total = 0;
+  for (const f of ENGAGEMENT_FACTORS) total += w[f] * (SCORE_MAX - scores[f]);
+  let r = roll * total;
+  for (const f of ENGAGEMENT_FACTORS) {
+    r -= w[f] * (SCORE_MAX - scores[f]);
+    if (r < 0) return f;
+  }
+  return ENGAGEMENT_FACTORS[ENGAGEMENT_FACTORS.length - 1] as EngagementFactor;
 }
 
 /** どの要因が納得感をいちばん引き下げているか（重み×中立からの不足が最大のもの） */
@@ -235,7 +277,7 @@ export function computeFactorScores(employees: readonly Employee[], ctx: Engagem
     out.set(e.id, {
       externalPay: externalPayScore(
         monthlyCompensation(e, ctx.policies),
-        marketCompensation(market, e.employmentType),
+        marketCompensation(market, e.employmentType, ctx.industry),
       ),
       internalFairness: fairness.get(e.id) ?? NEUTRAL,
       evaluation: score(evaluationScore(e.perceivedPerformance, e.ability) + fairnessBonus),
@@ -250,7 +292,7 @@ export function computeFactorScores(employees: readonly Employee[], ctx: Engagem
 /** 納得感を1か月ぶん更新する（社員を書き換える） */
 export function updateEngagement(employees: Employee[], ctx: EngagementContext): void {
   const scores = computeFactorScores(employees, ctx);
-  const rate = coef('engagement.adjust_rate');
+  const rate = K().adjustRate;
   const resistance = ctx.resistance ?? 0;
   for (const e of employees) {
     const s = scores.get(e.id);

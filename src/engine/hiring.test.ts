@@ -3,9 +3,9 @@ import { defaultPolicies, getLocation } from './data';
 import { desiredOpenings, runHiring, type HiringInput } from './hiring';
 import { computePerformance } from './performance';
 import { createRng } from './rng';
-import { chemicals, staff, tokyo, trading } from './testHelpers';
+import { chemicals, marketPaid, staff, tokyo, trading } from './testHelpers';
 
-const team = [...staff('sales', 6), ...staff('admin', 3)];
+const team = [...staff('sales', 6), ...staff('admin', 3)].map((e) => marketPaid(e));
 const capacity = computePerformance(team, trading, chemicals).capacity;
 
 const input = (over: Partial<HiringInput> = {}): HiringInput => ({
@@ -21,6 +21,7 @@ const input = (over: Partial<HiringInput> = {}): HiringInput => ({
   intensity: 1,
   nextEmployeeId: 100,
   policies: defaultPolicies,
+  month: 0,
   ...over,
 });
 
@@ -62,7 +63,7 @@ describe('採用の結果', () => {
   });
 
   it('採用された人は勤続0のプロパー社員で、社員番号が続きになる', () => {
-    const r = runHiring(input({ rng: createRng(5), employees: [...team, ...staff('sales', 40)] }));
+    const r = runHiring(input({ rng: createRng(5), employees: [...team, ...staff('sales', 40).map((e) => marketPaid(e))] }));
     expect(r.hires.length).toBeGreaterThan(0);
     r.hires.forEach((e, i) => {
       expect(e.id).toBe(`e${100 + i}`);
@@ -86,7 +87,30 @@ describe('採用の結果', () => {
     expect(totalHires({ intensity: 0 })).toBe(0);
   });
 
-  it('採用が難しい地域では、採用できる人数が減る', () => {
-    expect(totalHires({ location: getLocation('kochi') })).toBeLessThan(totalHires({ location: tokyo }));
+  it('採用が難しい地域では、採用できる人数が減る（報酬はどちらも地域の相場どおり）', () => {
+    const kochi = getLocation('kochi');
+    const kochiTeam = team.map((e) => marketPaid(e, kochi));
+    expect(totalHires({ location: kochi, employees: kochiTeam })).toBeLessThan(totalHires({ location: tokyo }));
+  });
+
+  it('報酬が相場より低い会社は採用できる人数が減り、高い会社は増える', () => {
+    const low = team.map((e) => ({ ...e, bonusMonthly: 0 }));
+    const high = team.map((e) => ({ ...e, salaryMonthly: e.salaryMonthly * 1.1 }));
+    expect(totalHires({ employees: low })).toBeLessThan(totalHires({}));
+    expect(totalHires({ employees: high })).toBeGreaterThan(totalHires({}));
+  });
+
+  it('新卒中心では、入社月にまとめて採り、それ以外の月は中途で少しだけ採る', () => {
+    const newGrad = { ...defaultPolicies, hiring: 'new_grad' as const };
+    // 求人の上限が分かれるよう、社員を多めにする
+    const big = [...team, ...staff('sales', 40).map((e) => marketPaid(e))];
+    const bigCap = computePerformance(big, trading, chemicals).capacity;
+    const offcycle = totalHires({ policies: newGrad, month: 5, employees: big, capacity: bigCap, demand: bigCap * 2 });
+    expect(offcycle).toBeLessThan(totalHires({ month: 5, employees: big, capacity: bigCap, demand: bigCap * 2 }));
+    expect(totalHires({ policies: newGrad, month: 12 })).toBeGreaterThan(totalHires({ month: 12 }));
+    const r = runHiring(input({ rng: createRng(3), policies: newGrad, month: 12 }));
+    expect(r.hires.every((e) => e.hireChannel === 'new_grad')).toBe(true);
+    const off = runHiring(input({ rng: createRng(3), policies: newGrad, month: 5, intensity: 3 }));
+    expect(off.hires.every((e) => e.hireChannel === 'mid_career')).toBe(true);
   });
 });

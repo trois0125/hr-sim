@@ -11,7 +11,7 @@ import { runAttrition } from './attrition';
 import { updateEngagement } from './engagement';
 import { computeFinance } from './finance';
 import { runHiring } from './hiring';
-import { demandAt, stepEconomy } from './market';
+import { demandAt, stepEconomy, updateShareFactor } from './market';
 import { computeOvertime, computePerformance, overtimeCap } from './performance';
 import { growAbility, runAnnualReview, stepSalaryTransitions } from './evaluation';
 import { currentResistance } from './policyChange';
@@ -63,7 +63,9 @@ export function tickInPlace(state: CompanyState): CompanyState {
   const location = getLocation(state.profile.locationId);
 
   // 1. 市場と景気
-  state.market.economy = stepEconomy(state.market.economy, streams.market);
+  const economy = stepEconomy(state.market.economy, streams.market);
+  state.market.economy = economy.economy;
+  if (economy.recession) state.market.recessionMonths.push(state.month);
   const demand = demandAt(state.market, state.profile, industry, state.month);
 
   // 2. 採用
@@ -81,6 +83,13 @@ export function tickInPlace(state: CompanyState): CompanyState {
     intensity: state.hiring.intensity,
     nextEmployeeId: state.nextEmployeeId,
     policies: state.policies,
+    month: state.month,
+    projectedDemand: demandAt(
+      state.market,
+      state.profile,
+      industry,
+      state.month + coef('policy.hiring.new_grad.projection_months'),
+    ),
   });
   state.employees.push(...hiring.hires);
   state.nextEmployeeId += hiring.hires.length;
@@ -104,6 +113,11 @@ export function tickInPlace(state: CompanyState): CompanyState {
     hiringCost: hiring.cost,
   });
   state.cash += fin.operatingProfit;
+  // 取りこぼした需要は、将来の取り分を減らす
+  state.market.shareFactor = updateShareFactor(
+    state.market.shareFactor,
+    demand > 0 ? (demand - fin.revenue) / demand : 0,
+  );
   state.negativeCashMonths = state.cash < 0 ? state.negativeCashMonths + 1 : 0;
 
   // 10. 記録（納得感の計算で今月の業績を使うので、先につくっておく）

@@ -189,7 +189,8 @@ describe('納得感と退職（ステップ4）', () => {
     const before = new Map(c.employees.map((e) => [e.id, e]));
     for (const e of end.employees) {
       const b = before.get(e.id);
-      if (!b || e.employmentType === 'part' || b.age >= coef('generation.age.max')) continue;
+      // 57歳で頭打ち、60歳で継続雇用の水準に下がるので、57歳未満の人で確かめる
+      if (!b || e.employmentType === 'part' || b.age + 1 >= coef('generation.salary.age_peak')) continue;
       expect(e.salaryMonthly).toBeGreaterThan(b.salaryMonthly);
     }
   });
