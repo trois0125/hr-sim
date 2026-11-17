@@ -181,9 +181,10 @@ describe('納得感と退職（ステップ4）', () => {
     expect(end.history.reduce((s, r) => s + r.returns, 0)).toBe(secondees.length);
   });
 
-  it('仮の昇給：1年たつと、フルタイムの給与が年齢カーブに沿って上がる', () => {
+  it('年功で昇給：1年たつと、フルタイムの給与が全員上がる', () => {
     const c = company(4, 'carveout');
     c.hiring.intensity = 0;
+    c.policies.pay = 'seniority';
     const end = runToEnd(c, MONTHS_PER_YEAR);
     const before = new Map(c.employees.map((e) => [e.id, e]));
     for (const e of end.employees) {

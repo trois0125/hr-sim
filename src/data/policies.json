@@ -1,10 +1,10 @@
 {
-  "note": "創業時と「同期創業の他社」が使う標準の制度（§6.6）。仮置き",
+  "note": "創業時と「同期創業の他社」が使う標準の制度（§6.6）。仮置き。賞与は相場（年2か月分）に合わせて「一律の月数」にしている",
   "default": {
     "grade": "none",
     "evaluation": "ceo",
     "pay": "market",
-    "bonus": "none",
+    "bonus": "fixed_months",
     "hiring": "mid_career",
     "workHours": "standard",
     "training": "0",

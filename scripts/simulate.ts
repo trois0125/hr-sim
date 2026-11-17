@@ -4,9 +4,11 @@
 //   npx tsx scripts/simulate.ts --industry trading --founding subsidiary --seed 7
 //   npx tsx scripts/simulate.ts --seed 7 --employees      （創業時の社員の一覧も出す）
 //   npx tsx scripts/simulate.ts --seed 7 --overtime special （残業の方針：none / limit20 / limit45 / special）
+//   npx tsx scripts/simulate.ts --seed 7 --policy pay=performance,bonus=individual_linked,evaluation=mbo
 //   npx tsx scripts/simulate.ts --seed 7 --months 60 --detail （60か月で止め、在籍者の納得感の内訳を出す）
 import { getFoundingPattern, getIndustry, getLocation } from '../src/engine/data';
 import { generateCompany } from '../src/engine/generate';
+import { validatePolicies } from '../src/engine/policies';
 import { runToEnd } from '../src/engine/tick';
 import {
   ENGAGEMENT_FACTORS,
@@ -16,6 +18,7 @@ import {
   type FoundingPatternId,
   type IndustryId,
   type OvertimePolicy,
+  type PolicySet,
 } from '../src/engine/types';
 
 function arg(name: string): string | undefined {
@@ -33,6 +36,12 @@ const c = generateCompany({
 });
 const overtime = arg('overtime') as OvertimePolicy | undefined;
 if (overtime) c.policies.overtime = overtime;
+for (const pair of (arg('policy') ?? '').split(',').filter(Boolean)) {
+  const [key, value] = pair.split('=');
+  if (!key || !value || !(key in c.policies)) throw new Error(`--policy の指定が不正です: ${pair}`);
+  (c.policies as Record<string, string>)[key] = value;
+}
+validatePolicies(c.policies as PolicySet, getIndustry(c.profile.industryId));
 const p = c.profile;
 const industry = getIndustry(p.industryId);
 const variant = industry.variants.find((v) => v.id === p.variantId);
@@ -61,7 +70,7 @@ if (flag('employees')) {
 
 const end = runToEnd(c, arg('months') ? Number(arg('months')) : Infinity);
 const statusName = { running: '進行中', matured: '成熟', timeout: '25年経過', bankrupt: '倒産' }[end.status];
-console.log(`\n残業の方針：${end.policies.overtime}`);
+console.log(`\n制度：${Object.entries(end.policies).map(([k, v]) => `${k}=${v}`).join(' ')}`);
 console.log(`結果：${statusName}（${Math.floor(end.month / MONTHS_PER_YEAR)}年${end.month % MONTHS_PER_YEAR}か月）　金額は万円`);
 console.log('  年  社員  採用  退職  離職率     売上   人件費  人件費率  営業利益   手元資金  残業h  納得感   景気');
 for (let y = 0; y * MONTHS_PER_YEAR < end.history.length; y++) {

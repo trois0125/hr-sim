@@ -19,6 +19,7 @@
       "id": "sales",
       "name": "営業",
       "kind": "revenue",
+      "partTimeAllowed": false,
       "marketSalaryMonthly": {
         "value": 350000,
         "unit": "円/月",
@@ -52,6 +53,7 @@
       "id": "admin",
       "name": "事務",
       "kind": "admin",
+      "partTimeAllowed": true,
       "marketSalaryMonthly": {
         "value": 260000,
         "unit": "円/月",
@@ -84,6 +86,7 @@
       "id": "management",
       "name": "管理",
       "kind": "management",
+      "partTimeAllowed": false,
       "marketSalaryMonthly": {
         "value": 420000,
         "unit": "円/月",

@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { engagementMultiplier, marketGapMultiplier, resignationProbability, runAttrition } from './attrition';
 import { coef } from './coefficients';
+import { defaultPolicies } from './data';
 import { marketSalaryFor } from './employees';
 import { createRng } from './rng';
 import { makeEmployee, staff, tokyo, trading } from './testHelpers';
 import type { Employee, FactorScores } from './types';
 import { MONTHS_PER_YEAR } from './types';
 
-const base = { industry: trading, location: tokyo };
+const base = { industry: trading, location: tokyo, policies: defaultPolicies };
 
 /** n人を1か月判定するのを runs 回くり返し、退職者を集める */
 function simulate(make: () => Employee, runs = 400, people = 50) {
@@ -37,7 +38,9 @@ describe('倍率', () => {
   it('納得感50・相場どおりなら、月の退職確率は基本離職率÷12', () => {
     const e = makeEmployee('sales', { age: 30, engagement: 50 });
     const market = marketSalaryFor(trading, tokyo, 'sales', 30, 'full');
-    const p = resignationProbability({ ...e, salaryMonthly: market }, base);
+    // 相場どおり＝給与も賞与も相場の水準
+    const bonusMonthly = (market * coef('compensation.market_bonus_months')) / MONTHS_PER_YEAR;
+    const p = resignationProbability({ ...e, salaryMonthly: market, bonusMonthly }, base);
     expect(p.unrelated + p.related).toBeCloseTo(trading.baseAttritionRate.value / MONTHS_PER_YEAR);
     expect(p.unrelated / (p.unrelated + p.related)).toBeCloseTo(coef('attrition.unrelated_share'));
   });

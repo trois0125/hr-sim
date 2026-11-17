@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getLocation } from './data';
+import { defaultPolicies, getLocation } from './data';
 import { desiredOpenings, runHiring, type HiringInput } from './hiring';
 import { computePerformance } from './performance';
 import { createRng } from './rng';
@@ -20,6 +20,7 @@ const input = (over: Partial<HiringInput> = {}): HiringInput => ({
   cash: 1_000_000_000,
   intensity: 1,
   nextEmployeeId: 100,
+  policies: defaultPolicies,
   ...over,
 });
 

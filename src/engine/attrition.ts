@@ -11,6 +11,7 @@
 import { coef } from './coefficients';
 import { biggestDrag, piecewise } from './engagement';
 import { marketSalaryFor } from './employees';
+import { marketCompensation, monthlyCompensation, policyEffect } from './policies';
 import type { Rng } from './rng';
 import type {
   AttritionReason,
@@ -19,6 +20,7 @@ import type {
   EngagementFactor,
   IndustryData,
   LocationData,
+  PolicySet,
 } from './types';
 import { MONTHS_PER_YEAR } from './types';
 
@@ -55,6 +57,7 @@ export type AttritionContext = {
   industry: IndustryData;
   location: LocationData;
   month: number;
+  policies: PolicySet;
 };
 
 /** 月の退職確率の内訳 */
@@ -65,13 +68,22 @@ export function resignationProbability(
   const monthlyBase = ctx.industry.baseAttritionRate.value / MONTHS_PER_YEAR;
   const unrelatedShare = coef('attrition.unrelated_share');
   const market = marketSalaryFor(ctx.industry, ctx.location, e.role, e.age, e.employmentType);
+  const compRatio = monthlyCompensation(e, ctx.policies) / marketCompensation(market, e.employmentType);
+  // 新卒などの入社3年以内の辞めやすさと、パートの辞めやすさ
+  const early =
+    e.hireChannel !== 'founding' && e.tenureMonths < coef('policy.hiring.early_attrition_months')
+      ? policyEffect('hiring', e.hireChannel, 'early_attrition_mult')
+      : 1;
+  const part = e.employmentType === 'part' ? coef('labor.parttime_attrition_mult') : 1;
   return {
-    unrelated: monthlyBase * unrelatedShare,
+    unrelated: monthlyBase * unrelatedShare * part,
     related:
       monthlyBase *
       (1 - unrelatedShare) *
       engagementMultiplier(e.engagement) *
-      marketGapMultiplier(e.salaryMonthly / market),
+      marketGapMultiplier(compRatio) *
+      early *
+      part,
   };
 }
 

@@ -62,7 +62,7 @@ describe('人件費', () => {
   });
 
   it('残業代は割増になる（同じ時間の通常の賃金より高い）', () => {
-    const e = { salaryMonthly: 320000, overtimeHours: 10 };
+    const e = { salaryMonthly: 320000, overtimeHours: 10, employmentType: 'full' as const };
     expect(overtimePay(e)).toBeGreaterThan((320000 / 160) * 10);
   });
 

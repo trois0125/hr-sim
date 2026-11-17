@@ -1,6 +1,6 @@
 # 統計で確認が必要な値（DATA_TODO）
 
-source に `TODO` が付いた値の一覧（38件。根拠付きの数値は全部で203件で、いまはすべて `basis: "assumption"`）。
+source に `TODO` が付いた値の一覧（41件。根拠付きの数値は全部で310件で、いまはすべて `basis: "assumption"`）。
 統計で確認できたら値を直し、`basis` を `statistic` にして source を統計名・表番号に書き換える。ステップ6（バランス確認）の前にまとめて差し替える予定。
 
 このファイルは `npx tsx scripts/data-todo.ts` で作り直す（手で編集しない）。
@@ -45,3 +45,6 @@ source に `TODO` が付いた値の一覧（38件。根拠付きの数値は全
 | `coefficients.json` | `[policy.overtime.cap.special]` | 80 | 時間/月 | 仮置き。特別条項つき36協定の上限（月100時間未満・複数月平均80時間以内・年720時間以内、月45時間超は年6か月まで）を月80時間に単純化。TODO: 要確認（年6か月の制限をゲームでどう扱うかはステップ7で決める） |
 | `coefficients.json` | `[attrition.unrelated_share]` | 0.3 | 比 | 仮置き。基本離職率のうち、制度や納得感と関係なく起きる割合。TODO: 要確認（雇用動向調査の離職理由別の内訳で確認） |
 | `coefficients.json` | `[attrition.unrelated.family_share]` | 0.5 | 比 | 仮置き。制度と関係ない退職のうち「家庭の事情」の割合（残りは「人間関係」）。TODO: 要確認（雇用動向調査の離職理由） |
+| `coefficients.json` | `[compensation.market_bonus_months]` | 2 | か月分 | 賃金構造基本統計調査（年間賞与その他特別給与額）を参考に仮置き。TODO: 要確認（業種別の賞与の月数） |
+| `coefficients.json` | `[policy.hiring.new_grad.early_attrition_mult]` | 1.3 | 倍 | 新規学卒就職者の離職状況（大卒3年以内33.8%）を参考に仮置き。TODO: 要確認。入社3年以内の退職のしやすさ |
+| `coefficients.json` | `[labor.parttime_attrition_mult]` | 1.5 | 倍 | 仮置き。パートは辞めやすい。TODO: 要確認（雇用動向調査のパートタイム労働者の離職率） |

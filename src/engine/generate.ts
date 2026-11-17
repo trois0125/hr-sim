@@ -97,10 +97,11 @@ export function generateCompany(options: GenerateOptions): CompanyState {
     Math.min(Math.round(headcount * partTimeRatio), headcount - secondeeCount - keyCount),
   );
 
+  const partAllowed = new Set(industry.roles.filter((r) => r.partTimeAllowed).map((r) => r.id));
   const employees: Employee[] = roles.map((role, i) => {
     const affiliation: Affiliation = i < secondeeCount ? 'secondee' : 'proper';
     const employmentType: EmploymentType =
-      i >= headcount - partCount && affiliation === 'proper' ? 'part' : 'full';
+      i >= headcount - partCount && affiliation === 'proper' && partAllowed.has(role) ? 'part' : 'full';
     return createEmployee({
       rng,
       id: `e${i + 1}`,
@@ -170,6 +171,8 @@ export function generateCompany(options: GenerateOptions): CompanyState {
     hiring: { intensity: 1 },
     history: [],
     departures: [],
+    policyChanges: [],
+    disputeSeeds: [],
     rng: getStreamsState(streams),
   };
 }

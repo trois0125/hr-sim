@@ -8,7 +8,9 @@
  */
 import { coef } from './coefficients';
 import { SCORE_MAX, clamp } from './employees';
-import type { Employee, IndustryData, IndustryVariant, OvertimePolicy, RoleKind } from './types';
+import { defaultPolicies } from './data';
+import { policyEffect, rampParams } from './policies';
+import type { Employee, IndustryData, IndustryVariant, OvertimePolicy, PolicySet, RoleKind } from './types';
 
 /** 能力の基準点（0〜100 の中央） */
 const SCORE_MID = SCORE_MAX / 2;
@@ -24,10 +26,18 @@ export function fte(e: Employee): number {
   return 1;
 }
 
-/** 入社からの立ち上がり（一人前で1.0） */
-export function rampFactor(tenureMonths: number): number {
-  const start = coef('performance.ramp_start');
-  const progress = clamp(tenureMonths / coef('performance.ramp_months'), 0, 1);
+/** 時間あたりの生産性（パートは任される仕事の範囲が狭い） */
+export function hourlyProductivity(e: Employee): number {
+  return e.employmentType === 'part' ? coef('labor.parttime_productivity') : 1;
+}
+
+/** 入社からの立ち上がり（一人前で1.0）。months・start を省くと創業メンバーの値 */
+export function rampFactor(
+  tenureMonths: number,
+  months = coef('performance.ramp_months'),
+  start = coef('performance.ramp_start'),
+): number {
+  const progress = clamp(tenureMonths / months, 0, 1);
   return start + (1 - start) * progress;
 }
 
@@ -48,9 +58,17 @@ export function engagementFactor(engagement: number): number {
   return mid + ((hi - mid) * (engagement - x1)) / (x2 - x1);
 }
 
-/** 社員1人の実効的な稼働（稼働量×立ち上がり×実力×納得感） */
-export function effectiveWork(e: Employee): number {
-  return fte(e) * rampFactor(e.tenureMonths) * abilityFactor(e.ability) * engagementFactor(e.engagement);
+/** 社員1人の実効的な稼働（稼働量×立ち上がり×実力×納得感×働き方） */
+export function effectiveWork(e: Employee, policies: PolicySet = defaultPolicies): number {
+  const ramp = rampParams(e, policies);
+  return (
+    fte(e) *
+    hourlyProductivity(e) *
+    rampFactor(e.tenureMonths, ramp.months, ramp.start) *
+    abilityFactor(e.ability) *
+    engagementFactor(e.engagement) *
+    policyEffect('workStyle', policies.workStyle, 'productivity')
+  );
 }
 
 export type PerformanceResult = {
@@ -110,6 +128,7 @@ export function computePerformance(
   employees: readonly Employee[],
   industry: IndustryData,
   variant: IndustryVariant,
+  policies: PolicySet = defaultPolicies,
 ): PerformanceResult {
   const kinds = roleKindMap(industry);
   let revenueOutput = 0;
@@ -120,7 +139,7 @@ export function computePerformance(
 
   for (const e of employees) {
     const kind = kinds.get(e.role);
-    const work = effectiveWork(e);
+    const work = effectiveWork(e, policies);
     if (kind === 'revenue') {
       const out = work * nominalOutputPerRevenueStaff(industry, variant, e.role);
       revenueOutput += out;

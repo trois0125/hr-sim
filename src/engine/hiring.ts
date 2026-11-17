@@ -7,14 +7,15 @@
  * - 求人が埋まるかどうかは、職種と地域の採用難度で決まる
  * - 採用しても人件費の数か月分の資金が残るときだけ採用する
  *
- * 採用方針（新卒／中途／パート中心）による違いはステップ5、
+ * 採用方針（新卒／中途／パート中心）と働き方で、埋まりやすさ・採用費・年齢・パートの割合が変わる。
  * 採用を強化しないといけないイベントはステップ8で足す。そのために「採用の強さ」を持つ。
  */
 import { coef } from './coefficients';
 import { createEmployee } from './employees';
 import { fte, nominalOutputPerRevenueStaff, supportRequirement } from './performance';
+import { bonusMonthlyFor, fillRateMultiplier, hireChannelFor, policyEffect } from './policies';
 import type { Rng } from './rng';
-import type { Employee, IndustryData, IndustryVariant, LocationData, RoleId } from './types';
+import type { Employee, EmploymentType, IndustryData, IndustryVariant, LocationData, PolicySet, RoleId } from './types';
 
 export type HiringInput = {
   rng: Rng;
@@ -30,6 +31,7 @@ export type HiringInput = {
   cash: number;
   intensity: number;
   nextEmployeeId: number;
+  policies: PolicySet;
 };
 
 export type HiringResult = {
@@ -76,7 +78,10 @@ export function desiredOpenings(
 }
 
 export function runHiring(input: HiringInput): HiringResult {
-  const { rng, employees, industry, location, intensity } = input;
+  const { rng, employees, industry, location, intensity, policies } = input;
+  const policyPartShare = policyEffect('hiring', policies.hiring, 'part_share');
+  // 採用のうちパートの割合（-1 は業種・会社のパート比率に従う）
+  const partShare = policyPartShare < 0 ? input.partTimeRatio : policyPartShare;
   const desired = desiredOpenings(input);
 
   // 1か月に出せる求人の上限
@@ -110,24 +115,40 @@ export function runHiring(input: HiringInput): HiringResult {
 
   for (const role of industry.roles) {
     for (let i = 0; i < (openings[role.id] ?? 0); i++) {
+      // 乱数は求人1件につき決まった回数だけ引く（結果で乱数列がずれないように）
+      const partRoll = rng.next();
+      const fillRoll = rng.next();
+      const employmentType: EmploymentType = partRoll < partShare && role.partTimeAllowed ? 'part' : 'full';
+      const channel = hireChannelFor(policies, employmentType);
+      const newGrad = channel === 'new_grad';
       const fillRate = Math.min(
         1,
-        (coef('hiring.fill_rate_base') * intensity) /
+        (coef('hiring.fill_rate_base') * intensity * fillRateMultiplier(channel, policies)) /
           (role.hiringDifficulty.value * location.hiringDifficulty.value),
       );
-      // 応募があったかどうかは、資金の判定より先に抽選する（資金の有無で乱数列がずれないように）
-      if (!rng.chance(fillRate)) continue;
-
+      if (fillRoll >= fillRate) continue;
       const candidate = createEmployee({
         rng,
         id: `e${nextId}`,
         industry,
         location,
         role: role.id,
-        employmentType: rng.chance(input.partTimeRatio) && role.kind !== 'management' ? 'part' : 'full',
+        employmentType,
         affiliation: 'proper',
+        hireChannel: channel,
+        age: newGrad
+          ? { mean: coef('policy.hiring.new_grad.age_mean'), sd: coef('policy.hiring.new_grad.age_sd') }
+          : undefined,
+        abilityOffset: newGrad ? coef('policy.hiring.new_grad.ability_offset') : 0,
       });
-      const fee = candidate.salaryMonthly * coef('hiring.cost_salary_months');
+      // 賞与は次の評価まで「平均的な評価」として決める（業績連動は次の決算までなし）
+      candidate.bonusMonthly = bonusMonthlyFor(candidate, {
+        policies,
+        percentile: 0.5,
+        lastYearProfit: 0,
+        totalSalaries: 0,
+      });
+      const fee = candidate.salaryMonthly * policyEffect('hiring', channel, 'fee_salary_months');
       const payrollAfter = payroll + candidate.salaryMonthly * welfare;
       if (cash - fee < payrollAfter * coef('hiring.cash_runway_months')) continue; // 資金が足りないので見送る
 

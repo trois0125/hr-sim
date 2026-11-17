@@ -53,6 +53,8 @@ export type RoleData = {
   name: string;
   /** 売上を生む職種か、それを支える事務・管理か */
   kind: RoleKind;
+  /** パートで採用できる職種か（商社の営業などは不可） */
+  partTimeAllowed: boolean;
   /** 相場の月給（円） */
   marketSalaryMonthly: Sourced<number>;
   /** 1人1か月あたりの売上への寄与（円） */
@@ -203,6 +205,16 @@ export type Gender = 'M' | 'F' | 'X';
 export type EmploymentType = 'full' | 'part' | 'contract';
 /** 所属：プロパー社員か、親会社からの出向者か（§3.4 の拡張） */
 export type Affiliation = 'proper' | 'secondee';
+/** どの経路で入ったか。founding は創業時からいる人 */
+export type HireChannel = 'founding' | HiringPolicy;
+
+/** 激変緩和で給与を段階的に下げている途中の状態 */
+export type SalaryTransition = {
+  /** 下げきったときの月給 */
+  target: number;
+  /** 1か月に下げる額 */
+  stepPerMonth: number;
+};
 
 /** 価値観。4つの合計が 1.0 */
 export type Values = { growth: number; stability: number; money: number; balance: number };
@@ -215,10 +227,15 @@ export type Employee = {
   role: RoleId;
   employmentType: EmploymentType;
   affiliation: Affiliation;
+  hireChannel: HireChannel;
   /** 等級（制度がなければ0） */
   grade: number;
   /** 円 */
   salaryMonthly: number;
+  /** 賞与の月割り（円）。評価のたびに決め直す */
+  bonusMonthly: number;
+  /** 激変緩和で給与を下げている途中なら、その状態 */
+  salaryTransition: SalaryTransition | null;
   /** 0-100 本当の実力（プレイヤーには直接見えない） */
   ability: number;
   /** 評価制度を通して見えた成果 */
@@ -361,8 +378,37 @@ export type MonthlyRecord = {
   grossProfit: number;
   labor: LaborCost;
   otherFixedCost: number;
+  /** その他の固定費のうち、等級・評価の制度の運用コスト */
+  hrSystemCost: number;
   operatingProfit: number;
   cash: number;
+};
+
+/** 制度の変更（§5.1）。変更後しばらく納得感が揺れる */
+export type PolicyChangeRecord = {
+  month: number;
+  /** 変えたカテゴリ */
+  categories: (keyof PolicySet)[];
+  /** 納得感の目標値を一時的に下げる量（点）。月がたつと小さくなる */
+  resistance: number;
+  method: ChangeMethod | null;
+  transition: boolean;
+  /** 給与が下がった人数 */
+  affected: number;
+  /** 給与の下げ幅の平均（%） */
+  averageCutPct: number;
+};
+
+/** 不利益変更の進め方：合意を取る／就業規則の変更で進める */
+export type ChangeMethod = 'consent' | 'rules';
+
+/** 就業規則の変更で不利益変更を進めたときの「紛争の種」。イベント（ステップ8）で使う */
+export type DisputeSeed = {
+  month: number;
+  affectedIds: string[];
+  /** 変更の合理性（0〜1。低いほど紛争になりやすい） */
+  reasonableness: number;
+  averageCutPct: number;
 };
 
 /** 進行中か、どの終了条件で終わったか（§2.3） */
@@ -387,6 +433,8 @@ export type CompanyState = {
   hiring: HiringState;
   history: MonthlyRecord[];
   departures: Departure[];
+  policyChanges: PolicyChangeRecord[];
+  disputeSeeds: DisputeSeed[];
   rng: RngStreamsState;
 };
 

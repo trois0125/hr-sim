@@ -6,6 +6,14 @@
  */
 import { coef } from './coefficients';
 import { SCORE_MAX, SCORE_MIN, clamp, marketSalaryFor } from './employees';
+import {
+  growthBonus,
+  marketCompensation,
+  monthlyCompensation,
+  policyEffect,
+  stabilityBonus,
+  workloadBonus,
+} from './policies';
 import type {
   Employee,
   EngagementFactor,
@@ -41,9 +49,9 @@ export function piecewise(x: number, points: readonly (readonly [number, number]
 // 6つの要因
 // ---------------------------------------------------------------------------
 
-/** 報酬の社外比較：自分の給与 ÷ 同じ職種・年齢の相場 */
-export function externalPayScore(salary: number, market: number): number {
-  return score(NEUTRAL + coef('engagement.external_pay.slope') * (salary / market - 1));
+/** 報酬の社外比較：自分の報酬（給与＋賞与の月割り＋固定残業代）÷ 同じ職種・年齢の相場の報酬 */
+export function externalPayScore(compensation: number, marketComp: number): number {
+  return score(NEUTRAL + coef('engagement.external_pay.slope') * (compensation / marketComp - 1));
 }
 
 /** 順位を 0（最下位）〜1（最上位）に直す。同じ値は同じ順位（平均順位） */
@@ -67,7 +75,7 @@ export function percentiles(xs: readonly number[]): number[] {
  * 報酬の社内公平性：同じ職種のフルタイムの中で、実力の順位と給与の順位がどれだけずれているか。
  * 実力に比べて給与の順位が低いと下がる。もらいすぎの嬉しさは、もらえなさの不満より小さい。
  */
-export function internalFairnessScores(employees: readonly Employee[]): Map<string, number> {
+export function internalFairnessScores(employees: readonly Employee[], policies?: PolicySet): Map<string, number> {
   const out = new Map<string, number>();
   const byRole = new Map<string, Employee[]>();
   for (const e of employees) {
@@ -82,7 +90,7 @@ export function internalFairnessScores(employees: readonly Employee[]): Map<stri
       continue;
     }
     const ability = percentiles(group.map((e) => e.ability));
-    const salary = percentiles(group.map((e) => e.salaryMonthly));
+    const salary = percentiles(group.map((e) => (policies ? monthlyCompensation(e, policies) : e.salaryMonthly)));
     group.forEach((e, i) => {
       const gap = (ability[i] ?? 0) - (salary[i] ?? 0); // プラス＝実力のわりに給与が低い
       out.set(e.id, score(gap > 0 ? NEUTRAL - slope * gap : NEUTRAL - slope * gain * gap));
@@ -152,6 +160,11 @@ export function factorWeights(values: Values): FactorScores {
   return out;
 }
 
+/** 変化への抵抗の強さ（価値観。安定を重視する人ほど強い。平均的な人で0.75倍） */
+export function resistanceSensitivity(values: Values): number {
+  return NEUTRAL / SCORE_MAX + values.stability;
+}
+
 /** 重み付きの平均（目標値） */
 export function targetEngagement(scores: FactorScores, values: Values): number {
   const w = factorWeights(values);
@@ -192,6 +205,8 @@ export type EngagementContext = {
   cash: number;
   /** 今月の社員数（採用後） */
   headcount: number;
+  /** 制度変更による一時的な抵抗（点）。policyChange.ts の currentResistance */
+  resistance?: number;
 };
 
 /** 会社の状況から決まる要因（全員共通） */
@@ -203,25 +218,28 @@ export function companyFactors(ctx: EngagementContext): { growthOpportunity: num
   const profit = window.reduce((s, r) => s + r.operatingProfit, 0);
   const monthlyLoss = window.length > 0 ? -profit / window.length : 0;
   return {
-    growthOpportunity: growthOpportunityScore(ctx.policies.training, growth),
-    stability: stabilityScore(profit, monthlyLoss, ctx.cash),
+    growthOpportunity: score(growthOpportunityScore(ctx.policies.training, growth) + growthBonus(ctx.policies)),
+    stability: score(stabilityScore(profit, monthlyLoss, ctx.cash) + stabilityBonus(ctx.policies)),
   };
 }
 
 /** 社員一人ひとりの要因の点数を計算する */
 export function computeFactorScores(employees: readonly Employee[], ctx: EngagementContext): Map<string, FactorScores> {
   const company = companyFactors(ctx);
-  const fairness = internalFairnessScores(employees);
+  const fairness = internalFairnessScores(employees, ctx.policies);
+  const fairnessBonus = policyEffect('evaluation', ctx.policies.evaluation, 'fairness_bonus');
+  const workBonus = workloadBonus(ctx.policies);
   const out = new Map<string, FactorScores>();
   for (const e of employees) {
+    const market = marketSalaryFor(ctx.industry, ctx.location, e.role, e.age, e.employmentType);
     out.set(e.id, {
       externalPay: externalPayScore(
-        e.salaryMonthly,
-        marketSalaryFor(ctx.industry, ctx.location, e.role, e.age, e.employmentType),
+        monthlyCompensation(e, ctx.policies),
+        marketCompensation(market, e.employmentType),
       ),
       internalFairness: fairness.get(e.id) ?? NEUTRAL,
-      evaluation: evaluationScore(e.perceivedPerformance, e.ability),
-      workload: workloadScore(e.overtimeHours),
+      evaluation: score(evaluationScore(e.perceivedPerformance, e.ability) + fairnessBonus),
+      workload: score(workloadScore(e.overtimeHours) + workBonus),
       growthOpportunity: company.growthOpportunity,
       stability: company.stability,
     });
@@ -233,10 +251,12 @@ export function computeFactorScores(employees: readonly Employee[], ctx: Engagem
 export function updateEngagement(employees: Employee[], ctx: EngagementContext): void {
   const scores = computeFactorScores(employees, ctx);
   const rate = coef('engagement.adjust_rate');
+  const resistance = ctx.resistance ?? 0;
   for (const e of employees) {
     const s = scores.get(e.id);
     if (!s) continue;
     e.factorScores = s;
-    e.engagement = score(e.engagement + rate * (targetEngagement(s, e.values) - e.engagement));
+    const target = targetEngagement(s, e.values) - resistance * resistanceSensitivity(e.values);
+    e.engagement = score(e.engagement + rate * (target - e.engagement));
   }
 }

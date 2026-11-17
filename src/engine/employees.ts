@@ -9,6 +9,7 @@ import type {
   Employee,
   EmploymentType,
   Gender,
+  HireChannel,
   IndustryData,
   LocationData,
   RoleId,
@@ -121,7 +122,13 @@ export type CreateEmployeeInput = {
   role: RoleId;
   employmentType: EmploymentType;
   affiliation: Affiliation;
+  /** 入社の経路（省略すると創業時からいる人） */
+  hireChannel?: HireChannel;
   ageShift?: number;
+  /** 年齢を指定の平均と標準偏差で抽選する（新卒など）。省略すると全体の年齢分布 */
+  age?: { mean: number; sd: number };
+  /** 入社時の実力の上乗せ（新卒はマイナス） */
+  abilityOffset?: number;
   tenureMonths?: number;
   engagementBonus?: number;
   isKeyPerson?: boolean;
@@ -131,9 +138,11 @@ export function createEmployee(input: CreateEmployeeInput): Employee {
   const { rng } = input;
   const gender = sampleGender(rng);
   const name = sampleName(rng, gender);
-  const age = sampleAge(rng, input.ageShift ?? 0);
+  const age = input.age
+    ? clamp(Math.round(rng.normal(input.age.mean, input.age.sd)), coef('generation.age.min'), coef('generation.age.max'))
+    : sampleAge(rng, input.ageShift ?? 0);
   const ability = clamp(
-    rng.normal(coef('generation.ability.mean'), coef('generation.ability.sd')),
+    rng.normal(coef('generation.ability.mean') + (input.abilityOffset ?? 0), coef('generation.ability.sd')),
     SCORE_MIN,
     SCORE_MAX,
   );
@@ -162,10 +171,13 @@ export function createEmployee(input: CreateEmployeeInput): Employee {
     role: input.role,
     employmentType: input.employmentType,
     affiliation: input.affiliation,
+    hireChannel: input.hireChannel ?? 'founding',
     grade: 0,
     salaryMonthly,
+    bonusMonthly: 0,
+    salaryTransition: null,
     ability,
-    // 評価制度はステップ5で入る。それまでは実力がそのまま見えるものとする
+    // 最初の評価（決算月）までは、実力がそのまま見えるものとする
     perceivedPerformance: ability,
     engagement,
     values,
