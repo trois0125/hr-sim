@@ -437,6 +437,8 @@ export type MonthlyRecord = {
   retirements?: number;
   /** 資金調達で入ったお金（円。利益ではない。古い記録には無い） */
   funding?: number;
+  /** その他の固定費のうち、個別制度の維持費（古い記録には無い） */
+  programCost?: number;
   cash: number;
   /** その月の制度（人事スタイル診断で「選んでいた期間の長さ」を数えるため。古い記録には無い） */
   policies?: PolicySet;
@@ -667,6 +669,8 @@ export type GroupEffect = {
   resign?: AttritionReason;
   /** 退職させるときの上乗せの退職金（月給の何か月分） */
   severanceMonths?: number;
+  /** 対象になった1人あたりの費用（円。研修費など） */
+  costPerMember?: number;
 };
 
 /** 対象者への効果 */
@@ -755,6 +759,8 @@ export type EventEffects = {
   unpaidOvertimeMult?: number;
   /** 制度を変える（反応は起きない。是正のための変更） */
   setPolicies?: Partial<PolicySet>;
+  /** 個別制度を整える（§14.1。すでにあれば何もしない） */
+  installProgram?: ProgramId;
 };
 
 export type EventChoice = {
@@ -770,6 +776,8 @@ export type EventChoice = {
   hint?: string;
   /** 法令のイベントを自動で進めるとき、この方針ならこの選択肢を選ぶ */
   auto?: LegalResponse[];
+  /** 施策の「やめる」：選んでも次に打てるまでの期間をあけない */
+  cancel?: boolean;
 };
 
 /**
@@ -778,11 +786,12 @@ export type EventChoice = {
  * - random：毎月の抽選で起きる（条件を満たしているものの中から重みで選ぶ）
  * - followUp：前の判断で予約されたときだけ起きる（連鎖イベント）
  * - condition：条件を満たした月に、毎月の抽選とは別に起きる（景気後退など。probability は月あたりの確率）
+ * - initiative：プレイヤーが「施策を打つ」から起こす（§14.1。抽選しない。自動で進めるときは起きない）
  */
 export type EventTrigger =
   | { type: 'law' }
   | {
-      type: 'random' | 'followUp' | 'condition';
+      type: 'random' | 'followUp' | 'condition' | 'initiative';
       minHeadcount?: number;
       /** condition のときの月あたりの確率（省略すると1） */
       probability?: number;
@@ -813,6 +822,13 @@ export type EventDef = {
   /** 選ぶ前に起きる効果（需要の急拡大そのものなど） */
   onTrigger?: EventEffects;
   choices: EventChoice[];
+  /**
+   * 個別制度が整っていると、判断待ちにならずに軽く済む（§14.1）。
+   * effects は軽く済んだときの効果、text はフィードに出す文（{name} などを差し込める）
+   */
+  mitigatedBy?: { program: ProgramId; effects: EventEffects; text: string };
+  /** 施策のメニューに出す短い説明（施策のときだけ） */
+  menuSummary?: string;
 };
 
 /** 判断待ち（節目・イベント）。画面はここで時間を止める */
@@ -861,6 +877,48 @@ export type VoiceRecord = {
   /** どの要因についての声か（ふだんの声のとき） */
   factor: EngagementFactor | null;
   text: string;
+};
+
+// ---------------------------------------------------------------------------
+// 個別制度（§14.1。`src/data/programs.json`）
+// ---------------------------------------------------------------------------
+
+export type ProgramId = string;
+
+/** 個別制度の常時の効果：条件に合う社員の、納得感の要因の点数を上げる */
+export type ProgramBonus = {
+  factor: EngagementFactor;
+  points: Sourced<number>;
+  /** 対象の条件（省略すると全員） */
+  where?: EmployeeCondition[];
+};
+
+export type ProgramDef = {
+  id: ProgramId;
+  name: string;
+  /** 何をする制度か（画面に出す） */
+  summary: string;
+  /** 維持費（社員1人あたり・月） */
+  costPerEmployeeMonthly: Sourced<number>;
+  bonuses: ProgramBonus[];
+  /** 止めたときの納得感の目標値の下がり方（点）と期間（月） */
+  stopMorale: Sourced<number>;
+  stopMoraleMonths: Sourced<number>;
+};
+
+/** 整えている個別制度 */
+export type ProgramState = { id: ProgramId; since: number };
+
+/** 個別制度の記録（整えた・止めた。社史と画面に使う） */
+export type ProgramLogEntry = { month: number; id: ProgramId; action: 'install' | 'stop' };
+
+/** 個別制度があったので、判断待ちにならずに軽く済んだ出来事 */
+export type MitigationRecord = {
+  month: number;
+  eventId: string;
+  programId: ProgramId;
+  targetId: string | null;
+  vars: Record<string, string | number>;
 };
 
 /** 予約された続きのイベント */
@@ -928,6 +986,11 @@ export type CompanyState = {
   unrecordedExtraordinaryCost: number;
   /** その月の記録ができる前に入った資金調達（次にできる記録に載せる。古い状態には無い） */
   unrecordedFunding?: number;
+  /** 整えている個別制度（§14.1） */
+  programs: ProgramState[];
+  programLog: ProgramLogEntry[];
+  /** 個別制度があったので軽く済んだ出来事 */
+  mitigations: MitigationRecord[];
   rng: RngStreamsState;
 };
 

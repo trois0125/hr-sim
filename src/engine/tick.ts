@@ -21,6 +21,7 @@ import { hiringAttractionModifier, modifierValue, pruneModifiers, pushDecision }
 import { generateVoices } from './voices';
 import { runEvents } from './eventTriggers';
 import { processLeaves } from './leave';
+import { programMonthlyCost } from './programs';
 import { checkObligations, checkViolations, legalMonthlyCost } from './laws';
 import { currentResistance } from './policyChange';
 import { createRng, deriveSeed, getStreamsState, restoreStreams } from './rng';
@@ -166,6 +167,7 @@ export function tickInPlace(state: CompanyState): CompanyState {
     grossMargin: state.profile.grossMargin,
     hiringCost: hiring.cost,
     legalCost: legalMonthlyCost(state),
+    programCost: programMonthlyCost(state, state.employees.length),
     revenue,
   });
   state.cash += fin.operatingProfit;
@@ -193,6 +195,7 @@ export function tickInPlace(state: CompanyState): CompanyState {
     otherFixedCost: fin.otherFixedCost,
     hrSystemCost: fin.hrSystemCost,
     legalCost: fin.legalCost,
+    programCost: fin.programCost,
     operatingProfit: fin.operatingProfit,
     extraordinaryCost: state.unrecordedExtraordinaryCost,
     funding: state.unrecordedFunding ?? 0,
@@ -215,6 +218,7 @@ export function tickInPlace(state: CompanyState): CompanyState {
     // 制度変更への抵抗と、イベントによる一時的な士気の上下（リストラの不安など）
     resistance: currentResistance(state) - modifierValue(state, 'morale'),
     violations: state.history[state.history.length - 2]?.violations ?? 0,
+    programs: state.programs,
   });
 
   // 6. 退職（と出向者の帰任）

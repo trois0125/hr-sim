@@ -45,6 +45,8 @@ export type FinanceInput = {
   hiringCost: number;
   /** 法令の義務に対応したあと毎月かかる費用（その他の固定費に入れる） */
   legalCost?: number;
+  /** 個別制度の維持費（その他の固定費に入れる。§14.1） */
+  programCost?: number;
   /** 売上を外から決める（積み上がる売上の業種）。省略すると min(需要, 売れる上限＋残業) */
   revenue?: number;
 };
@@ -57,6 +59,7 @@ export type FinanceResult = {
   /** その他の固定費のうち、等級・評価の制度の運用コスト */
   hrSystemCost: number;
   legalCost: number;
+  programCost: number;
   operatingProfit: number;
 };
 
@@ -98,7 +101,8 @@ export function computeFinance(input: FinanceInput): FinanceResult {
   const officeCost =
     coef('cost.office_per_employee') * policyEffect('workStyle', policies.workStyle, 'office_cost_mult') * employees.length;
   const legalCost = input.legalCost ?? 0;
-  const otherFixedCost = coef('cost.company_base') + officeCost + hrSystemCost + legalCost;
+  const programCost = input.programCost ?? 0;
+  const otherFixedCost = coef('cost.company_base') + officeCost + hrSystemCost + legalCost + programCost;
   return {
     revenue,
     grossProfit,
@@ -106,6 +110,7 @@ export function computeFinance(input: FinanceInput): FinanceResult {
     otherFixedCost,
     hrSystemCost,
     legalCost,
+    programCost,
     operatingProfit: grossProfit - labor.total - otherFixedCost,
   };
 }

@@ -4,14 +4,16 @@
  * エンジン（src/engine）の状態を持ち、画面からの操作をエンジンの関数につなぐ。ゲームの計算はここではしない。
  * - 時間：速度に応じてタイマーで1か月ずつ進める。判断待ちの間は進めない
  * - 判断：節目・イベント・毎年の見直しをエンジンの関数で解決する
- * - フィード：状態の変化（声、判断、法令、入社、決算、制度変更）から、画面に流す出来事をつくる
+ * - フィード：状態の変化（声、判断、法令、入社、決算、制度変更、個別制度）から、画面に流す出来事をつくる
  *
  * React に依存しない（zustand/vanilla）ので、Node のテストから最後まで遊べる。
  */
 import { createStore } from 'zustand/vanilla';
 import { coef } from '../engine/coefficients';
 import { localizeEvent } from '../engine/eventData';
-import { getEvent, addReflection, resolveEvent, resolveMilestone, resolveReview } from '../engine/events';
+import { getEvent, addReflection, renderText, resolveEvent, resolveMilestone, resolveReview } from '../engine/events';
+import { initiativeAvailability, startInitiative as startInitiativeInEngine } from '../engine/initiatives';
+import { getProgram, stopProgram as stopProgramInEngine } from '../engine/programs';
 import { generateCompany, setFoundingPolicies } from '../engine/generate';
 import { changePolicies, type ChangeOptions } from '../engine/policyChange';
 import { isWaitingForDecision, tick } from '../engine/tick';
@@ -26,7 +28,7 @@ export type Screen = 'title' | 'howto' | 'generate' | 'policies' | 'main' | 'end
 export type FeedItem = {
   id: number;
   month: number;
-  kind: 'voice' | 'decision' | 'law' | 'hire' | 'yearEnd' | 'policy';
+  kind: 'voice' | 'decision' | 'law' | 'hire' | 'yearEnd' | 'policy' | 'program';
   tone: VoiceTone;
   text: string;
   /** 声の主（社員の詳細を開けるように） */
@@ -61,6 +63,8 @@ export type GameState = {
   evidenceOpen: boolean;
   /** このブラウザで保存できるか（保存が止められている環境では false。タイトルの説明を変える） */
   canSave: boolean;
+  /** 施策のメニューを開いているか */
+  initiativesOpen: boolean;
 };
 
 export type GameActions = {
@@ -85,6 +89,13 @@ export type GameActions = {
   continueGame(): void;
   openEvidence(): void;
   closeEvidence(): void;
+  /** 施策を打つ（判断待ちになる。打てないときは何もしない） */
+  startInitiative(eventId: string): void;
+  /** 個別制度を止める */
+  stopProgram(id: string): void;
+  /** 施策のメニューを開く・閉じる（開いている間は時間を止める） */
+  openInitiatives(): void;
+  closeInitiatives(): void;
 };
 
 export type GameStore = GameState & GameActions;
@@ -104,6 +115,7 @@ const initial: GameState = {
   saveFailed: false,
   evidenceOpen: false,
   canSave: false,
+  initiativesOpen: false,
 };
 
 let seedCounter = 0;
@@ -145,11 +157,26 @@ export function collectFeed(prev: CompanyState | null, next: CompanyState): Feed
   }
   for (const d of from(next.decisions, prev?.decisions)) {
     const ev = localizeEvent(getEvent(d.eventId), next.profile.industryId);
+    if (ev.choices[d.choiceIndex]?.cancel) continue; // 施策を「やめる」は流さない
     item({ month: d.month, kind: 'decision', tone: 'neutral', text: feedStrings.decision(ev.title, ev.choices[d.choiceIndex]?.label ?? '') });
   }
   for (const c of from(next.policyChanges, prev?.policyChanges)) {
     const names = c.categories.map((k) => `${policyStrings.categories[k]}→${optionName(k, next.policies[k])}`).join('、');
     item({ month: c.month, kind: 'policy', tone: 'neutral', text: feedStrings.policyChange(names) });
+  }
+  for (const p of from(next.programLog ?? [], prev?.programLog)) {
+    const name = getProgram(p.id).name;
+    item({ month: p.month, kind: 'program', tone: 'neutral', text: p.action === 'install' ? feedStrings.programInstalled(name) : feedStrings.programStopped(name) });
+  }
+  for (const m of from(next.mitigations ?? [], prev?.mitigations)) {
+    const ev = getEvent(m.eventId);
+    item({
+      month: m.month,
+      kind: 'program',
+      tone: 'positive',
+      text: feedStrings.mitigated(getProgram(m.programId).name, renderText(ev.mitigatedBy?.text ?? ev.title, m.vars)),
+      employeeId: m.targetId ?? undefined,
+    });
   }
   for (const v of from(next.voices, prev?.voices)) {
     item({ month: v.month, kind: 'voice', tone: v.tone, text: v.text, employeeId: v.employeeId, name: v.name });
@@ -233,7 +260,7 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
     };
     /** 時間が進む状態か（速度が0でなく、判断待ちでも見直しの画面を開いてもいない） */
     const running = () => {
-      const { speed, screen, company, editorOpen, evidenceOpen } = get();
+      const { speed, screen, company, editorOpen, evidenceOpen, initiativesOpen } = get();
       return (
         speed > 0 &&
         screen === 'main' &&
@@ -241,7 +268,8 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
         company.status === 'running' &&
         !isWaitingForDecision(company) &&
         !editorOpen &&
-        !evidenceOpen // 数字の根拠を読んでいる間は止める
+        !evidenceOpen && // 数字の根拠を読んでいる間は止める
+        !initiativesOpen
       );
     };
     /** 次の1か月を始める（止まる状態なら止める）。状態が変わる操作のたびに呼ぶ */
@@ -280,6 +308,26 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
         feedId = Math.max(feedId, ...feed.map((f) => f.id), 0);
         // 再開は一時停止で始める（どこまで進んでいたかを見てから再開できるように）
         set({ ...initial, savedGame: get().savedGame, canSave: get().canSave, company, feed, screen: company.status === 'running' ? 'main' : 'end', speed: 0 });
+      },
+      openInitiatives() {
+        set({ initiativesOpen: true });
+        schedule();
+      },
+      closeInitiatives() {
+        set({ initiativesOpen: false });
+        schedule();
+      },
+      startInitiative(eventId) {
+        const c = get().company;
+        if (!c) return;
+        const ev = getEvent(eventId);
+        if (!initiativeAvailability(c, ev).available) return;
+        mutate((x) => startInitiativeInEngine(x, eventId), { initiativesOpen: false });
+        schedule();
+      },
+      stopProgram(id) {
+        mutate((x) => stopProgramInEngine(x, id));
+        schedule();
       },
       openEvidence() {
         set({ evidenceOpen: true });
@@ -325,7 +373,7 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
         const ev = d?.eventId && c ? localizeEvent(getEvent(d.eventId), c.profile.industryId) : null;
         const choice = ev?.choices[choiceIndex];
         mutate((x) => resolveEvent(x, decisionId, choiceIndex), {
-          lesson: ev && choice?.lesson ? { title: ev.title, label: choice.label, lesson: choice.lesson } : null,
+          lesson: ev && choice?.lesson && !choice.cancel ? { title: ev.title, label: choice.label, lesson: choice.lesson } : null,
         });
         schedule();
       },

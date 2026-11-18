@@ -15,18 +15,20 @@ import { getIndustry } from './data';
 import { eventDefs } from './eventData';
 import { compare, matchesEmployee } from './eventConditions';
 import { applyEffects, getEvent, pushDecision } from './events';
+import { hasProgram } from './programs';
 import type { Rng } from './rng';
 import type {
   CompanyCondition,
   CompanyMetric,
   CompanyState,
   Employee,
+  EngagementFactor,
   EventDef,
   IndustryData,
   PendingDecision,
   TargetSpec,
 } from './types';
-import { COMPANY_METRICS, MONTHS_PER_YEAR } from './types';
+import { COMPANY_METRICS, ENGAGEMENT_FACTORS, MONTHS_PER_YEAR } from './types';
 
 const K = coefGroup({
   monthlyP: 'event.monthly_probability',
@@ -135,11 +137,16 @@ export function availableInIndustry(event: EventDef, industry: IndustryData): bo
   return event.category !== 'industry' || industry.specialEvents.includes(event.id);
 }
 
-/** 同じイベントを最後に起こしてから、空ける月数がたったか（判断待ちのものも数える） */
+/**
+ * 同じイベントを最後に起こしてから、空ける月数がたったか（判断待ちのもの・個別制度で軽く済んだものも数える）。
+ * 施策の「やめる」（cancel の選択肢）は数えない
+ */
 export function cooledDown(event: EventDef, state: CompanyState): boolean {
   if (state.pendingDecisions.some((d) => d.eventId === event.id)) return false;
   const months = event.cooldownMonths ?? K().cooldown;
-  return !state.decisions.some((d) => d.eventId === event.id && state.month - d.month < months);
+  const recent = (m: number) => state.month - m < months;
+  if (state.decisions.some((d) => d.eventId === event.id && recent(d.month) && !event.choices[d.choiceIndex]?.cancel)) return false;
+  return !state.mitigations.some((m) => m.eventId === event.id && recent(m.month));
 }
 
 /** 対象者が条件に合う人がいるか（対象者の指定がなければ true） */
@@ -167,6 +174,40 @@ export function eligibleRandomEvents(state: CompanyState, metrics = companyMetri
 // 起こす
 // ---------------------------------------------------------------------------
 
+/** 全社の納得感の要因の平均（休職中の人と、まだ点数のない人は除く） */
+export function averageFactorScores(state: CompanyState): Record<EngagementFactor, number> | null {
+  const scored = state.employees.filter((e) => !e.leave && e.factorScores);
+  if (scored.length === 0) return null;
+  const out = {} as Record<EngagementFactor, number>;
+  for (const f of ENGAGEMENT_FACTORS) out[f] = scored.reduce((s, e) => s + (e.factorScores?.[f] ?? 0), 0) / scored.length;
+  return out;
+}
+
+/**
+ * 組織の様子の差し込み（サーベイの結果など）。weakFactor／strongFactor は要因のID（画面で名前にする）、
+ * weakScore／strongScore はその平均点、engagement は納得感の平均
+ */
+export function organizationVars(state: CompanyState): Record<string, string | number> {
+  const avg = averageFactorScores(state);
+  const active = state.employees.filter((e) => !e.leave);
+  const vars: Record<string, string | number> = {
+    engagement: active.length > 0 ? Math.round(active.reduce((s, e) => s + e.engagement, 0) / active.length) : 0,
+  };
+  if (avg) {
+    const sorted = [...ENGAGEMENT_FACTORS].sort((a, b) => avg[a] - avg[b]);
+    const weak = sorted[0] as EngagementFactor;
+    const strong = sorted[sorted.length - 1] as EngagementFactor;
+    Object.assign(vars, {
+      weakFactor: weak,
+      weakScore: Math.round(avg[weak]),
+      strongFactor: strong,
+      strongScore: Math.round(avg[strong]),
+    });
+  }
+  return vars;
+}
+
+
 /** 本文への差し込み */
 export function eventVars(
   event: EventDef,
@@ -186,12 +227,17 @@ export function eventVars(
       annual,
     });
   }
+  // 本文で組織の様子（サーベイの結果など）を使うイベントだけ、全社の要因の平均を差し込む
+  if (/\{(engagement|weakFactor|weakScore|strongFactor|strongScore)\}/.test(event.body)) Object.assign(vars, organizationVars(state));
   const base = { annual, headcount: state.employees.length, revenue };
   for (const [k, spec] of Object.entries(event.extraVars ?? {})) vars[k] = Math.round(base[spec.of] * spec.mult);
   return vars;
 }
 
-/** イベントを起こす：選ぶ前の効果を反映し、判断待ちを積む（自動の方針があればその場で選ぶ） */
+/**
+ * イベントを起こす：選ぶ前の効果を反映し、判断待ちを積む（自動の方針があればその場で選ぶ）。
+ * 対応する個別制度が整っていれば、判断待ちにせず軽く済ませる（§14.1）
+ */
 export function fireEvent(state: CompanyState, event: EventDef, target: Employee | null, rng: Rng): void {
   const d: Omit<PendingDecision, 'id' | 'month'> = {
     kind: 'event',
@@ -200,6 +246,12 @@ export function fireEvent(state: CompanyState, event: EventDef, target: Employee
     vars: eventVars(event, state, target),
     targetId: target?.id ?? null,
   };
+  const m = event.mitigatedBy;
+  if (m && hasProgram(state, m.program)) {
+    applyEffects(state, m.effects, { ...d, id: '', month: state.month });
+    state.mitigations.push({ month: state.month, eventId: event.id, programId: m.program, targetId: d.targetId ?? null, vars: d.vars });
+    return;
+  }
   if (event.onTrigger) applyEffects(state, event.onTrigger, { ...d, id: '', month: state.month });
   pushDecision(state, d, rng);
 }

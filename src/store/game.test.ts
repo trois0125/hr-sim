@@ -290,3 +290,38 @@ describe('自動セーブと再開（ステップ13）', () => {
     expect(s.getState().saveFailed).toBe(true);
   });
 });
+
+describe('施策と個別制度（ステップ14）', () => {
+  it('施策のメニューを開いている間は止まり、施策を打つと判断待ちになってメニューが閉じる', () => {
+    const store = createGameStore({ timers: false, storage: null });
+    store.getState().newCandidate('trading');
+    store.getState().startGame(defaultPolicies);
+    for (let i = 0; i < 60 && (store.getState().company?.employees.length ?? 0) < 5; i++) {
+      const s = store.getState();
+      const d = s.company?.pendingDecisions[0];
+      if (d?.kind === 'milestone') s.answerMilestone(d.id, 'immediate');
+      else if (d?.kind === 'event') s.answerEvent(d.id, 0);
+      else if (d?.kind === 'review') s.finishReview(d.id);
+      else s.step();
+    }
+    const s = store.getState();
+    for (const d of [...(s.company?.pendingDecisions ?? [])]) {
+      if (d.kind === 'milestone') s.answerMilestone(d.id, 'immediate');
+      else if (d.kind === 'event') s.answerEvent(d.id, 0);
+      else s.finishReview(d.id);
+    }
+    store.getState().setSpeed(1);
+    store.getState().openInitiatives();
+    expect(store.getState().cycle).toBeNull();
+    store.getState().startInitiative('initiative_programs');
+    expect(store.getState().initiativesOpen).toBe(false);
+    const d = store.getState().company!.pendingDecisions[0]!;
+    expect(d.eventId).toBe('initiative_programs');
+    store.getState().answerEvent(d.id, 0); // 両立支援を整える
+    expect(store.getState().company!.programs.map((p) => p.id)).toEqual(['work_life_support']);
+    expect(store.getState().feed[0]?.kind).toBe('program');
+    store.getState().stopProgram('work_life_support');
+    expect(store.getState().company!.programs).toEqual([]);
+    expect(store.getState().feed[0]?.text).toContain('止めた');
+  });
+});

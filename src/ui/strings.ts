@@ -215,6 +215,9 @@ export const feedStrings = {
   hires: (n: number) => `${n}人が入社しました`,
   decision: (title: string, label: string) => `${title}：「${label}」を選んだ`,
   policyChange: (names: string) => `制度を変えた：${names}`,
+  programInstalled: (name: string) => `個別制度「${name}」を整えた`,
+  programStopped: (name: string) => `個別制度「${name}」を止めた`,
+  mitigated: (name: string, text: string) => `【${name}】${text}`,
   yearEnd: (year: number, revenue: string, profit: string, resignations: number) =>
     `${year}年目の決算：売上${revenue}、営業利益${profit}、退職${resignations}人`,
 } as const;
@@ -240,6 +243,8 @@ export const decisionStrings = {
     reputation: ['採用での評判が上がる', '採用での評判が下がる'],
     demand: ['需要が増える', '需要が減る'],
     compliance: ['法令違反が解消する', ''],
+    ability: ['実力が伸びる', '実力が下がる'],
+    program: ['個別制度が加わる（毎月の維持費がかかる）', ''],
   },
 } as const;
 
@@ -520,4 +525,31 @@ export const evidenceStrings = {
     experienceElasticity: '経験が売上に効く強さ',
   } as Record<string, string>,
   close: '閉じる',
+} as const;
+
+/** 施策と個別制度（§14.1。ステップ14） */
+export const initiativeStrings = {
+  sectionTitle: '施策と個別制度',
+  open: '施策を打つ',
+  menuTitle: '施策を打つ',
+  menuLead: '施策を選ぶと稟議書が出て、そこで中身を選びます。メニューを開いている間は時間が止まります。',
+  slipKind: '施策',
+  run: 'この施策を打つ',
+  close: '閉じる',
+  unavailable: {
+    waiting: '判断待ちに答えてから打てます',
+    ended: '会社の歩みは終わりました',
+    cooldown: (months: number) => `あと${months}か月で打てます`,
+    headcount: (n: number) => `社員が${n}人になったら打てます`,
+    conditions: 'いまは打てません',
+  },
+  programsTitle: '個別制度',
+  noPrograms: 'まだありません。「施策を打つ」の「個別制度を整える」や、出来事の選択肢から整えられます。',
+  monthlyCost: (cost: string) => `維持費 月${cost}`,
+  since: (date: string) => `${date}から`,
+  stop: '止める',
+  stopConfirm: (name: string) => `「${name}」を止めますか？ しばらく社員の納得感が下がります。`,
+  stopYes: '止める',
+  stopNo: 'やめる',
+  alreadyInstalled: 'もう整えてあります',
 } as const;

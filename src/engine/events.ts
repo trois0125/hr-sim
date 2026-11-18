@@ -15,6 +15,7 @@ import { eventDefs } from './eventData';
 import { matchesEmployee } from './eventConditions';
 import { SCORE_MAX, SCORE_MIN, clamp } from './employees';
 import { startLeave } from './leave';
+import { hasProgram, installProgram } from './programs';
 import { getStreamsState, restoreStreams, type Rng } from './rng';
 import type {
   AttritionReason,
@@ -201,6 +202,10 @@ export function resolveEvent(
   const event = getEvent(d.eventId ?? '');
   const choice = event.choices[choiceIndex];
   if (!choice) throw new Error(`選択肢がありません: ${event.id} ${choiceIndex}`);
+  if (choice.effects.installProgram && hasProgram(state, choice.effects.installProgram) && !options.auto) {
+    state.pendingDecisions.push(d); // 選び直せるように戻す
+    throw new Error(`もう整えてある個別制度です: ${choice.effects.installProgram}`);
+  }
   state.decisions.push({
     month: state.month,
     eventId: event.id,
@@ -277,6 +282,7 @@ function applyGroupEffect(state: CompanyState, g: GroupEffect, targetId: string 
     if (g.salaryPct) e.salaryMonthly = roundSalary(e.salaryMonthly * (1 + g.salaryPct / PERCENT));
     if (g.bonusPct) e.bonusMonthly *= 1 + g.bonusPct / PERCENT;
     if (g.ability) e.ability = clamp(e.ability + g.ability, SCORE_MIN, SCORE_MAX);
+    if (g.costPerMember) addExtraordinaryCost(state, g.costPerMember);
     if (g.resign) {
       if (g.severanceMonths) addExtraordinaryCost(state, e.salaryMonthly * g.severanceMonths);
       resignEmployee(state, e, g.resign);
@@ -354,6 +360,7 @@ export function applyEffects(state: CompanyState, effects: EventEffects, d: Pend
     state.legal.unpaidOvertime = [];
     state.legal.fixedOvertimeMisoperation = false;
   }
+  if (effects.installProgram) installProgram(state, effects.installProgram);
   if (effects.setPolicies) {
     // その業種で選べない働き方にはしない（念のため。そうなるイベントは excludeIndustries で起きないようにしている）
     const next = { ...state.policies, ...effects.setPolicies };

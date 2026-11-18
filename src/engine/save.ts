@@ -36,6 +36,9 @@ export function normalizeCompany(c: CompanyState): CompanyState {
   c.policyChanges ??= [];
   c.pendingDecisions ??= [];
   c.unrecordedFunding ??= 0;
+  c.programs ??= [];
+  c.programLog ??= [];
+  c.mitigations ??= [];
   for (const e of c.employees) e.leave ??= null;
   return c;
 }

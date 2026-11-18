@@ -3,10 +3,11 @@ import { getEvent, renderText } from '../../engine/events';
 import { getLaw } from '../../engine/lawData';
 import { choiceImpacts, type Impact } from '../../engine/preview';
 import { localizeEvent } from '../../engine/eventData';
-import type { CompanyState, EventEffects, IndustryId, LegalResponse, PendingDecision } from '../../engine/types';
+import { choiceAvailable } from '../../engine/initiatives';
+import type { CompanyState, EngagementFactor, EventEffects, LegalResponse, PendingDecision } from '../../engine/types';
 import { LEGAL_RESPONSES, MONTHS_PER_YEAR } from '../../engine/types';
 import { actions } from '../useGame';
-import { decisionStrings, eventStrings, lawStrings, reviewStrings } from '../strings';
+import { decisionStrings, eventStrings, factorNames, initiativeStrings, lawStrings, reviewStrings } from '../strings';
 import { yen } from '../format';
 
 /** 印を押してから次に進むまでの間（ミリ秒）。動きを減らす設定なら待たない */
@@ -135,12 +136,23 @@ function MilestoneSlip({ d }: { d: PendingDecision }) {
   );
 }
 
-function EventSlip({ d, industryId }: { d: PendingDecision; industryId: IndustryId }) {
-  const ev = localizeEvent(getEvent(d.eventId ?? ''), industryId);
+/** 差し込みの要因のID（weakFactor など）を、画面の名前にする */
+function displayVars(vars: PendingDecision['vars']): PendingDecision['vars'] {
+  const out = { ...vars };
+  for (const [k, v] of Object.entries(vars)) {
+    if (k.endsWith('Factor') && typeof v === 'string' && v in factorNames) out[k] = factorNames[v as EngagementFactor];
+  }
+  return out;
+}
+
+function EventSlip({ d, company }: { d: PendingDecision; company: CompanyState }) {
+  const raw = getEvent(d.eventId ?? '');
+  const ev = localizeEvent(raw, company.profile.industryId);
   const { chosen, choose } = useStamp();
+  const initiative = raw.trigger.type === 'initiative';
   return (
-    <Slip kind={eventStrings.categories[ev.category]} title={ev.title}>
-      <p>{renderText(ev.body, d.vars)}</p>
+    <Slip kind={initiative ? initiativeStrings.slipKind : eventStrings.categories[ev.category]} title={ev.title}>
+      <p>{renderText(ev.body, displayVars(d.vars))}</p>
       {ev.onTrigger && (
         <div className="slip-note">
           {decisionStrings.happened}：<Impacts effects={ev.onTrigger} />
@@ -148,18 +160,21 @@ function EventSlip({ d, industryId }: { d: PendingDecision; industryId: Industry
       )}
       <h3 className="sheet-title">{decisionStrings.impactTitle}</h3>
       <ol className="option-list">
-        {ev.choices.map((c, i) => (
-          <Option
-            key={c.label}
-            label={c.label}
-            chosen={chosen === i}
-            disabled={chosen !== null}
-            onChoose={() => choose(i, () => actions().answerEvent(d.id, i))}
-          >
-            <Impacts effects={c.effects} />
-            {c.hint && <span className="option-hint">{c.hint}</span>}
-          </Option>
-        ))}
+        {ev.choices.map((c, i) => {
+          const available = choiceAvailable(company, raw, i);
+          return (
+            <Option
+              key={c.label}
+              label={c.label}
+              chosen={chosen === i}
+              disabled={chosen !== null || !available}
+              onChoose={() => choose(i, () => actions().answerEvent(d.id, i))}
+            >
+              {available ? <Impacts effects={c.effects} /> : <span className="muted">{initiativeStrings.alreadyInstalled}</span>}
+              {available && c.hint && <span className="option-hint">{c.hint}</span>}
+            </Option>
+          );
+        })}
       </ol>
     </Slip>
   );
@@ -215,6 +230,6 @@ export function DecisionModal({ company }: { company: CompanyState }) {
   const d = company.pendingDecisions[0];
   if (!d) return null;
   if (d.kind === 'milestone') return <MilestoneSlip key={d.id} d={d} />;
-  if (d.kind === 'event') return <EventSlip key={d.id} d={d} industryId={company.profile.industryId} />;
+  if (d.kind === 'event') return <EventSlip key={d.id} d={d} company={company} />;
   return <ReviewSlip key={d.id} d={d} company={company} />;
 }

@@ -435,6 +435,16 @@
       "manufacturing": {
         "body": "現場でいちばんの腕を持つ{name}さん（{age}歳・勤続{tenure}年）から「ほかのメーカーから年収{offer}万円で誘われている。辞めようと思う」と相談がありました。今の年収は{annual}万円です。"
       }
+    },
+    "mitigatedBy": {
+      "program": "one_on_one",
+      "effects": {
+        "target": {
+          "salaryPct": 3,
+          "engagement": 12
+        }
+      },
+      "text": "{name}さんの転職の迷いを1on1で早めにつかみ、役割を見直して引き留めました"
     }
   },
   {
@@ -948,13 +958,14 @@
         }
       },
       {
-        "label": "専門職として処遇する道をつくる",
+        "label": "専門職として処遇する道（専門職コース）をつくる",
         "effects": {
           "cash": -500000,
           "target": {
             "salaryPct": 5,
             "engagement": 10
-          }
+          },
+          "installProgram": "specialist_track"
         },
         "axes": {
           "reward": 1,
@@ -965,7 +976,8 @@
         "diagnosis": {
           "develop": 1,
           "outcome": 1
-        }
+        },
+        "hint": "個別制度「専門職コース」が加わる（毎月の維持費がかかる）。次からは同じ相談が軽く済む"
       },
       {
         "label": "本人の希望を尊重し、別の人を探す",
@@ -983,7 +995,16 @@
           "control": -1
         }
       }
-    ]
+    ],
+    "mitigatedBy": {
+      "program": "specialist_track",
+      "effects": {
+        "target": {
+          "engagement": 5
+        }
+      },
+      "text": "{name}さん（{age}歳）が管理職ではなく専門職コースに進みました"
+    }
   },
   {
     "id": "parental_leave_female",
@@ -1102,7 +1123,20 @@
         },
         "hint": "ハラスメント（マタハラ）にあたりうる"
       }
-    ]
+    ],
+    "mitigatedBy": {
+      "program": "work_life_support",
+      "effects": {
+        "target": {
+          "leave": {
+            "kind": "parental",
+            "returnRateBonus": 0.08
+          },
+          "engagement": 5
+        }
+      },
+      "text": "{name}さん（{age}歳）が育休に入りました。両立支援の制度で復帰後の働き方まで決まっているので、職場も落ち着いています"
+    }
   },
   {
     "id": "parental_leave_male",
@@ -1212,7 +1246,20 @@
         },
         "hint": "育休の取得を妨げるのは法律違反"
       }
-    ]
+    ],
+    "mitigatedBy": {
+      "program": "work_life_support",
+      "effects": {
+        "target": {
+          "leave": {
+            "kind": "parental",
+            "returnRateBonus": 0.08
+          },
+          "engagement": 5
+        }
+      },
+      "text": "{name}さん（{age}歳）が育休に入りました。両立支援の制度で復帰後の働き方まで決まっているので、職場も落ち着いています"
+    }
   },
   {
     "id": "mental_health_leave",
@@ -1310,7 +1357,20 @@
         },
         "hint": "体調が悪化して、長い休職になるかもしれない。会社の安全配慮義務が問われうる"
       }
-    ]
+    ],
+    "mitigatedBy": {
+      "program": "consultation_desk",
+      "effects": {
+        "target": {
+          "leave": {
+            "kind": "sick",
+            "monthsMult": 0.6,
+            "returnRateBonus": 0.25
+          }
+        }
+      },
+      "text": "{name}さんの不調に相談窓口が早めに気づき、短い休職で復帰の計画をつくりました"
+    }
   },
   {
     "id": "mental_relapse",
@@ -1483,7 +1543,18 @@
         },
         "hint": "外部の相談窓口に持ち込まれる可能性が高い。被害を受けた人が辞めることも"
       }
-    ]
+    ],
+    "mitigatedBy": {
+      "program": "consultation_desk",
+      "effects": {
+        "cash": -200000,
+        "target": {
+          "engagement": -10
+        },
+        "engagementOthers": 2
+      },
+      "text": "{name}さんの強い叱責について相談窓口に早めに相談が届き、調査と指導で収まりました"
+    }
   },
   {
     "id": "harassment_escalation",
@@ -1630,12 +1701,13 @@
         }
       },
       {
-        "label": "在宅勤務と時短で、続けられる働き方にする",
+        "label": "両立支援の制度を全社に整え、在宅勤務と時短で続けてもらう",
         "effects": {
-          "cash": -200000,
+          "cash": -300000,
           "target": {
             "engagement": 10
-          }
+          },
+          "installProgram": "work_life_support"
         },
         "axes": {
           "people": 1,
@@ -1645,7 +1717,8 @@
         "lesson": "仕事と介護の両立は、長く休むより「続けられる働き方」のほうが効くことも多い",
         "diagnosis": {
           "control": -1
-        }
+        },
+        "hint": "個別制度「両立支援」が加わる（毎月の維持費がかかる）。次からは同じ相談が軽く済む"
       },
       {
         "label": "両立の方法は本人に任せる",
@@ -1663,7 +1736,16 @@
         },
         "hint": "介護を理由に辞めてしまうかもしれない"
       }
-    ]
+    ],
+    "mitigatedBy": {
+      "program": "work_life_support",
+      "effects": {
+        "target": {
+          "engagement": 5
+        }
+      },
+      "text": "{name}さん（{age}歳）が親の介護を始めました。両立支援の制度を使って、時短と在宅で働き続けています"
+    }
   },
   {
     "id": "newgrad_mismatch",
@@ -1708,7 +1790,7 @@
     "body": "新卒で入った{name}さん（{age}歳）が「思っていた仕事と違う」と悩んでいると、同期から相談がありました。",
     "choices": [
       {
-        "label": "先輩社員をメンターにつける仕組みをつくる",
+        "label": "1on1と先輩のメンターの仕組みをつくる",
         "effects": {
           "cashPerEmployee": -10000,
           "groups": [
@@ -1727,7 +1809,8 @@
               ],
               "engagement": 8
             }
-          ]
+          ],
+          "installProgram": "one_on_one"
         },
         "axes": {
           "horizon": 1,
@@ -1737,7 +1820,8 @@
         "lesson": "一人の悩みは、同じ時期に入った人みんなの悩みであることが多い。仕組みで支えると全員に効く",
         "diagnosis": {
           "develop": 1
-        }
+        },
+        "hint": "個別制度「1on1・メンター」が加わる（毎月の維持費がかかる）"
       },
       {
         "label": "本人と面談し、仕事の割り当てを見直す",
@@ -1771,7 +1855,16 @@
           "develop": -1
         }
       }
-    ]
+    ],
+    "mitigatedBy": {
+      "program": "one_on_one",
+      "effects": {
+        "target": {
+          "engagement": 10
+        }
+      },
+      "text": "新卒の{name}さんの悩みを、メンターとの1on1で早めにつかみ、仕事の割り当てを見直しました"
+    }
   },
   {
     "id": "remote_request",
@@ -4002,6 +4095,394 @@
         },
         "lesson": "労災を健康保険で処理させる「労災かくし」は違法。発覚すると処罰され、社員の信頼も失う",
         "hint": "労災かくしは違法"
+      }
+    ]
+  },
+  {
+    "id": "initiative_survey",
+    "category": "people",
+    "trigger": {
+      "type": "initiative",
+      "minHeadcount": 5
+    },
+    "weight": 1,
+    "cooldownMonths": 12,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "エンゲージメントサーベイ",
+    "menuSummary": "全社の納得感と、いちばん弱い要因を測る。結果は翌月に出て、その扱いを選ぶ。年1回まで",
+    "body": "社外の調査会社に頼んで、全社員にエンゲージメントサーベイ（納得感の調査）を行います。費用は社員1人あたり3千円ほどで、結果は翌月に出ます。",
+    "choices": [
+      {
+        "label": "全社でサーベイを行う",
+        "effects": {
+          "cashPerEmployee": -3000,
+          "followUp": {
+            "eventId": "survey_result",
+            "afterMonths": 0,
+            "probability": 1
+          }
+        },
+        "axes": {
+          "horizon": 1,
+          "people": 1
+        },
+        "diagnosis": {
+          "proactive": 1
+        },
+        "lesson": "測ることで、一人ひとりの声では見えない「組織全体の弱いところ」が分かる",
+        "hint": "翌月に結果が出て、その扱いを選ぶ"
+      },
+      {
+        "label": "今回はやめておく",
+        "effects": {},
+        "cancel": true,
+        "lesson": "施策は打たなかった（次の機会にまた打てる）"
+      }
+    ]
+  },
+  {
+    "id": "survey_result",
+    "category": "people",
+    "trigger": {
+      "type": "followUp"
+    },
+    "weight": 1,
+    "cooldownMonths": 0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "サーベイの結果",
+    "body": "サーベイの結果が出ました。納得感の平均は{engagement}点。いちばん低いのは「{weakFactor}」（{weakScore}点）、いちばん高いのは「{strongFactor}」（{strongScore}点）でした。結果をどう扱いますか？",
+    "choices": [
+      {
+        "label": "結果を全社に共有し、いちばん低い要因の改善を約束する",
+        "effects": {
+          "engagementAll": 2,
+          "morale": {
+            "delta": 3,
+            "months": 12
+          }
+        },
+        "axes": {
+          "people": 1,
+          "rules": 1
+        },
+        "diagnosis": {
+          "control": -1,
+          "proactive": 1
+        },
+        "lesson": "結果を隠さず共有し、改善を約束すると信頼が上がる。約束した要因に、制度や施策で手を打つことが大事"
+      },
+      {
+        "label": "管理職だけで共有し、職場ごとに手を打ってもらう",
+        "effects": {
+          "morale": {
+            "delta": 2,
+            "months": 6
+          }
+        },
+        "axes": {
+          "rules": 1
+        },
+        "diagnosis": {
+          "control": 1
+        },
+        "lesson": "職場ごとの手当ては効くが、社員には「何が分かって、何をするのか」が見えにくい"
+      },
+      {
+        "label": "参考にとどめ、結果は公表しない",
+        "effects": {
+          "engagementAll": -2
+        },
+        "axes": {
+          "people": -1,
+          "horizon": -1
+        },
+        "diagnosis": {
+          "proactive": -1
+        },
+        "lesson": "答えさせて何も返さないと「言っても無駄」と受け取られ、次のサーベイに本音が出なくなる",
+        "hint": "答えた社員の納得感が下がる"
+      }
+    ]
+  },
+  {
+    "id": "initiative_training",
+    "category": "people",
+    "trigger": {
+      "type": "initiative",
+      "minHeadcount": 5
+    },
+    "weight": 1,
+    "cooldownMonths": 12,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "研修を見直す",
+    "menuSummary": "管理職・若手・全員のどこに研修の費用をかけるかを選ぶ。実力と納得感が上がる。年1回まで",
+    "body": "今年の研修の重点を決めます。費用は参加する人の人数で決まります（管理職研修は1人15万円、若手の研修は1人10万円、全員向けのeラーニングは1人2万円ほど）。",
+    "choices": [
+      {
+        "label": "管理職研修（評価のしかたと部下との面談）",
+        "effects": {
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "roleKind",
+                  "op": "==",
+                  "value": "management"
+                }
+              ],
+              "ability": 4,
+              "engagement": 5,
+              "costPerMember": 150000
+            }
+          ],
+          "morale": {
+            "delta": 1,
+            "months": 12
+          }
+        },
+        "axes": {
+          "horizon": 1
+        },
+        "diagnosis": {
+          "develop": 1,
+          "control": 1
+        },
+        "lesson": "管理職の評価と面談の質は、部下全員の納得感に効く。少ない人数で広く効く研修"
+      },
+      {
+        "label": "若手の研修（入社3年目まで）",
+        "effects": {
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "tenureMonths",
+                  "op": "<",
+                  "value": 36
+                }
+              ],
+              "ability": 6,
+              "engagement": 4,
+              "costPerMember": 100000
+            }
+          ]
+        },
+        "axes": {
+          "horizon": 1,
+          "people": 1
+        },
+        "diagnosis": {
+          "develop": 1
+        },
+        "lesson": "入社して早いうちの育成は、定着と戦力化の両方に効く"
+      },
+      {
+        "label": "全員向けのeラーニング",
+        "effects": {
+          "groups": [
+            {
+              "where": [],
+              "ability": 2,
+              "costPerMember": 20000
+            }
+          ]
+        },
+        "axes": {
+          "horizon": 1,
+          "reward": -1
+        },
+        "diagnosis": {
+          "develop": 1,
+          "control": -1
+        },
+        "lesson": "安く広く学べるが、学ぶかどうかは本人次第で、効き目は小さめ"
+      },
+      {
+        "label": "今回はやめておく",
+        "effects": {},
+        "cancel": true,
+        "lesson": "施策は打たなかった（次の機会にまた打てる）"
+      }
+    ]
+  },
+  {
+    "id": "initiative_recruiting",
+    "category": "hiring",
+    "trigger": {
+      "type": "initiative",
+      "minHeadcount": 1
+    },
+    "weight": 1,
+    "cooldownMonths": 6,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "採用を強化する",
+    "menuSummary": "採用広報・人材紹介・社員の紹介で、しばらく人が採れやすくなる。半年に1回まで",
+    "body": "人手が足りないと、残業が増え、需要を取りこぼします。採用をどう強化しますか？",
+    "choices": [
+      {
+        "label": "採用広報に投資する（採用サイトと会社の発信）",
+        "effects": {
+          "cash": -1500000,
+          "hiringAttraction": {
+            "mult": 1.2,
+            "months": 12
+          }
+        },
+        "axes": {
+          "horizon": 1
+        },
+        "diagnosis": {
+          "develop": -1,
+          "proactive": 1
+        },
+        "lesson": "会社を知ってもらう発信は、すぐには効かないが長く効く"
+      },
+      {
+        "label": "人材紹介会社と求人広告を増やす（半年）",
+        "effects": {
+          "cash": -500000,
+          "hiringIntensity": {
+            "mult": 1.4,
+            "months": 6
+          }
+        },
+        "axes": {
+          "horizon": -1
+        },
+        "diagnosis": {
+          "develop": -1
+        },
+        "lesson": "すぐに効くが、採用1人あたりの費用（紹介手数料など）も上がる",
+        "hint": "採用1人あたりの費用も上がる"
+      },
+      {
+        "label": "リファラル採用（社員からの紹介）を始める",
+        "effects": {
+          "cashPerEmployee": -5000,
+          "hiringAttraction": {
+            "mult": 1.1,
+            "months": 12
+          },
+          "engagementAll": 1
+        },
+        "axes": {
+          "people": 1
+        },
+        "diagnosis": {
+          "develop": -1,
+          "control": -1
+        },
+        "lesson": "社員が友人に勧められる会社かどうかが試される。納得感の高い会社ほど効く"
+      },
+      {
+        "label": "今回はやめておく",
+        "effects": {},
+        "cancel": true,
+        "lesson": "施策は打たなかった（次の機会にまた打てる）"
+      }
+    ]
+  },
+  {
+    "id": "initiative_programs",
+    "category": "people",
+    "trigger": {
+      "type": "initiative",
+      "minHeadcount": 1
+    },
+    "weight": 1,
+    "cooldownMonths": 0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "個別制度を整える",
+    "menuSummary": "両立支援・専門職コース・1on1・相談窓口を、出来事が起きる前に先回りして整える。毎月の維持費がかかる",
+    "body": "出来事が起きる前に、個別制度を整えておくことができます。整えると準備の費用（30万円）と毎月の維持費がかかりますが、対応する出来事が軽く済み、社員の納得感も少し上がります。",
+    "choices": [
+      {
+        "label": "両立支援（介護・育児）を整える",
+        "effects": {
+          "cash": -300000,
+          "installProgram": "work_life_support"
+        },
+        "axes": {
+          "people": 1,
+          "horizon": 1
+        },
+        "diagnosis": {
+          "proactive": 1
+        },
+        "lesson": "介護や育児は誰にでも起きうる。制度が先にあると、相談した人が辞めずに済む"
+      },
+      {
+        "label": "専門職コース（複線型）を整える",
+        "effects": {
+          "cash": -300000,
+          "installProgram": "specialist_track"
+        },
+        "axes": {
+          "reward": 1,
+          "horizon": 1
+        },
+        "diagnosis": {
+          "proactive": 1,
+          "develop": 1
+        },
+        "lesson": "管理職以外の上がる道があると、専門性の高い人が伸び、残る"
+      },
+      {
+        "label": "1on1・メンターを整える",
+        "effects": {
+          "cash": -300000,
+          "installProgram": "one_on_one"
+        },
+        "axes": {
+          "people": 1,
+          "horizon": 1
+        },
+        "diagnosis": {
+          "proactive": 1,
+          "develop": 1
+        },
+        "lesson": "定期的な対話で、不満や迷いを早めにつかめる。管理職の時間はかかる"
+      },
+      {
+        "label": "相談窓口（メンタル・ハラスメント）を整える",
+        "effects": {
+          "cash": -300000,
+          "installProgram": "consultation_desk"
+        },
+        "axes": {
+          "rules": 1,
+          "people": 1
+        },
+        "diagnosis": {
+          "proactive": 1
+        },
+        "lesson": "困ったときに相談できる先があると、問題が小さいうちに見つかる。ハラスメントの相談窓口は事業主の義務でもある"
+      },
+      {
+        "label": "今回はやめておく",
+        "effects": {},
+        "cancel": true,
+        "lesson": "施策は打たなかった（次の機会にまた打てる）"
       }
     ]
   }

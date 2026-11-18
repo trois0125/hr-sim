@@ -116,6 +116,7 @@ describe('イベントのデータ', () => {
       if (e.category === 'law') continue;
       for (const c of e.choices) {
         expect(c.lesson?.length ?? 0, `${e.id}: ${c.label}`).toBeGreaterThan(5);
+        if (c.cancel) continue; // 施策の「やめる」には判断の傾向の印を付けない
         const marks = Object.entries(c.axes ?? {});
         expect(marks.length, `${e.id}: ${c.label}`).toBeGreaterThan(0);
         for (const [axis, v] of marks) {
@@ -148,8 +149,8 @@ describe('イベントのデータ', () => {
     expect(c.decisions.at(-1)?.diagnosis).toEqual({ outcome: 1 });
   });
 
-  it('同じイベントの選択肢どうしは、判断の傾向の印が違う', () => {
-    for (const e of nonLaw) {
+  it('同じイベントの選択肢どうしは、判断の傾向の印が違う（施策はプレイヤーが選ぶので除く）', () => {
+    for (const e of nonLaw.filter((x) => x.trigger.type !== 'initiative')) {
       const keys = e.choices.map((c) => JSON.stringify(JUDGMENT_AXES.map((a) => c.axes?.[a] ?? 0)));
       expect(new Set(keys).size, e.id).toBe(keys.length);
     }

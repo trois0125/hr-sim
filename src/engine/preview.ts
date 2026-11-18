@@ -19,6 +19,8 @@ export const IMPACT_KEYS = [
   'reputation', // 採用での評判（求人の埋まりやすさ）
   'demand', // 需要
   'compliance', // 法令違反の解消
+  'ability', // 実力が伸びる（研修など）
+  'program', // 個別制度が加わる（毎月の維持費がかかる）
 ] as const;
 export type ImpactKey = (typeof IMPACT_KEYS)[number];
 export type Impact = { key: ImpactKey; dir: 1 | -1 };
@@ -32,7 +34,7 @@ export function choiceImpacts(effects: EventEffects): Impact[] {
   const severance = groups.some((g) => g.resign && g.severanceMonths);
   const dirs: Record<ImpactKey, number> = {
     cash:
-      (effects.correct || effects.payUnpaidOvertime || severance ? -1 : 0) ||
+      (effects.correct || effects.payUnpaidOvertime || severance || groups.some((g) => g.costPerMember) ? -1 : 0) ||
       sign((effects.cash ?? 0) + (effects.cashPerEmployee ?? 0) + (effects.cashRevenueMonths ?? 0) + (effects.fundingPayrollMonths ?? 0)),
     laborCost: sign(
       groups.reduce((s, g) => s + (g.salaryPct ?? 0) + (g.bonusPct ?? 0), 0) + (t?.salaryPct ?? 0),
@@ -50,6 +52,8 @@ export function choiceImpacts(effects: EventEffects): Impact[] {
     reputation: sign((effects.hiringAttraction?.mult ?? 1) - 1),
     demand: sign((effects.demand?.mult ?? 1) * (effects.matureDemandMult ?? 1) - 1),
     compliance: effects.correct || effects.payUnpaidOvertime ? 1 : 0,
+    ability: sign(groups.reduce((s, g) => s + (g.ability ?? 0), 0) + (t?.ability ?? 0)),
+    program: effects.installProgram ? 1 : 0,
   };
   return IMPACT_KEYS.flatMap((key) => (dirs[key] === 0 ? [] : [{ key, dir: dirs[key] as 1 | -1 }]));
 }

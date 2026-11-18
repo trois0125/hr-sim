@@ -13,6 +13,7 @@ import { DecisionModal } from '../parts/DecisionModal';
 import { LayerView } from '../parts/LayerView';
 import { EmployeeDetail } from '../parts/EmployeeDetail';
 import { Lesson } from '../parts/Lesson';
+import { InitiativeMenu, ProgramsPanel } from '../parts/Initiatives';
 import { PolicyEditor } from '../parts/PolicyEditor';
 import { actions, useGame } from '../useGame';
 import { eventStrings, evidenceStrings, mainStrings as t, policyStrings, strings } from '../strings';
@@ -339,9 +340,11 @@ export function Main() {
         </div>
         <div className="side side-right">
           <Policies company={company} />
+          <ProgramsPanel company={company} />
         </div>
       </main>
       {editorOpen ? <PolicyEditor company={company} /> : <DecisionModal company={company} />}
+      {!waiting && !editorOpen && <InitiativeMenu company={company} />}
       {selected && !editorOpen && !waiting && <EmployeeDetail company={company} id={selected} />}
       <Lesson />
     </>
