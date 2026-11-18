@@ -634,3 +634,40 @@ export const dashboardStrings = {
   people: (n: number) => `${n}人`,
   hours: (n: number) => `${Math.round(n)}時間`,
 } as const;
+
+/** 人事の辞典（§14.3。ステップ16） */
+export const guideStrings = {
+  title: '人事の辞典',
+  open: '人事の辞典',
+  lead: '制度・法令・個別制度・施策の、しくみとメリット・デメリット。法令は公式のページで確かめた内容と出典を載せています。',
+  help: (name: string) => `「${name}」の解説`,
+  helpShort: '？',
+  back: '一覧へ',
+  close: '閉じる',
+  search: '探す',
+  searchPlaceholder: '言葉で絞り込む（例：残業、賞与、育休）',
+  sections: { policies: '制度', laws: '法令', programs: '個別制度', initiatives: '施策' },
+  kinds: { category: '制度のカテゴリ', option: '制度', law: '法令', program: '個別制度', initiative: '施策' },
+  headings: {
+    considerations: '選ぶときに考えること',
+    options: '選択肢',
+    merits: 'メリット',
+    demerits: 'デメリット',
+    fits: '向いている会社',
+    cautions: '導入するときの注意',
+    pitfalls: 'よくある失敗',
+    legal: '法令のポイント',
+    who: '対象',
+    duties: '会社がすること',
+    practice: '実務の注意',
+    sources: '出典',
+    todo: '確かめきれなかったこと',
+    effectiveFrom: (date: string) => {
+      const [y, m, d] = date.split('-').map(Number);
+      return `施行：${y}年${m}月${d}日`;
+    },
+  },
+  checkedAt: (date: string) => `法令の内容は${date}時点で確かめたものです。最新の情報は出典のページで確かめてください。`,
+  related: '関係する解説',
+  noResult: '見つかりませんでした。',
+} as const;

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { actions, useGame } from '../useGame';
-import { strings } from '../strings';
+import { guideStrings, strings } from '../strings';
 import { dateLabel } from '../format';
 
 export function Title() {
@@ -46,6 +46,9 @@ export function Title() {
           </button>
           <button className="btn" onClick={() => actions().goto('howto')}>
             {strings.howTo}
+          </button>
+          <button className="btn" onClick={() => actions().openGuide()}>
+            {guideStrings.open}
           </button>
           <button className="btn" onClick={() => actions().openEvidence()}>
             {strings.evidence}

@@ -1,4 +1,5 @@
 import { Evidence } from './parts/Evidence';
+import { Guide } from './parts/Guide';
 import { End } from './screens/End';
 import { Generate } from './screens/Generate';
 import { HowTo } from './screens/HowTo';
@@ -13,6 +14,7 @@ export function App() {
     <>
       <Screen />
       {evidenceOpen && <Evidence />}
+      <Guide />
     </>
   );
 }

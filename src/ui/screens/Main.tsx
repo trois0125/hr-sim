@@ -17,7 +17,7 @@ import { InitiativeMenu, ProgramsPanel } from '../parts/Initiatives';
 import { BusinessView, OrgView } from '../parts/Dashboard';
 import { PolicyEditor } from '../parts/PolicyEditor';
 import { actions, useGame } from '../useGame';
-import { dashboardStrings, eventStrings, evidenceStrings, mainStrings as t, policyStrings, strings } from '../strings';
+import { dashboardStrings, eventStrings, evidenceStrings, guideStrings, mainStrings as t, policyStrings, strings } from '../strings';
 import { dateLabel, pct, yen } from '../format';
 
 /** 1か月の進み具合。いまの月が始まるたびに、その月の長さで左から右へ伸びる。止まっている間は空 */
@@ -323,9 +323,14 @@ function Policies({ company }: { company: CompanyState }) {
       <button className="btn" onClick={() => actions().openEditor()}>
         {t.reviewPolicies}
       </button>
-      <button className="btn evidence-open" onClick={() => actions().openEvidence()}>
-        {strings.evidence}
-      </button>
+      <div className="side-links">
+        <button className="btn" onClick={() => actions().openGuide()}>
+          {guideStrings.open}
+        </button>
+        <button className="btn" onClick={() => actions().openEvidence()}>
+          {strings.evidence}
+        </button>
+      </div>
     </section>
   );
 }

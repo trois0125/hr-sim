@@ -4,7 +4,9 @@ import { getLaw } from '../../engine/lawData';
 import { choiceImpacts, type Impact } from '../../engine/preview';
 import { localizeEvent } from '../../engine/eventData';
 import { choiceAvailable } from '../../engine/initiatives';
-import type { CompanyState, EngagementFactor, EventEffects, LegalResponse, PendingDecision } from '../../engine/types';
+import type { CompanyState, EngagementFactor, EventDef, EventEffects, LegalResponse, PendingDecision } from '../../engine/types';
+import type { GuideRef } from '../guide';
+import { GuideLinks } from './Guide';
 import { LEGAL_RESPONSES, MONTHS_PER_YEAR } from '../../engine/types';
 import { actions } from '../useGame';
 import { decisionStrings, eventStrings, factorNames, initiativeStrings, lawStrings, reviewStrings } from '../strings';
@@ -106,6 +108,7 @@ function MilestoneSlip({ d }: { d: PendingDecision }) {
           </li>
         ))}
       </ul>
+      <GuideLinks refs={d.ruleIds.map((id) => ({ kind: 'law' as const, id }))} />
       {overtime && <p className="slip-note warn">{lawStrings.overtimeWarning}</p>}
       {workplace && <p className="slip-note">{lawStrings.workplaceUnitNote}</p>}
       <ol className="option-list">
@@ -136,6 +139,18 @@ function MilestoneSlip({ d }: { d: PendingDecision }) {
   );
 }
 
+/** イベントの稟議書に出す「関係する解説」：法令、整えられる・軽くなる個別制度、施策そのもの */
+function eventGuideRefs(ev: EventDef, d: PendingDecision): GuideRef[] {
+  const refs: GuideRef[] = [];
+  if (ev.trigger.type === 'initiative') refs.push({ kind: 'initiative', id: ev.id });
+  for (const id of d.ruleIds) refs.push({ kind: 'law', id });
+  const programs = new Set<string>();
+  for (const c of ev.choices) if (c.effects.installProgram) programs.add(c.effects.installProgram);
+  if (ev.mitigatedBy) programs.add(ev.mitigatedBy.program);
+  for (const id of programs) refs.push({ kind: 'program', id });
+  return refs;
+}
+
 /** 差し込みの要因のID（weakFactor など）を、画面の名前にする */
 function displayVars(vars: PendingDecision['vars']): PendingDecision['vars'] {
   const out = { ...vars };
@@ -153,6 +168,7 @@ function EventSlip({ d, company }: { d: PendingDecision; company: CompanyState }
   return (
     <Slip kind={initiative ? initiativeStrings.slipKind : eventStrings.categories[ev.category]} title={ev.title}>
       <p>{renderText(ev.body, displayVars(d.vars))}</p>
+      <GuideLinks refs={eventGuideRefs(raw, d)} />
       {ev.onTrigger && (
         <div className="slip-note">
           {decisionStrings.happened}：<Impacts effects={ev.onTrigger} />

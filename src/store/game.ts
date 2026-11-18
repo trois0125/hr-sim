@@ -13,6 +13,7 @@ import { coef } from '../engine/coefficients';
 import { localizeEvent } from '../engine/eventData';
 import { getEvent, addReflection, renderText, resolveEvent, resolveMilestone, resolveReview } from '../engine/events';
 import type { Period } from '../engine/dashboard';
+import type { GuideRef } from '../ui/guide';
 import { initiativeAvailability, startInitiative as startInitiativeInEngine } from '../engine/initiatives';
 import { getProgram, stopProgram as stopProgramInEngine } from '../engine/programs';
 import { generateCompany, setFoundingPolicies } from '../engine/generate';
@@ -68,6 +69,8 @@ export type GameState = {
   initiativesOpen: boolean;
   /** メイン画面のタブ（現場／事業／組織。§14.2） */
   view: MainView;
+  /** 人事の辞典を開いているか。開いている項目（null なら一覧）。§14.3 */
+  guide: { ref: GuideRef | null } | null;
   /** 事業・組織のグラフの期間 */
   chartPeriod: Period;
 };
@@ -104,6 +107,9 @@ export type GameActions = {
   openInitiatives(): void;
   closeInitiatives(): void;
   setView(view: MainView): void;
+  /** 人事の辞典を開く（ref を渡すとその項目から。開いている間は時間を止める） */
+  openGuide(ref?: GuideRef | null): void;
+  closeGuide(): void;
   setChartPeriod(period: Period): void;
 };
 
@@ -127,6 +133,7 @@ const initial: GameState = {
   initiativesOpen: false,
   view: 'floor',
   chartPeriod: 'year1',
+  guide: null,
 };
 
 let seedCounter = 0;
@@ -271,7 +278,7 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
     };
     /** 時間が進む状態か（速度が0でなく、判断待ちでも見直しの画面を開いてもいない） */
     const running = () => {
-      const { speed, screen, company, editorOpen, evidenceOpen, initiativesOpen } = get();
+      const { speed, screen, company, editorOpen, evidenceOpen, initiativesOpen, guide } = get();
       return (
         speed > 0 &&
         screen === 'main' &&
@@ -280,7 +287,8 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
         !isWaitingForDecision(company) &&
         !editorOpen &&
         !evidenceOpen && // 数字の根拠を読んでいる間は止める
-        !initiativesOpen
+        !initiativesOpen &&
+        !guide // 人事の辞典を読んでいる間も止める
       );
     };
     /** 次の1か月を始める（止まる状態なら止める）。状態が変わる操作のたびに呼ぶ */
@@ -319,6 +327,14 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
         feedId = Math.max(feedId, ...feed.map((f) => f.id), 0);
         // 再開は一時停止で始める（どこまで進んでいたかを見てから再開できるように）
         set({ ...initial, savedGame: get().savedGame, canSave: get().canSave, company, feed, screen: company.status === 'running' ? 'main' : 'end', speed: 0 });
+      },
+      openGuide(ref = null) {
+        set({ guide: { ref } });
+        schedule();
+      },
+      closeGuide() {
+        set({ guide: null });
+        schedule();
       },
       setView(view) {
         set({ view });

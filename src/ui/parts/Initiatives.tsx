@@ -5,6 +5,7 @@ import type { CompanyState } from '../../engine/types';
 import { actions, useGame } from '../useGame';
 import { initiativeStrings as t } from '../strings';
 import { dateLabel, yen } from '../format';
+import { HelpButton } from './Guide';
 
 /** 施策のメニュー（右の欄の「施策を打つ」から開く。開いている間は時間を止める） */
 export function InitiativeMenu({ company }: { company: CompanyState }) {
@@ -37,7 +38,10 @@ export function InitiativeMenu({ company }: { company: CompanyState }) {
               return (
                 <li key={ev.id}>
                   <div className="initiative-text">
-                    <strong>{ev.title}</strong>
+                    <strong>
+                      {ev.title}
+                      <HelpButton target={{ kind: 'initiative', id: ev.id }} />
+                    </strong>
                     <span className="muted">{ev.menuSummary}</span>
                     {note && <span className="initiative-note">{note}</span>}
                   </div>
@@ -76,7 +80,10 @@ export function ProgramsPanel({ company }: { company: CompanyState }) {
             return (
               <li key={p.id}>
                 <div>
-                  <strong title={def.summary}>{def.name}</strong>
+                  <strong title={def.summary}>
+                    {def.name}
+                    <HelpButton target={{ kind: 'program', id: p.id }} />
+                  </strong>
                   <span className="muted num">
                     {t.since(dateLabel(p.since))}・{t.monthlyCost(yen(programMonthlyCost({ programs: [p] }, company.employees.length)))}
                   </span>

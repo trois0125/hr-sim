@@ -13,6 +13,8 @@ import {
   type PolicySet,
 } from '../../engine/types';
 import { policyStrings } from '../strings';
+import { optionKey } from '../guide';
+import { HelpButton } from './Guide';
 
 const OPTIONS: { [K in keyof PolicySet]: readonly PolicySet[K][] } = {
   grade: GRADE_SYSTEMS,
@@ -40,7 +42,10 @@ export function PolicyForm({ value, onChange, industry, current }: Props) {
     <div className="policy-form">
       {(Object.keys(OPTIONS) as (keyof PolicySet)[]).map((cat) => (
         <fieldset key={cat} className="policy-field">
-          <legend>{policyStrings.categories[cat]}</legend>
+          <legend>
+            {policyStrings.categories[cat]}
+            <HelpButton target={{ kind: 'category', id: cat }} />
+          </legend>
           <div className="policy-options">
             {(OPTIONS[cat] as readonly string[]).map((opt) => {
               const [name, desc] = (policyStrings.options[cat] as Record<string, readonly [string, string]>)[opt] ?? [opt, ''];
@@ -59,6 +64,7 @@ export function PolicyForm({ value, onChange, industry, current }: Props) {
                   />
                   <span>
                     {name}
+                    <HelpButton target={{ kind: 'option', id: optionKey(cat, opt) }} label={name} />
                     {current?.[cat] === opt && <span className="tag">今の制度</span>}
                     {!current && defaultPolicies[cat] === opt && <span className="tag">{policyStrings.standard}</span>}
                   </span>
