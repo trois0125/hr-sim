@@ -20,6 +20,7 @@ import { createStreams, getStreamsState, type Rng } from './rng';
 import type {
   Affiliation,
   CompanyProfile,
+  AutoPlay,
   CompanyState,
   PolicySet,
   Employee,
@@ -32,6 +33,11 @@ import type {
 
 export type GenerateOptions = {
   seed: number;
+  /**
+   * 判断待ちを自動で選ぶ方針。省略すると「すぐ対応」で自動に進む（画面のないシミュレーション用）。
+   * 画面で遊ぶときは null を渡し、判断待ちで止める
+   */
+  autoPlay?: AutoPlay | null;
   /** 指定しなければおまかせ（重み付き抽選） */
   industryId?: IndustryId;
   foundingPatternId?: FoundingPatternId;
@@ -175,6 +181,20 @@ export function generateCompany(options: GenerateOptions): CompanyState {
     departures: [],
     policyChanges: [],
     disputeSeeds: [],
+    legal: {
+      compliance: [],
+      fixedOvertimeMisoperation: false,
+      fixedOvertimeRolled: false,
+      unpaidOvertime: [],
+      overtimeOver45Months: [],
+      overtimeCapExceeded: false,
+      log: [],
+    },
+    pendingDecisions: [],
+    modifiers: [],
+    autoPlay: options.autoPlay === undefined ? { legal: 'immediate' } : options.autoPlay,
+    nextDecisionId: 1,
+    unrecordedExtraordinaryCost: 0,
     rng: getStreamsState(streams),
   };
   return setFoundingPolicies(state, state.policies);

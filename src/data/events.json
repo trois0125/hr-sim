@@ -1,0 +1,223 @@
+[
+  {
+    "id": "labor_inspection",
+    "category": "law",
+    "trigger": {
+      "type": "law"
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "労働基準監督署の臨検",
+    "body": "{how}。{violations} について是正勧告を受けました。",
+    "choices": [
+      {
+        "label": "是正勧告に従ってすぐ直す",
+        "effects": {
+          "correct": "detected",
+          "correctionCostMult": 1.5,
+          "engagementAll": -5,
+          "hiringAttraction": {
+            "mult": 0.9,
+            "months": 12
+          }
+        },
+        "lesson": "是正勧告を受けてから直すと、最初から対応するより高くつき、社員の信頼も下がる",
+        "auto": [
+          "immediate",
+          "postpone"
+        ]
+      },
+      {
+        "label": "社労士に依頼して直す",
+        "effects": {
+          "correct": "detected",
+          "correctionCostMult": 2.0,
+          "engagementAll": -3,
+          "hiringAttraction": {
+            "mult": 0.93,
+            "months": 12
+          }
+        },
+        "lesson": "専門家に任せると確実だが費用は高い。どちらにしても「先に対応しておく」ほうが安い",
+        "auto": [
+          "outsource"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unpaid_overtime_claim",
+    "category": "law",
+    "trigger": {
+      "type": "law"
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "未払い残業代の請求",
+    "body": "退職した{name}さんから「固定残業代の時間を超えた残業代が払われていない」と請求がありました。未払いは過去3年分で約{amount}万円です。",
+    "choices": [
+      {
+        "label": "全員分を精算し、運用を改める",
+        "effects": {
+          "payUnpaidOvertime": 1,
+          "engagementAll": 2
+        },
+        "lesson": "固定残業代は「含めた時間を超えた分は別に払う」のが前提。超過分の精算を忘れると、全員分がさかのぼって請求されうる",
+        "auto": [
+          "immediate",
+          "outsource"
+        ]
+      },
+      {
+        "label": "争う（裁判で決着をつける）",
+        "effects": {
+          "payUnpaidOvertime": 1,
+          "unpaidOvertimeMult": 1.6,
+          "engagementAll": -6,
+          "hiringAttraction": {
+            "mult": 0.8,
+            "months": 24
+          }
+        },
+        "lesson": "争っても払う義務は消えず、付加金や遅延損害金が上乗せされうる。評判も下がる",
+        "auto": [
+          "postpone"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "disability_guidance",
+    "category": "law",
+    "trigger": {
+      "type": "law"
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "障害者雇用の行政指導",
+    "body": "6月1日現在の障害者雇用状況報告（ロクイチ報告）で、法定雇用率に{shortfall}人不足していました。{levy}",
+    "choices": [
+      {
+        "label": "採用計画を立てて雇用する",
+        "effects": {
+          "correct": "detected",
+          "correctionCostMult": 1.2
+        },
+        "lesson": "障害者雇用は、仕事の切り出しと受け入れ体制づくりから始まる",
+        "auto": [
+          "immediate",
+          "outsource"
+        ]
+      },
+      {
+        "label": "今は対応しない",
+        "effects": {},
+        "lesson": "未達のままだと毎年指導が続き、100人超なら納付金を払い続ける。企業名が公表されることもある",
+        "auto": [
+          "postpone"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "overwork_health",
+    "category": "law",
+    "trigger": {
+      "type": "law"
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "長時間労働による健康被害",
+    "body": "月{hours}時間の残業が続いていた{name}さんが体調を崩し、働けなくなりました。",
+    "choices": [
+      {
+        "label": "労災として申請し、残業を月45時間までに抑える",
+        "effects": {
+          "cash": -3000000,
+          "engagementAll": -2,
+          "setPolicies": {
+            "overtime": "limit45"
+          }
+        },
+        "lesson": "過労死ラインとされる月80時間に近づくほど、健康被害のリスクは急に高まる。上限を決めて守ることが先",
+        "auto": [
+          "immediate",
+          "outsource"
+        ]
+      },
+      {
+        "label": "個人の体調の問題として扱う",
+        "effects": {
+          "cash": -1000000,
+          "engagementAll": -8,
+          "hiringAttraction": {
+            "mult": 0.7,
+            "months": 36
+          }
+        },
+        "lesson": "会社の責任を認めないと、社員の信頼と採用の評判を大きく失う。のちに労災認定や損害賠償になることもある",
+        "auto": [
+          "postpone"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "disclosure_recommendation",
+    "category": "law",
+    "trigger": {
+      "type": "law"
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "公表義務の指摘",
+    "body": "{violations} を公表していないことを、行政から指摘され、求職者の口コミでも話題になっています。",
+    "choices": [
+      {
+        "label": "すぐ公表する",
+        "effects": {
+          "correct": "detected",
+          "correctionCostMult": 1.2
+        },
+        "lesson": "公表の義務は、数字を集める仕組みがあれば難しくない。数字が悪くても、改善の計画とあわせて出すほうが信頼される",
+        "auto": [
+          "immediate",
+          "outsource"
+        ]
+      },
+      {
+        "label": "公表しない",
+        "effects": {
+          "hiringAttraction": {
+            "mult": 0.85,
+            "months": 24
+          }
+        },
+        "lesson": "公表しないこと自体が「何か隠している」と受け取られ、採用の評判を下げる",
+        "auto": [
+          "postpone"
+        ]
+      }
+    ]
+  }
+]

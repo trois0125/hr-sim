@@ -386,7 +386,13 @@ export type MonthlyRecord = {
   otherFixedCost: number;
   /** その他の固定費のうち、等級・評価の制度の運用コスト */
   hrSystemCost: number;
+  /** その他の固定費のうち、法令の義務に対応したあと毎月かかる費用（産業医など） */
+  legalCost: number;
   operatingProfit: number;
+  /** 営業利益の外の臨時の支出（法令対応の費用、是正、未払い残業代、納付金、イベントの支出など） */
+  extraordinaryCost: number;
+  /** 違反の状態にある義務の数（月末） */
+  violations: number;
   cash: number;
 };
 
@@ -417,6 +423,165 @@ export type DisputeSeed = {
   averageCutPct: number;
 };
 
+// ---------------------------------------------------------------------------
+// 法令（§7 `src/data/laws.json`）
+// ---------------------------------------------------------------------------
+
+/** 節目での対応：すぐ対応／後回し／社労士に依頼（§7.2） */
+export const LEGAL_RESPONSES = ['immediate', 'postpone', 'outsource'] as const;
+export type LegalResponse = (typeof LEGAL_RESPONSES)[number];
+
+/**
+ * 人数の数え方。
+ * - all：パート・出向者を含む全員（労基法の「常時使用する労働者」、安衛法の事業場の労働者）
+ * - disability：障害者雇用率の算定基礎（週所定20時間以上30時間未満のパートは0.5人、20時間未満は数えない。出向者は除く）
+ */
+export type HeadcountMethod = 'all' | 'disability';
+
+export type LawRule = {
+  id: string;
+  name: string;
+  /** 根拠法と条文 */
+  law: string;
+  /** 発生する義務の短い説明（節目の画面に出す） */
+  description: string;
+  /** 義務が生じるきっかけ */
+  trigger:
+    | { type: 'headcount'; threshold: number; count: HeadcountMethod }
+    | { type: 'overtime' }
+    | { type: 'firstEmployee' };
+  /** 施行日（YYYY-MM-DD）。この日より前のゲーム内日付では適用しない */
+  effectiveFrom: string;
+  /** この日以降は適用しない（新しい基準に置き換わった場合） */
+  effectiveUntil?: string;
+  /** 出典（条文名・厚労省のページ名） */
+  source: string;
+  /** 内容に自信がない点（ある場合だけ。報告用） */
+  todo?: string;
+  /** 対応の費用（円）：すぐ対応／社労士に依頼 */
+  cost: { immediate: Sourced<number>; outsource: Sourced<number> };
+  /** 対応したあと毎月かかる費用（円） */
+  monthlyCost: Sourced<number>;
+  /** 自社で対応したとき、不備が残る確率（社労士に依頼すると0） */
+  selfErrorRate: Sourced<number>;
+  /** 違反のまま臨検を受けたときに発覚する確率 */
+  inspectionDetection: Sourced<number>;
+  /** 安衛法の義務（画面に「1社＝1事業場に単純化」の注記を出す） */
+  workplaceUnit?: boolean;
+  /** 違反が見つかったときのイベント（省略すると労働基準監督署の臨検） */
+  violationEvent?: string;
+  /** 障害者の法定雇用率（障害者雇用のルールだけ） */
+  requiredRate?: Sourced<number>;
+  /** 是正するとき、未加入だった期間の社会保険料（会社負担分）をさかのぼって納める（最大2年） */
+  backPaySocialInsurance?: boolean;
+  /** 違反したときに起きること・本来どうすべきだったか（社史レポートの解説） */
+  consequence: string;
+  lesson: string;
+};
+
+/** 義務ごとの対応の状況 */
+export type ComplianceStatus = {
+  ruleId: string;
+  /** 義務が生じた月 */
+  triggeredMonth: number;
+  /** compliant＝対応済み、noncompliant＝未対応（違反）、pending＝判断待ち */
+  status: 'compliant' | 'noncompliant' | 'pending';
+  response: LegalResponse | null;
+  /** 違反が発覚したか（発覚すると是正するまでイベントが続く） */
+  detected: boolean;
+  /** 違反の状態にあった月数の合計 */
+  violationMonths: number;
+};
+
+/** 社史レポートに載せる法令の出来事 */
+export type LegalLogEntry = {
+  month: number;
+  ruleId: string | null;
+  kind: 'obligation' | 'response' | 'violation_detected' | 'corrected' | 'warning' | 'health' | 'unpaid_overtime';
+  text: string;
+};
+
+export type LegalState = {
+  compliance: ComplianceStatus[];
+  /** 固定残業代を「含めた時間を超えた分を払わない」運用にしてしまっているか（運用ミス） */
+  fixedOvertimeMisoperation: boolean;
+  /** 払っていない残業代（月ごと。3年で時効） */
+  unpaidOvertime: { month: number; amount: number; employeeIds: string[] }[];
+  /** 固定残業代の運用ミスの抽選をしたか（固定残業代を導入した時に1回だけ抽選する） */
+  fixedOvertimeRolled: boolean;
+  /** 月45時間を超えて残業させた月（特別条項でも年6か月まで） */
+  overtimeOver45Months: number[];
+  /** 今年度、特別条項の年6か月を超えたか（臨検で見つかると是正される） */
+  overtimeCapExceeded: boolean;
+  log: LegalLogEntry[];
+};
+
+// ---------------------------------------------------------------------------
+// イベント（§8 `src/data/events.json`）
+// ---------------------------------------------------------------------------
+
+/** 選択肢の効果。数値はすべてデータ側に書く */
+export type EventEffects = {
+  /** 手元資金の増減（円） */
+  cash?: number;
+  /** 社員1人あたりの手元資金の増減（円） */
+  cashPerEmployee?: number;
+  /** 全員の納得感の増減（点） */
+  engagementAll?: number;
+  /** 一定期間、求人の埋まりやすさに掛ける倍率（評判） */
+  hiringAttraction?: { mult: number; months: number };
+  /** 発覚した違反（または指定した義務）を是正する（対応済みにし、是正の費用を払う） */
+  correct?: 'detected' | string[];
+  /** 是正の費用の倍率（是正勧告を受けてから直すと割高） */
+  correctionCostMult?: number;
+  /** 未払いの残業代を払う（割合。1なら全額）。払うと運用ミスもなくなる */
+  payUnpaidOvertime?: number;
+  /** 未払いの残業代の支払額に掛ける倍率（争った場合の付加金・遅延損害金など） */
+  unpaidOvertimeMult?: number;
+  /** 制度を変える（反応は起きない。是正のための変更） */
+  setPolicies?: Partial<PolicySet>;
+};
+
+export type EventChoice = {
+  label: string;
+  effects: EventEffects;
+  /** 学びの一言（社史レポートの解説に使う） */
+  lesson?: string;
+  /** 自動で進めるとき、この方針ならこの選択肢を選ぶ */
+  auto?: LegalResponse[];
+};
+
+export type EventDef = {
+  id: string;
+  category: 'people' | 'market' | 'law' | 'industry';
+  /** 起き方。law はエンジンの法令チェックから呼ばれる（抽選しない） */
+  trigger: { type: 'law' } | { type: 'random'; minHeadcount?: number; condition?: string };
+  weight: number;
+  difficulty: ('beginner' | 'intermediate' | 'advanced')[];
+  title: string;
+  /** {name} のような差し込みを使える */
+  body: string;
+  choices: EventChoice[];
+};
+
+/** 判断待ち（節目・イベント）。画面はここで時間を止める */
+export type PendingDecision = {
+  id: string;
+  month: number;
+  kind: 'milestone' | 'event';
+  /** milestone：対象の義務、event：イベントのID */
+  ruleIds: string[];
+  eventId: string | null;
+  /** 本文への差し込み */
+  vars: Record<string, string | number>;
+};
+
+/** 一時的な効果（期限つき） */
+export type TemporaryModifier = { type: 'hiringAttraction'; mult: number; untilMonth: number };
+
+/** 自動で進めるときの判断の方針（画面のない simulate.ts と、プレイヤーが任せた場合） */
+export type AutoPlay = { legal: LegalResponse };
+
 /** 進行中か、どの終了条件で終わったか（§2.3） */
 export type CompanyStatus = 'running' | 'matured' | 'timeout' | 'bankrupt';
 
@@ -441,6 +606,15 @@ export type CompanyState = {
   departures: Departure[];
   policyChanges: PolicyChangeRecord[];
   disputeSeeds: DisputeSeed[];
+  legal: LegalState;
+  pendingDecisions: PendingDecision[];
+  modifiers: TemporaryModifier[];
+  /** 自動で判断する方針。null なら判断待ちで止まる（画面で選ぶ） */
+  autoPlay: AutoPlay | null;
+  /** 次に採番する判断待ちの番号 */
+  nextDecisionId: number;
+  /** その月の記録ができる前に払った臨時の支出（次にできる記録に載せる） */
+  unrecordedExtraordinaryCost: number;
   rng: RngStreamsState;
 };
 

@@ -22,6 +22,12 @@ export type PeriodMetrics = {
   endHeadcount: number;
   /** 営業利益の合計（円） */
   totalOperatingProfit: number;
+  /** 臨時の支出（法令対応・是正・未払い残業代・納付金・イベントなど）の合計（円） */
+  totalExtraordinaryCost: number;
+  /** 営業利益から臨時の支出を引いた合計（円）。制度や方針の良し悪しはこれで比べる */
+  totalNetProfit: number;
+  /** 違反の状態にあった月の数 */
+  violationMonths: number;
 };
 
 export type RunSummary = {
@@ -38,6 +44,8 @@ export type RunSummary = {
   late: PeriodMetrics | null;
   /** 退職理由の割合（退職者がいなければ全部0） */
   reasons: Record<AttritionReason, number>;
+  /** 違反が見つかった回数 */
+  detections: number;
 };
 
 /** 創業期・成熟期の区切り（年） */
@@ -54,7 +62,11 @@ export function periodMetrics(records: readonly MonthlyRecord[]): PeriodMetrics 
   let eng = 0;
   let ot = 0;
   let demand = 0;
+  let extraordinary = 0;
+  let violationMonths = 0;
   for (const r of records) {
+    extraordinary += r.extraordinaryCost;
+    if (r.violations > 0) violationMonths++;
     resign += r.resignations;
     heads += r.headcount;
     labor += r.labor.total;
@@ -76,6 +88,9 @@ export function periodMetrics(records: readonly MonthlyRecord[]): PeriodMetrics 
     demandCoverage: demand > 0 ? revenue / demand : 1,
     endHeadcount: records[n - 1]?.headcount ?? 0,
     totalOperatingProfit: profit,
+    totalExtraordinaryCost: extraordinary,
+    totalNetProfit: profit - extraordinary,
+    violationMonths,
   };
 }
 
@@ -94,5 +109,6 @@ export function summarizeRun(state: CompanyState): RunSummary {
     early: periodMetrics(h.slice(0, EARLY_YEARS * MONTHS_PER_YEAR)),
     late: periodMetrics(h.slice(LATE_FROM_YEAR * MONTHS_PER_YEAR)),
     reasons,
+    detections: state.legal.log.filter((l) => l.kind === 'violation_detected').length,
   };
 }

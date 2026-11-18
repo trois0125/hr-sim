@@ -45,6 +45,8 @@ export type HiringInput = {
   month: number;
   /** 少し先（新卒を見込みで採るときの月数先）の需要（円）。省略すると今月の需要 */
   projectedDemand?: number;
+  /** 評判による求人の埋まりやすさの倍率（イベントの一時的な効果）。省略すると1 */
+  reputation?: number;
 };
 
 /**
@@ -141,7 +143,8 @@ export function runHiring(input: HiringInput): HiringResult {
   );
   const maxOpenings = Math.round(cap * intensity * batchMult);
   // 報酬が相場より低い会社は、求人が埋まりにくい
-  const attraction = payAttraction(payCompetitiveness(employees, industry, location, policies));
+  const attraction =
+    payAttraction(payCompetitiveness(employees, industry, location, policies)) * (input.reputation ?? 1);
 
   // 不足の大きい職種から順に、上限まで求人を割り当てる
   const openings: Record<RoleId, number> = {};

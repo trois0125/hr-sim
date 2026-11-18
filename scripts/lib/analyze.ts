@@ -49,6 +49,9 @@ const METRICS: (keyof PeriodMetrics)[] = [
   'overtimeHours',
   'demandCoverage',
   'endHeadcount',
+  'totalNetProfit',
+  'totalExtraordinaryCost',
+  'violationMonths',
 ];
 
 export function toCsv(results: JobResult[]): string {
@@ -59,6 +62,7 @@ export function toCsv(results: JobResult[]): string {
     'location',
     'variant',
     ...POLICY_KEYS,
+    'legal',
     'status',
     'months',
     'finalHeadcount',
@@ -78,6 +82,7 @@ export function toCsv(results: JobResult[]): string {
       r.locationId,
       r.variantId,
       ...POLICY_KEYS.map((k) => r.job.policies[k]),
+      r.job.legal,
       s.status,
       s.months,
       s.finalHeadcount,
@@ -105,8 +110,8 @@ function marginal(results: JobResult[], key: keyof PolicySet, option: string, st
   return {
     n: ps.length,
     margin: mean(ps.map((p) => p.operatingMargin)),
-    /** 期間の営業利益の合計の平均（億円）。期間中に倒産した会社は、倒産までの合計 */
-    profit: mean(ps.map((p) => p.totalOperatingProfit)) / 1e8,
+    /** 期間の利益（営業利益−臨時の支出）の合計の平均（億円）。期間中に倒産した会社は、倒産までの合計 */
+    profit: mean(ps.map((p) => p.totalNetProfit)) / 1e8,
     engagement: mean(ps.map((p) => p.engagement)),
     attrition: mean(ps.map((p) => p.attritionRate)),
     survival: rs.length ? rs.filter((r) => r.summary.status !== 'bankrupt').length / rs.length : NaN,
@@ -173,11 +178,11 @@ export function summarize(results: JobResult[], industryId: IndustryId, label: s
   for (const stage of ['early', 'late'] as Stage[]) {
     out.push(`## 制度の選択肢ごとの平均：${STAGE_NAME[stage]}`, '');
     out.push(
-      '★ はそのカテゴリで最も良い値（利益・納得感・生存率は高いほど、離職率は低いほど良い）。利益は期間の営業利益の合計の平均。営業利益率は参考（会社の大きさを見ないので、需要を取りこぼしても下がらない）。',
+      '★ はそのカテゴリで最も良い値（利益・納得感・生存率は高いほど、離職率は低いほど良い）。利益は期間の「営業利益−臨時の支出（法令対応・是正・未払い残業代・納付金など）」の合計の平均。営業利益率は参考（会社の大きさを見ないので、需要を取りこぼしても下がらない）。',
       '',
     );
     out.push(
-      '| カテゴリ | 選択肢 | 社数 | 営業利益の合計（億円） | 営業利益率 | 納得感 | 離職率 | 倒産しない割合 |',
+      '| カテゴリ | 選択肢 | 社数 | 利益の合計（億円） | 営業利益率 | 納得感 | 離職率 | 倒産しない割合 |',
       '|---|---|---|---|---|---|---|---|',
     );
     for (const key of POLICY_KEYS) {
@@ -211,7 +216,43 @@ export function summarize(results: JobResult[], industryId: IndustryId, label: s
   out.push('### 会社の段階で、利益が最も大きくなる選択肢が変わるか', '');
   out.push(stageShift.map((s) => `- ${s}`).join('\n'), '');
   out.push('### 業種ごとに最も良い組み合わせが違うか', '', '- いまは商社だけなので確認できない（ステップ12で4業種そろってから確かめる）', '');
-  out.push('### 法令違反を放置すると平均的に損をするか', '', '- 法令はステップ7で入るので、まだ確認できない', '');
+  out.push('### 法令違反を放置すると平均的に損をするか', '');
+  out.push(
+    '| 法令対応の方針 | 社数 | 利益の合計・創業期（億円） | 利益の合計・成熟期（億円） | 臨時の支出の合計（億円） | 違反の月数 | 発覚の回数 | 納得感 | 倒産 |',
+    '|---|---|---|---|---|---|---|---|---|',
+  );
+  const legalName: Record<string, string> = { immediate: 'すぐ対応', postpone: '後回し', outsource: '社労士に依頼' };
+  const legalRows = (['immediate', 'outsource', 'postpone'] as const).map((l) => {
+    const rs = results.filter((r) => r.job.legal === l);
+    return {
+      l,
+      n: rs.length,
+      early: mean(rs.map((r) => (r.summary.early?.totalNetProfit ?? 0) / 1e8)),
+      late: mean(rs.map((r) => (r.summary.late?.totalNetProfit ?? 0) / 1e8)),
+      extra: mean(rs.map((r) => r.summary.all.totalExtraordinaryCost / 1e8)),
+      vm: mean(rs.map((r) => r.summary.all.violationMonths)),
+      det: mean(rs.map((r) => r.summary.detections)),
+      eng: mean(rs.map((r) => r.summary.all.engagement)),
+      bk: rs.filter((r) => r.summary.status === 'bankrupt').length,
+    };
+  });
+  for (const x of legalRows) {
+    out.push(
+      `| ${legalName[x.l]} | ${x.n} | ${num(x.early, 2)} | ${num(x.late, 2)} | ${num(x.extra, 2)} | ${num(x.vm, 0)} | ${num(x.det, 1)} | ${num(x.eng)} | ${x.bk} |`,
+    );
+  }
+  const imm = legalRows.find((x) => x.l === 'immediate');
+  const post = legalRows.find((x) => x.l === 'postpone');
+  if (imm && post) {
+    const total = (x: typeof imm) => x.early + x.late;
+    out.push(
+      '',
+      total(post) < total(imm)
+        ? `- 後回しの会社は、すぐ対応の会社より利益が平均 ${num(total(imm) - total(post), 2)}億円 少ない（放置すると損をする）`
+        : `- 要注意：後回しの会社のほうが、すぐ対応の会社より利益が平均 ${num(total(post) - total(imm), 2)}億円 多い（放置したほうが得になっている）`,
+      '',
+    );
+  }
   return out.join('\n');
 }
 
@@ -224,15 +265,18 @@ export function summarizeOneAtATime(results: JobResult[], industryId: IndustryId
     groups.set(v, [...(groups.get(v) ?? []), r]);
   }
   const out: string[] = [`# 標準から1カテゴリだけ変えた比較：${industry.name}（各${runs}社）`, ''];
-  out.push('同じ会社（シード）を、標準の制度と、1カテゴリだけ変えた制度で回した平均。差は標準との差。', '');
   out.push(
-    '| 変えたもの | 営業利益の合計・創業期（億円） | 営業利益の合計・成熟期（億円） | 納得感 | 離職率 | 人件費率 | 倒産 |',
+    '同じ会社（シード）を、標準の制度（法令はすぐ対応）と、1カテゴリだけ変えた制度で回した平均。差は標準との差。利益は「営業利益−臨時の支出」。',
+    '',
+  );
+  out.push(
+    '| 変えたもの | 利益の合計・創業期（億円） | 利益の合計・成熟期（億円） | 納得感 | 離職率 | 人件費率 | 倒産 |',
     '|---|---|---|---|---|---|---|',
   );
   const stats = (rs: JobResult[]) => ({
     // 期間の営業利益の合計（億円）。成熟期まで届かなかった会社は0として平均する（倒産も損として数える）
-    earlyMargin: mean(rs.map((r) => (r.summary.early?.totalOperatingProfit ?? 0) / 1e8)),
-    lateMargin: mean(rs.map((r) => (r.summary.late?.totalOperatingProfit ?? 0) / 1e8)),
+    earlyMargin: mean(rs.map((r) => (r.summary.early?.totalNetProfit ?? 0) / 1e8)),
+    lateMargin: mean(rs.map((r) => (r.summary.late?.totalNetProfit ?? 0) / 1e8)),
     engagement: mean(rs.map((r) => r.summary.all.engagement)),
     attrition: mean(rs.map((r) => r.summary.all.attritionRate)),
     labor: mean(rs.map((r) => r.summary.all.laborCostRatio)),
@@ -246,10 +290,12 @@ export function summarizeOneAtATime(results: JobResult[], industryId: IndustryId
     const changed =
       v === 0
         ? '標準'
-        : (Object.keys(first.job.policies) as (keyof PolicySet)[])
-            .filter((k) => first.job.policies[k] !== (groups.get(0)?.[0]?.job.policies[k] ?? ''))
-            .map((k) => `${k}=${first.job.policies[k]}`)
-            .join(',');
+        : [
+            ...(Object.keys(first.job.policies) as (keyof PolicySet)[])
+              .filter((k) => first.job.policies[k] !== (groups.get(0)?.[0]?.job.policies[k] ?? ''))
+              .map((k) => `${k}=${first.job.policies[k]}`),
+            ...(first.job.legal !== groups.get(0)?.[0]?.job.legal ? [`法令=${first.job.legal}`] : []),
+          ].join(',');
     const s = stats(rs);
     out.push(
       v === 0

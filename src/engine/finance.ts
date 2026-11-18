@@ -43,6 +43,8 @@ export type FinanceInput = {
   overtimeCapacity: number;
   grossMargin: number;
   hiringCost: number;
+  /** 法令の義務に対応したあと毎月かかる費用（その他の固定費に入れる） */
+  legalCost?: number;
 };
 
 export type FinanceResult = {
@@ -52,6 +54,7 @@ export type FinanceResult = {
   otherFixedCost: number;
   /** その他の固定費のうち、等級・評価の制度の運用コスト */
   hrSystemCost: number;
+  legalCost: number;
   operatingProfit: number;
 };
 
@@ -80,13 +83,15 @@ export function computeFinance(input: FinanceInput): FinanceResult {
   const hrSystemCost = hrSystemCostPerEmployee(policies) * employees.length;
   const officeCost =
     coef('cost.office_per_employee') * policyEffect('workStyle', policies.workStyle, 'office_cost_mult') * employees.length;
-  const otherFixedCost = coef('cost.company_base') + officeCost + hrSystemCost;
+  const legalCost = input.legalCost ?? 0;
+  const otherFixedCost = coef('cost.company_base') + officeCost + hrSystemCost + legalCost;
   return {
     revenue,
     grossProfit,
     labor,
     otherFixedCost,
     hrSystemCost,
+    legalCost,
     operatingProfit: grossProfit - labor.total - otherFixedCost,
   };
 }

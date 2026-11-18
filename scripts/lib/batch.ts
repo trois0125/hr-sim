@@ -16,12 +16,14 @@ import {
   PAY_POLICIES,
   TRAINING_INVESTMENTS,
   WORK_HOUR_SYSTEMS,
+  LEGAL_RESPONSES,
   type IndustryData,
+  type LegalResponse,
   type IndustryId,
   type PolicySet,
 } from '../../src/engine/types';
 
-export type Job = { run: number; seed: number; industryId: IndustryId; policies: PolicySet };
+export type Job = { run: number; seed: number; industryId: IndustryId; policies: PolicySet; legal: LegalResponse };
 
 export type JobResult = {
   job: Job;
@@ -71,11 +73,15 @@ export function makeJobs(industryId: IndustryId, runs: number, baseSeed: number)
     seed: rng.int(1, 2 ** 31 - 1),
     industryId,
     policies: samplePolicies(rng, industry),
+    legal: rng.pick(LEGAL_RESPONSES),
   }));
 }
 
 export function runJob(job: Job): JobResult {
-  const c = setFoundingPolicies(generateCompany({ seed: job.seed, industryId: job.industryId }), job.policies);
+  const c = setFoundingPolicies(
+    generateCompany({ seed: job.seed, industryId: job.industryId, autoPlay: { legal: job.legal } }),
+    job.policies,
+  );
   const end = runToEnd(c);
   return {
     job,

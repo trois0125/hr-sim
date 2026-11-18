@@ -1583,5 +1583,138 @@
     "unit": "月",
     "basis": "assumption",
     "source": "仮置き。新卒の入社月には、この月数先の需要を見込んで採る"
+  },
+  {
+    "id": "calendar.start_year",
+    "value": 2026,
+    "unit": "年",
+    "basis": "assumption",
+    "source": "仮置き。創業する年（法令の施行日と比べる）"
+  },
+  {
+    "id": "calendar.start_month",
+    "value": 4,
+    "unit": "月",
+    "basis": "assumption",
+    "source": "仮置き。創業する月（4月。決算年度の始まりとそろえる）"
+  },
+  {
+    "id": "law.inspection.monthly_probability",
+    "value": 0.003,
+    "unit": "確率/月",
+    "basis": "assumption",
+    "source": "仮置き。1社が1か月に労働基準監督署の臨検（定期監督）を受ける確率（年3〜4%）。TODO: 要確認（労働基準監督年報の監督実施件数 ÷ 事業場数）"
+  },
+  {
+    "id": "law.inspection.size_factor",
+    "value": 0.5,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。社員数が10倍になるごとに臨検の確率が1.5倍になる"
+  },
+  {
+    "id": "law.complaint.per_resignation",
+    "value": 0.03,
+    "unit": "確率",
+    "basis": "assumption",
+    "source": "仮置き。違反があるとき、退職者1人が労働基準監督署に申告する確率（申告監督）"
+  },
+  {
+    "id": "law.unpaid_overtime.misoperation_probability",
+    "value": 0.3,
+    "unit": "確率",
+    "basis": "assumption",
+    "source": "仮置き。固定残業代を導入したとき「含めた時間を超えた分を払わない」運用にしてしまう確率"
+  },
+  {
+    "id": "law.unpaid_overtime.claim_per_resignation",
+    "value": 0.08,
+    "unit": "確率",
+    "basis": "assumption",
+    "source": "仮置き。未払いの残業代がある会社で、退職者1人が請求する確率"
+  },
+  {
+    "id": "law.unpaid_overtime.statute_months",
+    "value": 36,
+    "unit": "月",
+    "basis": "research",
+    "source": "労働基準法第115条・附則第143条（賃金請求権の消滅時効は当分の間3年。2020年4月1日施行）"
+  },
+  {
+    "id": "law.disability.levy_per_person_month",
+    "value": 50000,
+    "unit": "円/人/月",
+    "basis": "research",
+    "source": "障害者雇用納付金（不足1人あたり月額5万円）。厚生労働省・高齢・障害・求職者雇用支援機構「障害者雇用納付金制度」"
+  },
+  {
+    "id": "law.disability.levy_headcount",
+    "value": 100,
+    "unit": "人",
+    "basis": "research",
+    "source": "障害者雇用納付金の対象は常用労働者100人超の企業"
+  },
+  {
+    "id": "law.disability.report_month",
+    "value": 2,
+    "unit": "月目",
+    "basis": "research",
+    "source": "ロクイチ報告（毎年6月1日現在の状況）。創業月を4月とした年度の3か月目"
+  },
+  {
+    "id": "law.disability.part_weight",
+    "value": 0,
+    "unit": "人",
+    "basis": "research",
+    "source": "パートの数え方。ゲームのパートは月80時間（週約18.5時間）で、週20時間未満は算定基礎に数えない"
+  },
+  {
+    "id": "law.overtime.special_max_months",
+    "value": 6,
+    "unit": "か月/年",
+    "basis": "research",
+    "source": "労働基準法第36条第5項（特別条項で月45時間を超えられるのは年6か月まで）"
+  },
+  {
+    "id": "law.overtime.limit_hours",
+    "value": 45,
+    "unit": "時間/月",
+    "basis": "research",
+    "source": "労働基準法第36条第4項（限度時間 月45時間）"
+  },
+  {
+    "id": "law.overwork.health_probability_at80",
+    "value": 0.004,
+    "unit": "確率/月",
+    "basis": "assumption",
+    "source": "仮置き。月80時間残業した人が、その月に健康を害して働けなくなる確率（45時間を超えた分に比例）"
+  },
+  {
+    "id": "law.overwork.health_without_doctor_mult",
+    "value": 1.5,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。50人以上で産業医などの健康管理の義務を果たしていないと、健康被害が起きやすい"
+  },
+  {
+    "id": "law.social_insurance.back_pay_months",
+    "value": 24,
+    "unit": "か月",
+    "basis": "research",
+    "source": "健康保険法第193条・厚生年金保険法第92条（保険料を徴収する権利は2年で時効。未加入が発覚すると最大2年分をさかのぼって納める）"
+  },
+  {
+    "id": "law.violation.stability_penalty",
+    "value": 6,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。違反を放置している義務1つにつき、社員の「雇用の安定」の受け止めが下がる量（会社のルールが守られていない不安）"
+  },
+  {
+    "id": "law.violation.stability_penalty_max",
+    "value": 18,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。違反による「雇用の安定」の低下の上限"
   }
 ]

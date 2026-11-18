@@ -24,6 +24,7 @@ import {
   type EngagementFactor,
   type FoundingPatternId,
   type IndustryId,
+  type LegalResponse,
   type OvertimePolicy,
   type PolicySet,
 } from '../src/engine/types';
@@ -86,15 +87,17 @@ async function batch(): Promise<void> {
     // 同じ会社（シード）を、標準の制度と「1カテゴリだけ変えた制度」で回す
     const rng = createRng(baseSeed);
     const seeds = Array.from({ length: runs }, () => rng.int(1, 2 ** 31 - 1));
-    const variants: PolicySet[] = [{ ...defaultPolicies }];
+    // 標準は「法令はすぐ対応」。法令対応の方針だけ変えた比較も入れる
+    const variants: { policies: PolicySet; legal: LegalResponse }[] = [{ policies: { ...defaultPolicies }, legal: 'immediate' }];
     const opts = policyOptions(industry);
     for (const key of Object.keys(opts) as (keyof PolicySet)[]) {
       for (const o of opts[key] as readonly string[]) {
-        if (o !== defaultPolicies[key]) variants.push({ ...defaultPolicies, [key]: o } as PolicySet);
+        if (o !== defaultPolicies[key]) variants.push({ policies: { ...defaultPolicies, [key]: o } as PolicySet, legal: 'immediate' });
       }
     }
-    jobs = variants.flatMap((policies, v) =>
-      seeds.map((seed, i) => ({ run: v * runs + i, seed, industryId, policies })),
+    for (const legal of ['outsource', 'postpone'] as const) variants.push({ policies: { ...defaultPolicies }, legal });
+    jobs = variants.flatMap((v, vi) =>
+      seeds.map((seed, i) => ({ run: vi * runs + i, seed, industryId, policies: v.policies, legal: v.legal })),
     );
   } else {
     jobs = makeJobs(industryId, runs, baseSeed);

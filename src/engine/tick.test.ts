@@ -45,11 +45,11 @@ describe('ティック処理', () => {
     expect(end.history).toHaveLength(300);
   });
 
-  it('手元資金は、毎月の営業利益のぶんだけ動く', () => {
+  it('手元資金は、毎月の営業利益から臨時の支出を引いたぶんだけ動く', () => {
     const end = runToEnd(company(3), 36);
     let cash = end.profile.initialCash;
     for (const r of end.history) {
-      cash += r.operatingProfit;
+      cash += r.operatingProfit - r.extraordinaryCost;
       expect(r.cash).toBeCloseTo(cash, 0);
     }
   });

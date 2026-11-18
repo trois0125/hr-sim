@@ -2,8 +2,11 @@
  * ティック処理（§2.1）。1ティック＝1か月。
  *
  * 入っているのは 1 市場と景気、2 採用、3 稼働と成果、4 売上・コスト・利益、5 納得感、6 退職、
- * 7 評価と昇給（年1回の決算月。賞与もここで決める）、10 記録。
- * 8 法令（ステップ7）、9 イベント（ステップ8）は後で足す。
+ * 7 評価と昇給（年1回の決算月。賞与もここで決める）、8 法令（義務の発生は月のはじめ、違反の発覚は月の終わり）、10 記録。
+ * 9 イベントの抽選はステップ8で足す（法令のイベントは 8 から起きる）。
+ *
+ * 判断待ち（節目・イベント）は state.pendingDecisions に積まれる。autoPlay があればその場で選ぶ。
+ * autoPlay がなければ、判断待ちが残っている間はティックを進めない（画面で選んでから次に進む）。
  */
 import { coef } from './coefficients';
 import { getIndustry, getLocation } from './data';
@@ -14,6 +17,8 @@ import { runHiring } from './hiring';
 import { demandAt, stepEconomy, updateShareFactor } from './market';
 import { computeOvertime, computePerformance, overtimeCap } from './performance';
 import { growAbility, runAnnualReview, stepSalaryTransitions } from './evaluation';
+import { hiringAttractionModifier } from './events';
+import { checkObligations, checkViolations, legalMonthlyCost } from './laws';
 import { currentResistance } from './policyChange';
 import { getStreamsState, restoreStreams } from './rng';
 import { MONTHS_PER_YEAR, type CompanyState, type CompanyStatus, type MonthlyRecord } from './types';
@@ -56,9 +61,22 @@ export function checkEnd(state: CompanyState): CompanyStatus {
 }
 
 /** 1か月進める（渡された状態を書き換える）。大量に回すとき用 */
+/** 判断待ちで止まっているか（自動の方針がなく、判断待ちが残っている） */
+export function isWaitingForDecision(state: CompanyState): boolean {
+  return state.autoPlay === null && state.pendingDecisions.length > 0;
+}
+
 export function tickInPlace(state: CompanyState): CompanyState {
-  if (state.status !== 'running') return state;
+  if (state.status !== 'running' || isWaitingForDecision(state)) return state;
   const streams = restoreStreams(state.rng);
+
+  // 8a. 法令の義務の発生（月のはじめ。初級では残業させる前に36協定の節目が来る）
+  checkObligations(state, streams.laws);
+  if (isWaitingForDecision(state)) {
+    // 節目で止まる：この月の処理は、判断が済んでからやり直す
+    state.rng = getStreamsState(streams);
+    return state;
+  }
   const { industry, variant } = variantOf(state);
   const location = getLocation(state.profile.locationId);
 
@@ -84,6 +102,7 @@ export function tickInPlace(state: CompanyState): CompanyState {
     nextEmployeeId: state.nextEmployeeId,
     policies: state.policies,
     month: state.month,
+    reputation: hiringAttractionModifier(state),
     projectedDemand: demandAt(
       state.market,
       state.profile,
@@ -111,6 +130,7 @@ export function tickInPlace(state: CompanyState): CompanyState {
     overtimeCapacity: overtime.extraCapacity,
     grossMargin: state.profile.grossMargin,
     hiringCost: hiring.cost,
+    legalCost: legalMonthlyCost(state),
   });
   state.cash += fin.operatingProfit;
   // 取りこぼした需要は、将来の取り分を減らす
@@ -118,7 +138,6 @@ export function tickInPlace(state: CompanyState): CompanyState {
     state.market.shareFactor,
     demand > 0 ? (demand - fin.revenue) / demand : 0,
   );
-  state.negativeCashMonths = state.cash < 0 ? state.negativeCashMonths + 1 : 0;
 
   // 10. 記録（納得感の計算で今月の業績を使うので、先につくっておく）
   const record: MonthlyRecord = {
@@ -137,10 +156,14 @@ export function tickInPlace(state: CompanyState): CompanyState {
     labor: fin.labor,
     otherFixedCost: fin.otherFixedCost,
     hrSystemCost: fin.hrSystemCost,
+    legalCost: fin.legalCost,
     operatingProfit: fin.operatingProfit,
+    extraordinaryCost: state.unrecordedExtraordinaryCost,
+    violations: 0,
     cash: state.cash,
   };
   state.history.push(record);
+  state.unrecordedExtraordinaryCost = 0;
 
   // 5. 納得感
   updateEngagement(state.employees, {
@@ -151,6 +174,7 @@ export function tickInPlace(state: CompanyState): CompanyState {
     cash: state.cash,
     headcount: state.employees.length,
     resistance: currentResistance(state),
+    violations: state.history[state.history.length - 2]?.violations ?? 0,
   });
 
   // 6. 退職（と出向者の帰任）
@@ -166,10 +190,20 @@ export function tickInPlace(state: CompanyState): CompanyState {
   record.resignations = attrition.departures.filter((d) => d.kind === 'resignation').length;
   record.returns = attrition.departures.filter((d) => d.kind === 'return').length;
   record.headcount = state.employees.length;
+
+  // 8b. 法令：違反の判定と発覚、未払い残業代、長時間労働（臨時の支出は record.extraordinaryCost に入る）
+  record.violations = checkViolations(state, {
+    rng: streams.laws,
+    overtimeHours: overtime.hours,
+    resigned: attrition.departures.filter((d) => d.kind === 'resignation'),
+  });
+  record.headcount = state.employees.length;
   record.avgEngagement =
     state.employees.length > 0
       ? state.employees.reduce((s, e) => s + e.engagement, 0) / state.employees.length
       : 0;
+  record.cash = state.cash;
+  state.negativeCashMonths = state.cash < 0 ? state.negativeCashMonths + 1 : 0;
 
   // 激変緩和で下げている途中の給与を1か月ぶん下げ、実力を伸ばす
   stepSalaryTransitions(state.employees);
@@ -206,7 +240,7 @@ export function tick(state: CompanyState): CompanyState {
 export function runToEnd(initial: CompanyState, maxMonths = Infinity): CompanyState {
   const state = structuredClone(initial);
   let n = 0;
-  while (state.status === 'running' && n < maxMonths) {
+  while (state.status === 'running' && n < maxMonths && !isWaitingForDecision(state)) {
     tickInPlace(state);
     n++;
   }

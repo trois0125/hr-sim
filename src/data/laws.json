@@ -1,0 +1,541 @@
+[
+  {
+    "id": "labor_conditions_insurance",
+    "name": "労働条件の明示と、労働保険・社会保険の加入",
+    "law": "労働基準法第15条、労働者災害補償保険法、雇用保険法、健康保険法、厚生年金保険法",
+    "description": "人を雇ったら、賃金・労働時間などを書面で明示し、労災保険・雇用保険・健康保険・厚生年金に加入する（法人は社員1人から）。",
+    "trigger": {
+      "type": "firstEmployee"
+    },
+    "effectiveFrom": "2024-04-01",
+    "source": "労働基準法第15条・同施行規則第5条（2024年4月施行の改正で、就業場所・業務の変更の範囲も明示事項に追加）。厚生労働省「2024年4月からの労働条件明示のルール変更」",
+    "cost": {
+      "immediate": {
+        "value": 50000,
+        "unit": "円",
+        "basis": "assumption",
+        "source": "仮置き。書類の作成・届出・社内の手間を金額にしたもの"
+      },
+      "outsource": {
+        "value": 150000,
+        "unit": "円",
+        "basis": "assumption",
+        "source": "仮置き。社会保険労務士への依頼料の目安"
+      }
+    },
+    "monthlyCost": {
+      "value": 0,
+      "unit": "円/月",
+      "basis": "assumption",
+      "source": "仮置き。対応したあと毎月かかる費用"
+    },
+    "selfErrorRate": {
+      "value": 0.1,
+      "unit": "確率",
+      "basis": "assumption",
+      "source": "仮置き。自社で対応して不備が残る確率"
+    },
+    "inspectionDetection": {
+      "value": 0.6,
+      "unit": "確率",
+      "basis": "assumption",
+      "source": "仮置き。違反のまま臨検を受けたときに発覚する確率"
+    },
+    "consequence": "未加入が発覚すると、最大2年分の保険料（会社負担分）をさかのぼって納める。労災が起きたときに会社が全額を負担することもある。",
+    "lesson": "最初の1人を雇うときが、人事の手続きの出発点。雇い入れの書類と保険の手続きは、一度に済ませる",
+    "backPaySocialInsurance": true
+  },
+  {
+    "id": "agreement_36",
+    "name": "36協定の締結と届出",
+    "law": "労働基準法第36条",
+    "description": "法定労働時間（1日8時間・週40時間）を超えて残業させる前に、労使で36協定を結び、労働基準監督署に届け出る。上限は原則月45時間・年360時間。特別条項を付けても月100時間未満・2〜6か月平均80時間以内・年720時間以内で、月45時間を超えられるのは年6か月まで。",
+    "trigger": {
+      "type": "overtime"
+    },
+    "effectiveFrom": "2020-04-01",
+    "source": "労働基準法第36条。時間外労働の上限規制は中小企業に2020年4月1日から適用（大企業は2019年4月1日）。厚生労働省「時間外労働の上限規制 わかりやすい解説」",
+    "cost": {
+      "immediate": {
+        "value": 30000,
+        "unit": "円",
+        "basis": "assumption",
+        "source": "仮置き。書類の作成・届出・社内の手間を金額にしたもの"
+      },
+      "outsource": {
+        "value": 100000,
+        "unit": "円",
+        "basis": "assumption",
+        "source": "仮置き。社会保険労務士への依頼料の目安"
+      }
+    },
+    "monthlyCost": {
+      "value": 0,
+      "unit": "円/月",
+      "basis": "assumption",
+      "source": "仮置き。対応したあと毎月かかる費用"
+    },
+    "selfErrorRate": {
+      "value": 0.1,
+      "unit": "確率",
+      "basis": "assumption",
+      "source": "仮置き。自社で対応して不備が残る確率"
+    },
+    "inspectionDetection": {
+      "value": 0.8,
+      "unit": "確率",
+      "basis": "assumption",
+      "source": "仮置き。違反のまま臨検を受けたときに発覚する確率"
+    },
+    "consequence": "36協定なしで残業させると労働基準法違反（6か月以下の拘禁刑または30万円以下の罰金）。臨検で是正勧告を受ける。",
+    "lesson": "残業をさせる「前」に36協定が要る。忙しくなってからでは遅い"
+  },
+  {
+    "id": "work_rules",
+    "name": "就業規則の作成と届出",
+    "law": "労働基準法第89条",
+    "description": "常時10人以上の労働者（パートを含む）を使う事業場は、就業規則を作り、労働者代表の意見書を付けて労働基準監督署に届け出る。",
+    "trigger": {
+      "type": "headcount",
+      "threshold": 10,
+      "count": "all"
+    },
+    "effectiveFrom": "1947-09-01",
+    "source": "労働基準法第89条・第90条（1947年9月1日施行）",
+    "cost": {
+      "immediate": {
+        "value": 200000,
+        "unit": "円",
+        "basis": "assumption",
+        "source": "仮置き。書類の作成・届出・社内の手間を金額にしたもの"
+      },
+      "outsource": {
+        "value": 500000,
+        "unit": "円",
+        "basis": "assumption",
+        "source": "仮置き。社会保険労務士への依頼料の目安"
+      }
+    },
+    "monthlyCost": {
+      "value": 0,
+      "unit": "円/月",
+      "basis": "assumption",
+      "source": "仮置き。対応したあと毎月かかる費用"
+    },
+    "selfErrorRate": {
+      "value": 0.15,
+      "unit": "確率",
+      "basis": "assumption",
+      "source": "仮置き。自社で対応して不備が残る確率"
+    },
+    "inspectionDetection": {
+      "value": 0.7,
+      "unit": "確率",
+      "basis": "assumption",
+      "source": "仮置き。違反のまま臨検を受けたときに発覚する確率"
+    },
+    "consequence": "就業規則がないと是正勧告を受ける。懲戒の根拠がなく、労使のトラブルが長引く。",
+    "lesson": "10人が就業規則のライン。ルールを書面にしておかないと、注意も処分もできない"
+  },
+  {
+    "id": "safety_promoter",
+    "name": "安全衛生推進者（衛生推進者）の選任",
+    "law": "労働安全衛生法第12条の2",
+    "description": "常時10人以上50人未満の事業場は、安全衛生推進者（業種によっては衛生推進者）を選任し、労働者に周知する。",
+    "trigger": {
+      "type": "headcount",
+      "threshold": 10,
+      "count": "all"
+    },
+    "effectiveFrom": "1988-10-01",
+    "workplaceUnit": true,
+    "source": "労働安全衛生法第12条の2、労働安全衛生規則第12条の2〜第12条の4",
+    "todo": "施行日（1988年10月1日としている）は要確認",
+    "cost": {
+      "immediate": {
+        "value": 50000,
+        "unit": "円",
+        "basis": "assumption",
+        "source": "仮置き。書類の作成・届出・社内の手間を金額にしたもの"
+      },
+      "outsource": {
+        "value": 100000,
+        "unit": "円",
+        "basis": "assumption",
+        "source": "仮置き。社会保険労務士への依頼料の目安"
+      }
+    },
+    "monthlyCost": {
+      "value": 5000,
+      "unit": "円/月",
+      "basis": "assumption",
+      "source": "仮置き。対応したあと毎月かかる費用"
+    },
+    "selfErrorRate": {
+      "value": 0.1,
+      "unit": "確率",
+      "basis": "assumption",
+      "source": "仮置き。自社で対応して不備が残る確率"
+    },
+    "inspectionDetection": {
+      "value": 0.5,
+      "unit": "確率",
+      "basis": "assumption",
+      "source": "仮置き。違反のまま臨検を受けたときに発覚する確率"
+    },
+    "consequence": "選任していないと是正勧告を受ける。",
+    "lesson": "安全と健康の担当者を決めるのは、10人からの義務"
+  },
+  {
+    "id": "disability_employment_25",
+    "name": "障害者の雇用（法定雇用率2.5%）",
+    "law": "障害者の雇用の促進等に関する法律 第43条",
+    "description": "常用労働者40人以上の企業は、障害者を法定雇用率（2.5%）以上雇用し、毎年6月1日現在の状況を報告する（ロクイチ報告）。",
+    "trigger": {
+      "type": "headcount",
+      "threshold": 40,
+      "count": "disability"
+    },
+    "effectiveFrom": "2024-04-01",
+    "effectiveUntil": "2026-07-01",
+    "source": "障害者雇用促進法第43条。民間企業の法定雇用率は2024年4月から2.5%、2026年7月から2.7%（厚生労働省「障害者雇用率制度」）",
+    "todo": "短時間労働者（週20時間以上30時間未満）を0.5人と数える扱いと、出向者を算定基礎から除く扱いは単純化。要確認",
+    "cost": {
+      "immediate": {
+        "value": 300000,
+        "unit": "円",
+        "basis": "assumption",
+        "source": "仮置き。書類の作成・届出・社内の手間を金額にしたもの"
+      },
+      "outsource": {
+        "value": 600000,
+        "unit": "円",
+        "basis": "assumption",
+        "source": "仮置き。社会保険労務士への依頼料の目安"
+      }
+    },
+    "monthlyCost": {
+      "value": 30000,
+      "unit": "円/月",
+      "basis": "assumption",
+      "source": "仮置き。対応したあと毎月かかる費用"
+    },
+    "selfErrorRate": {
+      "value": 0.2,
+      "unit": "確率",
+      "basis": "assumption",
+      "source": "仮置き。自社で対応して不備が残る確率"
+    },
+    "inspectionDetection": {
+      "value": 0.5,
+      "unit": "確率",
+      "basis": "assumption",
+      "source": "仮置き。違反のまま臨検を受けたときに発覚する確率"
+    },
+    "consequence": "未達だと毎年のロクイチ報告で行政指導を受け、常用労働者100人超の企業は不足1人あたり月5万円の納付金を納める。",
+    "lesson": "障害者雇用は「採用して終わり」ではなく、働き続けられる職場づくりまでが仕事",
+    "requiredRate": {
+      "value": 0.025,
+      "unit": "比",
+      "basis": "research",
+      "source": "障害者雇用促進法 民間企業の法定雇用率（2024年4月〜）2.5%"
+    }
+  },
+  {
+    "id": "disability_employment_27",
+    "name": "障害者の雇用（法定雇用率2.7%）",
+    "law": "障害者の雇用の促進等に関する法律 第43条",
+    "description": "2026年7月から法定雇用率が2.7%に上がり、対象は常用労働者37.5人以上の企業になる。毎年6月1日現在の状況を報告する（ロクイチ報告）。",
+    "trigger": {
+      "type": "headcount",
+      "threshold": 37.5,
+      "count": "disability"
+    },
+    "effectiveFrom": "2026-07-01",
+    "source": "障害者雇用促進法第43条。民間企業の法定雇用率は2026年7月から2.7%、対象は37.5人以上（厚生労働省「障害者雇用率制度」）",
+    "todo": "短時間労働者（週20時間以上30時間未満）を0.5人と数える扱いと、出向者を算定基礎から除く扱いは単純化。要確認",
+    "cost": {
+      "immediate": {
+        "value": 300000,
+        "unit": "円",
+        "basis": "assumption",
+        "source": "仮置き。書類の作成・届出・社内の手間を金額にしたもの"
+      },
+      "outsource": {
+        "value": 600000,
+        "unit": "円",
+        "basis": "assumption",
+        "source": "仮置き。社会保険労務士への依頼料の目安"
+      }
+    },
+    "monthlyCost": {
+      "value": 30000,
+      "unit": "円/月",
+      "basis": "assumption",
+      "source": "仮置き。対応したあと毎月かかる費用"
+    },
+    "selfErrorRate": {
+      "value": 0.2,
+      "unit": "確率",
+      "basis": "assumption",
+      "source": "仮置き。自社で対応して不備が残る確率"
+    },
+    "inspectionDetection": {
+      "value": 0.5,
+      "unit": "確率",
+      "basis": "assumption",
+      "source": "仮置き。違反のまま臨検を受けたときに発覚する確率"
+    },
+    "consequence": "未達だと毎年のロクイチ報告で行政指導を受け、常用労働者100人超の企業は不足1人あたり月5万円の納付金を納める。",
+    "lesson": "法定雇用率は段階的に上がる。いま足りていても、次の引き上げで足りなくなる",
+    "requiredRate": {
+      "value": 0.027,
+      "unit": "比",
+      "basis": "research",
+      "source": "障害者雇用促進法 民間企業の法定雇用率（2026年7月〜）2.7%"
+    }
+  },
+  {
+    "id": "health_management_50",
+    "name": "衛生管理者・産業医・衛生委員会・ストレスチェック・健康診断結果の報告",
+    "law": "労働安全衛生法第12条・第13条・第18条・第66条の10、労働安全衛生規則第52条",
+    "description": "常時50人以上の事業場は、衛生管理者と産業医を選任し、衛生委員会を毎月開き、ストレスチェックを年1回行い、定期健康診断とストレスチェックの結果を労働基準監督署に報告する。",
+    "trigger": {
+      "type": "headcount",
+      "threshold": 50,
+      "count": "all"
+    },
+    "effectiveFrom": "2015-12-01",
+    "workplaceUnit": true,
+    "source": "労働安全衛生法第12条（衛生管理者）・第13条（産業医）・第18条（衛生委員会）・第66条の10（ストレスチェック、2015年12月1日施行）、労働安全衛生規則第52条",
+    "cost": {
+      "immediate": {
+        "value": 500000,
+        "unit": "円",
+        "basis": "assumption",
+        "source": "仮置き。書類の作成・届出・社内の手間を金額にしたもの"
+      },
+      "outsource": {
+        "value": 1000000,
+        "unit": "円",
+        "basis": "assumption",
+        "source": "仮置き。社会保険労務士への依頼料の目安"
+      }
+    },
+    "monthlyCost": {
+      "value": 150000,
+      "unit": "円/月",
+      "basis": "assumption",
+      "source": "仮置き。対応したあと毎月かかる費用"
+    },
+    "selfErrorRate": {
+      "value": 0.15,
+      "unit": "確率",
+      "basis": "assumption",
+      "source": "仮置き。自社で対応して不備が残る確率"
+    },
+    "inspectionDetection": {
+      "value": 0.7,
+      "unit": "確率",
+      "basis": "assumption",
+      "source": "仮置き。違反のまま臨検を受けたときに発覚する確率"
+    },
+    "consequence": "選任・実施していないと是正勧告を受ける。産業医がいないと、長時間労働による健康被害に気づきにくい。",
+    "lesson": "50人を超えると、健康管理が「担当者がいる」から「仕組みで回す」に変わる"
+  },
+  {
+    "id": "stress_check_small",
+    "name": "ストレスチェック（50人未満の事業場）",
+    "law": "労働安全衛生法第66条の10",
+    "description": "ストレスチェックが50人未満の事業場にも義務になる。",
+    "trigger": {
+      "type": "headcount",
+      "threshold": 1,
+      "count": "all"
+    },
+    "effectiveFrom": "2028-04-01",
+    "workplaceUnit": true,
+    "source": "2025年5月に成立した労働安全衛生法の改正（公布から3年以内に施行）",
+    "todo": "施行日（2028年4月1日としている）は政令で決まる予定のため要確認",
+    "cost": {
+      "immediate": {
+        "value": 100000,
+        "unit": "円",
+        "basis": "assumption",
+        "source": "仮置き。書類の作成・届出・社内の手間を金額にしたもの"
+      },
+      "outsource": {
+        "value": 200000,
+        "unit": "円",
+        "basis": "assumption",
+        "source": "仮置き。社会保険労務士への依頼料の目安"
+      }
+    },
+    "monthlyCost": {
+      "value": 20000,
+      "unit": "円/月",
+      "basis": "assumption",
+      "source": "仮置き。対応したあと毎月かかる費用"
+    },
+    "selfErrorRate": {
+      "value": 0.1,
+      "unit": "確率",
+      "basis": "assumption",
+      "source": "仮置き。自社で対応して不備が残る確率"
+    },
+    "inspectionDetection": {
+      "value": 0.3,
+      "unit": "確率",
+      "basis": "assumption",
+      "source": "仮置き。違反のまま臨検を受けたときに発覚する確率"
+    },
+    "consequence": "実施していないと是正勧告を受ける。",
+    "lesson": "小さな会社でも、心の健康を測る仕組みが求められるようになった"
+  },
+  {
+    "id": "women_action_plan_101",
+    "name": "女性活躍の一般事業主行動計画",
+    "law": "女性の職業生活における活躍の推進に関する法律 第8条",
+    "description": "常時雇用する労働者101人以上の企業は、女性の活躍に関する状況を把握し、行動計画を作って届け出て、情報を公表する。",
+    "trigger": {
+      "type": "headcount",
+      "threshold": 101,
+      "count": "all"
+    },
+    "effectiveFrom": "2022-04-01",
+    "source": "女性活躍推進法第8条。101人以上の企業への義務の拡大は2022年4月1日施行（厚生労働省「女性活躍推進法特集ページ」）",
+    "todo": "「常時雇用する労働者」の数え方（1年以上の雇用見込みのあるパートを含む）は、全員を数える形に単純化",
+    "cost": {
+      "immediate": {
+        "value": 200000,
+        "unit": "円",
+        "basis": "assumption",
+        "source": "仮置き。書類の作成・届出・社内の手間を金額にしたもの"
+      },
+      "outsource": {
+        "value": 400000,
+        "unit": "円",
+        "basis": "assumption",
+        "source": "仮置き。社会保険労務士への依頼料の目安"
+      }
+    },
+    "monthlyCost": {
+      "value": 0,
+      "unit": "円/月",
+      "basis": "assumption",
+      "source": "仮置き。対応したあと毎月かかる費用"
+    },
+    "selfErrorRate": {
+      "value": 0.1,
+      "unit": "確率",
+      "basis": "assumption",
+      "source": "仮置き。自社で対応して不備が残る確率"
+    },
+    "inspectionDetection": {
+      "value": 0.3,
+      "unit": "確率",
+      "basis": "assumption",
+      "source": "仮置き。違反のまま臨検を受けたときに発覚する確率"
+    },
+    "consequence": "届け出ていないと助言・指導・勧告の対象になり、勧告に従わないと企業名が公表されることがある。",
+    "lesson": "女性の採用比率・勤続年数・管理職比率を数字で見ることが、計画の出発点",
+    "violationEvent": "disclosure_recommendation"
+  },
+  {
+    "id": "women_disclosure_101",
+    "name": "男女間賃金差異と女性管理職比率の公表",
+    "law": "女性の職業生活における活躍の推進に関する法律 第20条（2026年4月施行の改正）",
+    "description": "常時雇用する労働者101人以上の企業は、男女間の賃金の差異と女性管理職比率を公表する。",
+    "trigger": {
+      "type": "headcount",
+      "threshold": 101,
+      "count": "all"
+    },
+    "effectiveFrom": "2026-04-01",
+    "source": "女性活躍推進法の改正（2026年4月1日施行）。男女間賃金差異は301人以上が2022年7月から、101人以上が2026年4月から",
+    "todo": "条番号は改正後の条文で要確認",
+    "cost": {
+      "immediate": {
+        "value": 100000,
+        "unit": "円",
+        "basis": "assumption",
+        "source": "仮置き。書類の作成・届出・社内の手間を金額にしたもの"
+      },
+      "outsource": {
+        "value": 200000,
+        "unit": "円",
+        "basis": "assumption",
+        "source": "仮置き。社会保険労務士への依頼料の目安"
+      }
+    },
+    "monthlyCost": {
+      "value": 0,
+      "unit": "円/月",
+      "basis": "assumption",
+      "source": "仮置き。対応したあと毎月かかる費用"
+    },
+    "selfErrorRate": {
+      "value": 0.1,
+      "unit": "確率",
+      "basis": "assumption",
+      "source": "仮置き。自社で対応して不備が残る確率"
+    },
+    "inspectionDetection": {
+      "value": 0.3,
+      "unit": "確率",
+      "basis": "assumption",
+      "source": "仮置き。違反のまま臨検を受けたときに発覚する確率"
+    },
+    "consequence": "公表していないと勧告の対象になり、求職者からの評判が下がる。",
+    "lesson": "賃金差異は「同じ仕事で差をつけている」だけでなく「女性が上の等級にいない」ことでも生まれる",
+    "violationEvent": "disclosure_recommendation"
+  },
+  {
+    "id": "paternity_leave_disclosure_301",
+    "name": "男性の育児休業取得率の公表",
+    "law": "育児休業、介護休業等育児又は家族介護を行う労働者の福祉に関する法律 第22条の2",
+    "description": "常時雇用する労働者300人超の企業は、男性の育児休業等の取得率を年1回公表する。",
+    "trigger": {
+      "type": "headcount",
+      "threshold": 301,
+      "count": "all"
+    },
+    "effectiveFrom": "2025-04-01",
+    "source": "育児・介護休業法第22条の2。2025年4月1日から1,000人超の企業から300人超の企業に拡大（厚生労働省「育児・介護休業法改正のポイント」）",
+    "cost": {
+      "immediate": {
+        "value": 100000,
+        "unit": "円",
+        "basis": "assumption",
+        "source": "仮置き。書類の作成・届出・社内の手間を金額にしたもの"
+      },
+      "outsource": {
+        "value": 200000,
+        "unit": "円",
+        "basis": "assumption",
+        "source": "仮置き。社会保険労務士への依頼料の目安"
+      }
+    },
+    "monthlyCost": {
+      "value": 0,
+      "unit": "円/月",
+      "basis": "assumption",
+      "source": "仮置き。対応したあと毎月かかる費用"
+    },
+    "selfErrorRate": {
+      "value": 0.1,
+      "unit": "確率",
+      "basis": "assumption",
+      "source": "仮置き。自社で対応して不備が残る確率"
+    },
+    "inspectionDetection": {
+      "value": 0.3,
+      "unit": "確率",
+      "basis": "assumption",
+      "source": "仮置き。違反のまま臨検を受けたときに発覚する確率"
+    },
+    "consequence": "公表していないと勧告の対象になり、求職者からの評判が下がる。",
+    "lesson": "取得率を公表するには、まず男性が育休を取れる職場の段取りが要る",
+    "violationEvent": "disclosure_recommendation"
+  }
+]

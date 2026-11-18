@@ -12,6 +12,7 @@ import { coef } from './coefficients';
 import { SCORE_MAX, SCORE_MIN, clamp, marketSalaryFor } from './employees';
 import { evaluationPercentiles } from './evaluation';
 import { getIndustry, getLocation } from './data';
+import { addExtraordinaryCost } from './events';
 import { bonusMonthlyFor, policyEffect, validatePolicies } from './policies';
 import type {
   ChangeMethod,
@@ -178,7 +179,7 @@ export function changePolicies(state: CompanyState, next: PolicySet, options: Ch
 
   // 合意を取る手間
   if (method === 'consent') {
-    out.cash -= coef('policy_change.consent_cost_per_employee') * out.employees.length;
+    addExtraordinaryCost(out, coef('policy_change.consent_cost_per_employee') * out.employees.length);
   }
 
   // 就業規則の変更で進めたら、紛争の種を残す

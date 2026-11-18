@@ -249,6 +249,8 @@ export type EngagementContext = {
   headcount: number;
   /** 制度変更による一時的な抵抗（点）。policyChange.ts の currentResistance */
   resistance?: number;
+  /** 違反の状態にある義務の数（会社のルールが守られていない不安として「雇用の安定」を下げる） */
+  violations?: number;
 };
 
 /** 会社の状況から決まる要因（全員共通） */
@@ -261,7 +263,14 @@ export function companyFactors(ctx: EngagementContext): { growthOpportunity: num
   const monthlyLoss = window.length > 0 ? -profit / window.length : 0;
   return {
     growthOpportunity: score(growthOpportunityScore(ctx.policies.training, growth) + growthBonus(ctx.policies)),
-    stability: score(stabilityScore(profit, monthlyLoss, ctx.cash) + stabilityBonus(ctx.policies)),
+    stability: score(
+      stabilityScore(profit, monthlyLoss, ctx.cash) +
+        stabilityBonus(ctx.policies) -
+        Math.min(
+          coef('law.violation.stability_penalty_max'),
+          coef('law.violation.stability_penalty') * (ctx.violations ?? 0),
+        ),
+    ),
   };
 }
 
