@@ -53,6 +53,9 @@ export type RunSummary = {
   eventCounts: Record<string, number>;
   /** 休職した人数（イベント・健康被害） */
   leaves: number;
+  /** 途中の制度変更：回数、そのうち就業規則の変更で不利益変更を進めた回数（紛争の種を残した回数） */
+  policyChanges: number;
+  disputeSeeds: number;
 };
 
 /** 創業期・成熟期の区切り（年） */
@@ -132,5 +135,7 @@ export function summarizeRun(state: CompanyState): RunSummary {
     events: state.decisions.filter((d) => !lawEventIds.has(d.eventId)).length,
     eventCounts,
     leaves,
+    policyChanges: state.policyChanges.length,
+    disputeSeeds: state.disputeSeeds.length,
   };
 }

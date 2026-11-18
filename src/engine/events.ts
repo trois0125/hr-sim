@@ -182,6 +182,7 @@ export function resolveEvent(
     choiceIndex,
     targetId: d.targetId ?? null,
     axes: choice.axes ?? {},
+    diagnosis: choice.diagnosis ?? {},
     auto: options.auto ?? false,
   });
   applyEffects(state, choice.effects, d);

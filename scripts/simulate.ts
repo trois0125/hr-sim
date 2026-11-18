@@ -8,6 +8,7 @@
 // 大量に回してバランスを見る（結果は out/ に CSV と要約の Markdown を書く）：
 //   npx tsx scripts/simulate.ts --industry trading --runs 1000
 //     制度の組み合わせとシードを抽選して回す（--base-seed で抽選のシードを変えられる）
+//     途中で制度を1カテゴリ変える会社を3割混ぜる（--change-share で割合を変えられる）
 //   npx tsx scripts/simulate.ts --industry trading --runs 100 --mode oat
 //     標準の制度から1カテゴリだけ変えた組み合わせを、それぞれ同じ100社で回す
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -30,6 +31,9 @@ import {
 } from '../src/engine/types';
 import { summarize, summarizeOneAtATime, toCsv } from './lib/analyze';
 import { makeJobs, policyOptions, type Job, type JobResult } from './lib/batch';
+
+/** 途中で制度を変える会社の割合（シミュレーションの設定。ゲームの係数ではない） */
+const DEFAULT_CHANGE_SHARE = 0.3;
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -100,7 +104,8 @@ async function batch(): Promise<void> {
       seeds.map((seed, i) => ({ run: vi * runs + i, seed, industryId, policies: v.policies, legal: v.legal })),
     );
   } else {
-    jobs = makeJobs(industryId, runs, baseSeed);
+    // 途中で制度を1カテゴリ変える会社を混ぜる（--change-share 0 で変えない）
+    jobs = makeJobs(industryId, runs, baseSeed, Number(arg('change-share') ?? DEFAULT_CHANGE_SHARE));
   }
 
   process.stderr.write(`${industry.name}：${jobs.length}社を回します（モード：${mode}）\n`);

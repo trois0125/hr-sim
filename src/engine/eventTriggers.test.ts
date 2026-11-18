@@ -27,7 +27,7 @@ import type {
   EventDef,
   JudgmentStyle,
 } from './types';
-import { COMPANY_METRICS, EMPLOYEE_FIELDS, JUDGMENT_AXES } from './types';
+import { COMPANY_METRICS, DIAGNOSIS_AXES, EMPLOYEE_FIELDS, JUDGMENT_AXES } from './types';
 
 const nonLaw = eventDefs.filter((e) => e.category !== 'law');
 
@@ -124,6 +124,28 @@ describe('イベントのデータ', () => {
         }
       }
     }
+  });
+
+  it('人事スタイル診断（§9）の印は、決まった4軸に +1／−1 だけ。法令以外の多くのイベントに付いている', () => {
+    let marked = 0;
+    for (const e of eventDefs) {
+      for (const c of e.choices) {
+        for (const [axis, v] of Object.entries(c.diagnosis ?? {})) {
+          expect(DIAGNOSIS_AXES as readonly string[], `${e.id}: ${c.label}`).toContain(axis);
+          expect([1, -1]).toContain(v);
+        }
+      }
+      if (e.choices.some((c) => Object.keys(c.diagnosis ?? {}).length > 0)) marked++;
+    }
+    expect(marked).toBeGreaterThanOrEqual(25);
+  });
+
+  it('選んだ判断は、診断の印も一緒に記録される', () => {
+    const ace = makeEmployee('sales');
+    const c = company([ace, ...staff('sales', 3)]);
+    c.pendingDecisions.push({ id: 'd1', month: c.month, kind: 'event', ruleIds: [], eventId: 'ace_resignation', vars: {}, targetId: ace.id });
+    resolveEvent(c, 'd1', 0);
+    expect(c.decisions.at(-1)?.diagnosis).toEqual({ outcome: 1 });
   });
 
   it('同じイベントの選択肢どうしは、判断の傾向の印が違う', () => {
@@ -272,7 +294,7 @@ describe('毎月の抽選', () => {
     const c = company(staff('sales', 20));
     const ev = eventDefs.find((e) => e.id === 'competitor_poaching') as EventDef;
     expect(cooledDown(ev, c)).toBe(true);
-    c.decisions.push({ month: c.month, eventId: ev.id, choiceIndex: 0, targetId: null, axes: {}, auto: false });
+    c.decisions.push({ month: c.month, eventId: ev.id, choiceIndex: 0, targetId: null, axes: {}, diagnosis: {}, auto: false });
     expect(cooledDown(ev, c)).toBe(false);
     c.month += coef('event.cooldown_months');
     expect(cooledDown(ev, c)).toBe(true);

@@ -75,6 +75,12 @@ export function toCsv(results: JobResult[]): string {
     ...ATTRITION_REASONS.map((r) => `reason_${r}`),
     'events',
     'leaves',
+    'change_month',
+    'change_category',
+    'change_option',
+    'change_method',
+    'change_transition',
+    'dispute_seeds',
   ];
   const rows = results.map((r) => {
     const s = r.summary;
@@ -98,6 +104,12 @@ export function toCsv(results: JobResult[]): string {
       ...ATTRITION_REASONS.map((x) => String(s.reasons[x])),
       s.events,
       s.leaves,
+      r.job.change?.month ?? '',
+      r.job.change?.category ?? '',
+      r.job.change?.option ?? '',
+      r.job.change?.method ?? '',
+      r.job.change ? String(r.job.change.transition) : '',
+      s.disputeSeeds,
     ].join(',');
   });
   return [head.join(','), ...rows].join('\n') + '\n';
@@ -130,6 +142,8 @@ export function summarize(results: JobResult[], industryId: IndustryId, label: s
   const ref = refs.industries[industryId];
   const out: string[] = [];
   const all = results.map((r) => r.summary.all);
+  /** 制度の選択肢ごとの集計は、途中で制度を変えなかった会社だけで行う */
+  const fixed = results.filter((r) => !r.job.change);
 
   out.push(`# シミュレーション結果：${industry.name}（${label}）`, '');
   out.push(`- 会社の数：${results.length}`);
@@ -185,7 +199,7 @@ export function summarize(results: JobResult[], industryId: IndustryId, label: s
   for (const stage of ['early', 'late'] as Stage[]) {
     out.push(`## 制度の選択肢ごとの平均：${STAGE_NAME[stage]}`, '');
     out.push(
-      '★ はそのカテゴリで最も良い値（利益・納得感・生存率は高いほど、離職率は低いほど良い）。利益は期間の「営業利益−臨時の支出（法令対応・是正・未払い残業代・納付金など）」の合計の平均。営業利益率は参考（会社の大きさを見ないので、需要を取りこぼしても下がらない）。',
+      '途中で制度を変えなかった会社だけで集計。★ はそのカテゴリで最も良い値（利益・納得感・生存率は高いほど、離職率は低いほど良い）。利益は期間の「営業利益−臨時の支出（法令対応・是正・未払い残業代・納付金など）」の合計の平均。営業利益率は参考（会社の大きさを見ないので、需要を取りこぼしても下がらない）。',
       '',
     );
     out.push(
@@ -193,7 +207,7 @@ export function summarize(results: JobResult[], industryId: IndustryId, label: s
       '|---|---|---|---|---|---|---|---|',
     );
     for (const key of POLICY_KEYS) {
-      const ms = (opts[key] as readonly string[]).map((o) => ({ o, ...marginal(results, key, o, stage) }));
+      const ms = (opts[key] as readonly string[]).map((o) => ({ o, ...marginal(fixed, key, o, stage) }));
       const best = (f: (m: (typeof ms)[number]) => number, hi = true) =>
         ms.reduce((a, b) => ((hi ? f(b) > f(a) : f(b) < f(a)) ? b : a)).o;
       const bm = best((m) => m.profit);
@@ -209,7 +223,7 @@ export function summarize(results: JobResult[], industryId: IndustryId, label: s
       if (bm === be && bm === ba) dominance.push(`${STAGE_NAME[stage]}の ${key}=${bm}（利益・納得感・離職率のすべてで最良）`);
       if (stage === 'late') {
         const early = (opts[key] as readonly string[])
-          .map((o) => ({ o, ...marginal(results, key, o, 'early') }))
+          .map((o) => ({ o, ...marginal(fixed, key, o, 'early') }))
           .reduce((a, b) => (b.profit > a.profit ? b : a)).o;
         stageShift.push(`${key}：創業期は ${early}、成熟期は ${bm}${early === bm ? '（同じ）' : ''}`);
       }
@@ -261,7 +275,28 @@ export function summarize(results: JobResult[], industryId: IndustryId, label: s
     );
   }
   out.push(...eventSections(results));
+  out.push(...changeSection(results));
   return out.join('\n');
+}
+
+/** 途中の制度変更と、不利益変更をめぐる訴え */
+function changeSection(results: JobResult[]): string[] {
+  const changed = results.filter((r) => r.job.change);
+  if (changed.length === 0) return [];
+  const applied = changed.filter((r) => r.summary.policyChanges > 0);
+  const seeded = applied.filter((r) => r.summary.disputeSeeds > 0);
+  const disputed = seeded.filter((r) => (r.summary.eventCounts.dispute_claim ?? 0) > 0);
+  const unseededDisputes = results.filter((r) => r.summary.disputeSeeds === 0 && (r.summary.eventCounts.dispute_claim ?? 0) > 0);
+  return [
+    '## 途中の制度変更',
+    '',
+    `- 途中で制度を1カテゴリ変える予定の会社：${changed.length}社（変える前に終わった会社を除くと ${applied.length}社）`,
+    `- そのうち、就業規則の変更で不利益変更を進めた（紛争の種を残した）会社：${seeded.length}社`,
+    `- そのうち、不利益変更をめぐる訴えが起きた会社：${disputed.length}社（${pct(disputed.length / Math.max(1, seeded.length), 0)}）`,
+    `- 紛争の種がないのに訴えが起きた会社：${unseededDisputes.length}社（0であること）`,
+    '- 上の「制度の選択肢ごとの平均」は、途中で制度を変えなかった会社だけで集計している',
+    '',
+  ];
 }
 
 const AXIS_NAME: Record<JudgmentAxis, [string, string]> = {

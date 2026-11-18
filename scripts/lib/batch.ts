@@ -4,8 +4,9 @@
  */
 import { getIndustry } from '../../src/engine/data';
 import { generateCompany, setFoundingPolicies } from '../../src/engine/generate';
-import { createRng, type Rng } from '../../src/engine/rng';
+import { createRng, deriveSeed, type Rng } from '../../src/engine/rng';
 import { summarizeRun, type RunSummary } from '../../src/engine/summary';
+import { changePolicies } from '../../src/engine/policyChange';
 import { runToEnd } from '../../src/engine/tick';
 import {
   BONUS_POLICIES,
@@ -19,6 +20,7 @@ import {
   LEGAL_RESPONSES,
   JUDGMENT_AXES,
   type IndustryData,
+  type ChangeMethod,
   type JudgmentStyle,
   type LegalResponse,
   type IndustryId,
@@ -33,7 +35,36 @@ export type Job = {
   legal: LegalResponse;
   /** イベントの判断の傾向（省略すると傾向なし＝無作為に近い選び方） */
   style?: JudgmentStyle;
+  /** 途中の制度変更（省略すると変えない） */
+  change?: PolicyChangePlan;
 };
+
+/** 途中で1カテゴリだけ制度を変える計画 */
+export type PolicyChangePlan = {
+  month: number;
+  category: keyof PolicySet;
+  option: string;
+  /** 給与や賞与が下がる人がいるときの進め方 */
+  method: ChangeMethod;
+  transition: boolean;
+};
+
+/** 途中で制度を変える月の範囲（2年目〜15年目） */
+const CHANGE_MONTH_RANGE = { min: 24, max: 180 };
+
+/** 途中の制度変更を抽選する（今の制度と違う選択肢を1つ選ぶ） */
+export function sampleChange(rng: Rng, industry: IndustryData, policies: PolicySet): PolicyChangePlan {
+  const opts = policyOptions(industry);
+  const category = rng.pick(Object.keys(opts) as (keyof PolicySet)[]);
+  const others = (opts[category] as readonly string[]).filter((o) => o !== policies[category]);
+  return {
+    month: rng.int(CHANGE_MONTH_RANGE.min, CHANGE_MONTH_RANGE.max),
+    category,
+    option: rng.pick(others),
+    method: rng.pick(['consent', 'rules'] as const),
+    transition: rng.chance(0.5),
+  };
+}
 
 /** 判断の傾向を抽選する（4軸それぞれ −1〜+1 の一様分布） */
 export function sampleStyle(rng: Rng): JudgmentStyle {
@@ -81,18 +112,27 @@ export function samplePolicies(rng: Rng, industry: IndustryData): PolicySet {
   };
 }
 
-/** 実行する会社の一覧をつくる（同じ baseSeed なら同じ一覧） */
-export function makeJobs(industryId: IndustryId, runs: number, baseSeed: number): Job[] {
+/**
+ * 実行する会社の一覧をつくる（同じ baseSeed なら同じ一覧）。
+ * changeShare の割合の会社は、途中で制度を1カテゴリ変える（変更の抽選は別の乱数なので、会社と制度の抽選はずれない）
+ */
+export function makeJobs(industryId: IndustryId, runs: number, baseSeed: number, changeShare = 0): Job[] {
   const industry = getIndustry(industryId);
   const rng = createRng(baseSeed);
-  return Array.from({ length: runs }, (_, run) => ({
-    run,
-    seed: rng.int(1, 2 ** 31 - 1),
-    industryId,
-    policies: samplePolicies(rng, industry),
-    legal: rng.pick(LEGAL_RESPONSES),
-    style: sampleStyle(rng),
-  }));
+  const changeRng = createRng(deriveSeed(baseSeed, 'policy-change'));
+  return Array.from({ length: runs }, (_, run) => {
+    const job: Job = {
+      run,
+      seed: rng.int(1, 2 ** 31 - 1),
+      industryId,
+      policies: samplePolicies(rng, industry),
+      legal: rng.pick(LEGAL_RESPONSES),
+      style: sampleStyle(rng),
+    };
+    const change = sampleChange(changeRng, industry, job.policies);
+    if (changeRng.next() < changeShare) job.change = change;
+    return job;
+  });
 }
 
 export function runJob(job: Job): JobResult {
@@ -100,7 +140,11 @@ export function runJob(job: Job): JobResult {
     generateCompany({ seed: job.seed, industryId: job.industryId, autoPlay: { legal: job.legal, style: job.style } }),
     job.policies,
   );
-  const end = runToEnd(c);
+  let end = runToEnd(c, job.change?.month ?? Infinity);
+  if (job.change && end.status === 'running') {
+    const next = { ...end.policies, [job.change.category]: job.change.option } as PolicySet;
+    end = runToEnd(changePolicies(end, next, { method: job.change.method, transition: job.change.transition }));
+  }
   return {
     job,
     foundingPatternId: c.profile.foundingPatternId,

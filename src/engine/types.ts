@@ -657,7 +657,7 @@ export type TargetEffect = {
   resign?: AttritionReason;
 };
 
-/** 判断の傾向の4軸（ステップ11の人事スタイル診断の軸）。プラス側／マイナス側 */
+/** 判断の傾向の4軸（自動で進めるときの選び方。人事スタイル診断には DIAGNOSIS_AXES を使う）。プラス側／マイナス側 */
 export const JUDGMENT_AXES = [
   'reward', // 個人に報いる ↔ 公平を守る
   'horizon', // 将来への投資 ↔ 今の利益
@@ -669,6 +669,19 @@ export type JudgmentAxis = (typeof JUDGMENT_AXES)[number];
 export type AxisMarks = Partial<Record<JudgmentAxis, number>>;
 /** 会社（プレイヤー）の判断の傾向。各軸 −1〜+1 */
 export type JudgmentStyle = Record<JudgmentAxis, number>;
+
+/**
+ * 人事スタイル診断の4軸（§9）。プラス側／マイナス側。
+ * 診断は制度の選び方と、イベントでの判断の両方から決める（組み合わせ方はステップ11）
+ */
+export const DIAGNOSIS_AXES = [
+  'outcome', // 成果 ↔ 安定
+  'control', // 統制 ↔ 自律
+  'develop', // 育成 ↔ 獲得
+  'proactive', // 先手 ↔ 後手
+] as const;
+export type DiagnosisAxis = (typeof DIAGNOSIS_AXES)[number];
+export type DiagnosisMarks = Partial<Record<DiagnosisAxis, number>>;
 
 /** 選択肢の効果。数値はすべてデータ側に書く */
 export type EventEffects = {
@@ -717,8 +730,10 @@ export type EventChoice = {
   effects: EventEffects;
   /** 学びの一言（社史レポートの解説に使う） */
   lesson?: string;
-  /** 判断の傾向の軸の印（自動で選ぶときと、人事スタイル診断に使う） */
+  /** 判断の傾向の軸の印（自動で選ぶときに使う） */
   axes?: AxisMarks;
+  /** 人事スタイル診断（§9）の軸の印。どの軸にも当てはまらない選択肢は省く */
+  diagnosis?: DiagnosisMarks;
   /** 法令のイベントを自動で進めるとき、この方針ならこの選択肢を選ぶ */
   auto?: LegalResponse[];
 };
@@ -781,6 +796,8 @@ export type DecisionRecord = {
   choiceIndex: number;
   targetId: string | null;
   axes: AxisMarks;
+  /** 人事スタイル診断の軸の印 */
+  diagnosis: DiagnosisMarks;
   /** 自動で選んだか */
   auto: boolean;
 };
