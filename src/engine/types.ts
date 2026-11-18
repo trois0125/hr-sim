@@ -942,4 +942,6 @@ export type SaveData = {
   version: typeof SAVE_VERSION;
   savedAt: string;
   company: CompanyState;
+  /** 画面の側で一緒に残したいもの（フィードなど）。エンジンは中身を見ない */
+  ui?: Record<string, unknown>;
 };

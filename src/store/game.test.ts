@@ -3,6 +3,7 @@ import { coef } from '../engine/coefficients';
 import { defaultPolicies } from '../engine/data';
 import { createGameStore, collectFeed } from './game';
 import { previewChange } from '../engine/policyChange';
+import { AUTOSAVE_KEY, memoryStorage } from './persist';
 import type { PolicySet } from '../engine/types';
 
 /** 画面のプレイヤーと同じ操作で、最後まで遊ぶ（タイマーは使わず、1か月ずつ進める） */
@@ -156,6 +157,17 @@ describe('1か月の進み具合（プログレスバー）', () => {
     if (!store.getState().company?.pendingDecisions.length) expect(store.getState().cycle).not.toBeNull();
   });
 
+  it('数字の根拠を開いている間は止まり、閉じると続きから進む', () => {
+    const store = createGameStore({ timers: false });
+    store.getState().newCandidate('trading');
+    store.getState().startGame(defaultPolicies);
+    expect(store.getState().cycle).not.toBeNull();
+    store.getState().openEvidence();
+    expect(store.getState().cycle).toBeNull();
+    store.getState().closeEvidence();
+    expect(store.getState().cycle).not.toBeNull();
+  });
+
   it('タイマーで1か月ずつ進み、判断待ちで止まり、答えると再開する', () => {
     vi.useFakeTimers();
     const store = createGameStore();
@@ -178,5 +190,103 @@ describe('1か月の進み具合（プログレスバー）', () => {
       expect(store.getState().company?.month).toBeGreaterThan(month);
     }
     store.getState().goto('title');
+  });
+});
+
+describe('自動セーブと再開（ステップ13）', () => {
+  /** 判断待ちを片づけながら n か月進める */
+  function advance(store: ReturnType<typeof createGameStore>, months: number) {
+    const target = (store.getState().company?.month ?? 0) + months;
+    for (let i = 0; i < 2000 && store.getState().screen === 'main' && (store.getState().company?.month ?? 0) < target; i++) {
+      const s = store.getState();
+      const d = s.company?.pendingDecisions[0];
+      if (d?.kind === 'milestone') s.answerMilestone(d.id, 'immediate');
+      else if (d?.kind === 'event') s.answerEvent(d.id, 0);
+      else if (d?.kind === 'review') s.finishReview(d.id);
+      else s.step();
+    }
+  }
+
+  it('途中で閉じても、続きから遊べる（同じ状態から、閉じなかった場合と同じ続きになる）', () => {
+    const storage = memoryStorage();
+    const a = createGameStore({ timers: false, storage });
+    a.getState().newCandidate('trading');
+    a.getState().startGame(defaultPolicies);
+    advance(a, 30);
+    const atClose = structuredClone(a.getState().company!);
+
+    // ページを閉じて開き直す（新しいストアが、同じ保存先を読む）
+    const b = createGameStore({ timers: false, storage });
+    expect(b.getState().savedGame).toMatchObject({ name: atClose.profile.name, month: atClose.month });
+    b.getState().continueGame();
+    expect(b.getState().screen).toBe('main');
+    expect(b.getState().speed).toBe(0); // 一時停止で再開する
+    expect(b.getState().company).toEqual(atClose);
+    expect(b.getState().feed.length).toBeGreaterThan(0);
+
+    // 続きを12か月：閉じなかった a と、開き直した b は同じになる
+    advance(a, 12);
+    advance(b, 12);
+    expect(b.getState().company?.history).toEqual(a.getState().company?.history);
+    expect(b.getState().company?.employees).toEqual(a.getState().company?.employees);
+  });
+
+  it('終わった会社は、再開すると社史レポートが出る', () => {
+    const storage = memoryStorage();
+    const a = createGameStore({ timers: false, storage });
+    a.getState().newCandidate('trading');
+    a.getState().startGame(defaultPolicies);
+    playToEnd(a);
+    const b = createGameStore({ timers: false, storage });
+    b.getState().continueGame();
+    expect(b.getState().screen).toBe('end');
+    expect(b.getState().company?.status).not.toBe('running');
+  });
+
+  it('新しく始めると、自動セーブは新しい会社で上書きされる', () => {
+    const storage = memoryStorage();
+    const a = createGameStore({ timers: false, storage });
+    a.getState().newCandidate('trading');
+    a.getState().startGame(defaultPolicies);
+    advance(a, 5);
+    const first = a.getState().company!.profile.name;
+    a.getState().goto('title');
+    a.getState().newCandidate('saas');
+    a.getState().startGame(defaultPolicies);
+    const b = createGameStore({ timers: false, storage });
+    b.getState().continueGame();
+    expect(b.getState().company?.profile.industryId).toBe('saas');
+    expect(b.getState().company?.month).toBe(0);
+    expect(first.length).toBeGreaterThan(0);
+  });
+
+  it('壊れたセーブは読まず、理由を出す。保存先がなくてもゲームは動く', () => {
+    const storage = memoryStorage();
+    storage.setItem(AUTOSAVE_KEY, '{broken');
+    const s = createGameStore({ timers: false, storage });
+    expect(s.getState().savedGame).toBeNull();
+    expect(s.getState().saveProblem).toBe('broken');
+
+    const none = createGameStore({ timers: false, storage: null });
+    none.getState().newCandidate('trading');
+    none.getState().startGame(defaultPolicies);
+    none.getState().step();
+    expect(none.getState().company?.history.length ?? 0).toBeGreaterThanOrEqual(0);
+    expect(none.getState().saveFailed).toBe(false);
+    expect(none.getState().canSave).toBe(false);
+    const ok = createGameStore({ timers: false, storage: memoryStorage() });
+    expect(ok.getState().canSave).toBe(true);
+    ok.getState().newCandidate('trading');
+    ok.getState().startGame(defaultPolicies);
+    ok.getState().goto('title');
+    expect(ok.getState().canSave).toBe(true); // 始めても、タイトルに戻っても変わらない
+  });
+
+  it('保存先に書けない（容量不足など）ときは、そのことを知らせる', () => {
+    const storage = { ...memoryStorage(), setItem: () => { throw new Error('QuotaExceededError'); } };
+    const s = createGameStore({ timers: false, storage });
+    s.getState().newCandidate('trading');
+    s.getState().startGame(defaultPolicies);
+    expect(s.getState().saveFailed).toBe(true);
   });
 });

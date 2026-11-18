@@ -2,6 +2,7 @@
  * データ（JSON）を型付きで読み込む窓口。
  * エンジンはこのファイル経由でデータを参照する（React には依存しない）。
  */
+import referencesJson from '../data/references.json';
 import coefficientsJson from '../data/coefficients.json';
 import foundingsJson from '../data/foundings.json';
 import manufacturingJson from '../data/industries/manufacturing.json';
@@ -20,6 +21,7 @@ import type {
   IndustryId,
   LocationData,
   PolicySet,
+  Sourced,
 } from './types';
 
 export type NamesData = {
@@ -62,4 +64,11 @@ export function getLocation(id: string): LocationData {
   const l = locations.find((x) => x.id === id);
   if (!l) throw new Error(`所在地がありません: ${id}`);
   return l;
+}
+
+/** 業種の参照値（統計など。ゲームの計算には使わず、画面とバランス確認で比べるためだけに使う） */
+export type IndustryReferences = Partial<Record<'attritionRate' | 'laborCostRatio' | 'overtimeHours', Sourced<number>>>;
+
+export function industryReferences(id: IndustryId): IndustryReferences {
+  return ((referencesJson as { industries: Record<string, IndustryReferences> }).industries[id] ?? {}) as IndustryReferences;
 }

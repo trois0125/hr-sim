@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Line, LineChart, ResponsiveContainer, Tooltip, YAxis } from 'recharts';
-import { getIndustry } from '../../engine/data';
+import { getIndustry, industryReferences } from '../../engine/data';
+import type { Sourced } from '../../engine/types';
 import type { CompanyState, Employee, PolicySet } from '../../engine/types';
 import { MONTHS_PER_YEAR } from '../../engine/types';
 import { optionName } from '../../store/game';
@@ -14,7 +15,7 @@ import { EmployeeDetail } from '../parts/EmployeeDetail';
 import { Lesson } from '../parts/Lesson';
 import { PolicyEditor } from '../parts/PolicyEditor';
 import { actions, useGame } from '../useGame';
-import { eventStrings, mainStrings as t, policyStrings } from '../strings';
+import { eventStrings, evidenceStrings, mainStrings as t, policyStrings, strings } from '../strings';
 import { dateLabel, pct, yen } from '../format';
 
 /** 1か月の進み具合。いまの月が始まるたびに、その月の長さで左から右へ伸びる。止まっている間は空 */
@@ -62,6 +63,16 @@ function TopBar({ company }: { company: CompanyState }) {
   );
 }
 
+/** 指標のそばに出す業種の目安（統計など）。出典は title で見せる */
+function Reference({ data, format }: { data: Sourced<number> | undefined; format: (v: number) => string }) {
+  if (!data) return null;
+  return (
+    <small className="metric-ref" title={data.source}>
+      {evidenceStrings.reference(format(data.value), evidenceStrings.basis[data.basis])}
+    </small>
+  );
+}
+
 function Metrics({ company }: { company: CompanyState }) {
   const h = company.history;
   const last = h[h.length - 1];
@@ -72,6 +83,7 @@ function Metrics({ company }: { company: CompanyState }) {
   const onLeave = company.employees.filter((e) => e.leave).length;
   const m = t.metrics;
   const industry = getIndustry(company.profile.industryId);
+  const refs = industryReferences(company.profile.industryId);
   // 飲食：店舗の数と店長のいない店。SaaS：いまの赤字が続いたら資金が何か月もつか
   const stores = industry.store ? storeCount(industry, company.employees.length) : 0;
   const managers = company.employees.filter((e) => !e.leave && industry.roles.find((r) => r.id === e.role)?.kind === 'management').length;
@@ -99,10 +111,12 @@ function Metrics({ company }: { company: CompanyState }) {
         <div className="metric">
           <dt>{m.laborCostRatio}</dt>
           <dd className="num">{last && last.revenue > 0 ? pct(last.labor.total / last.revenue) : '-'}</dd>
+          <Reference data={refs.laborCostRatio} format={pct} />
         </div>
         <div className="metric">
           <dt>{m.attrition}</dt>
           <dd className="num">{avgHead > 0 ? pct((resign / avgHead) * (MONTHS_PER_YEAR / Math.max(1, year.length))) : '-'}</dd>
+          <Reference data={refs.attritionRate} format={pct} />
         </div>
         <div className="metric">
           <dt>{m.engagement}</dt>
@@ -111,6 +125,7 @@ function Metrics({ company }: { company: CompanyState }) {
         <div className="metric">
           <dt>{m.overtime}</dt>
           <dd className="num">{last ? `${Math.round(last.overtimeHours)}時間` : '-'}</dd>
+          <Reference data={refs.overtimeHours} format={(v) => `${Math.round(v)}時間`} />
         </div>
         {onLeave > 0 && (
           <div className="metric">
@@ -291,6 +306,9 @@ function Policies({ company }: { company: CompanyState }) {
       <button className="btn" onClick={() => actions().openEditor()}>
         {t.reviewPolicies}
       </button>
+      <button className="btn evidence-open" onClick={() => actions().openEvidence()}>
+        {strings.evidence}
+      </button>
     </section>
   );
 }
@@ -299,6 +317,7 @@ export function Main() {
   const company = useGame((s) => s.company);
   const editorOpen = useGame((s) => s.editorOpen);
   const selected = useGame((s) => s.selectedEmployeeId);
+  const saveFailed = useGame((s) => s.saveFailed);
   if (!company) return null;
   const waiting = company.pendingDecisions.length > 0;
   return (
@@ -306,6 +325,11 @@ export function Main() {
       <TopBar company={company} />
       <main className="main-grid">
         <div className="side">
+          {saveFailed && (
+            <p className="save-failed" role="alert">
+              {strings.saveFailed}
+            </p>
+          )}
           {waiting && <p className="waiting-note">{t.waiting}</p>}
           <Metrics company={company} />
         </div>

@@ -18,6 +18,7 @@ import { isWaitingForDecision, tick } from '../engine/tick';
 import type { CompanyState, IndustryId, LegalResponse, PolicySet, VoiceTone } from '../engine/types';
 import { MONTHS_PER_YEAR } from '../engine/types';
 import { yen } from '../ui/format';
+import { browserStorage, readSave, writeSave, type SaveStorage } from './persist';
 import { feedStrings, policyStrings } from '../ui/strings';
 
 export type Screen = 'title' | 'howto' | 'generate' | 'policies' | 'main' | 'end';
@@ -50,6 +51,16 @@ export type GameState = {
   /** いま進んでいる1か月（始まった時刻と長さ。プログレスバー用）。止まっている間は null */
   cycle: { startedAt: number; ms: number } | null;
   lesson: LessonNote | null;
+  /** 自動セーブがあれば、その会社の名前・月・終わり方（タイトルの「つづきから」に出す） */
+  savedGame: { name: string; month: number; status: CompanyState['status'] } | null;
+  /** 自動セーブを読めなかったときの理由（壊れている・新しい版） */
+  saveProblem: 'broken' | 'newer' | null;
+  /** 保存先に書けなかったか（容量不足など） */
+  saveFailed: boolean;
+  /** 「数字の根拠」を開いているか（メイン画面の上に重ねる） */
+  evidenceOpen: boolean;
+  /** このブラウザで保存できるか（保存が止められている環境では false。タイトルの説明を変える） */
+  canSave: boolean;
 };
 
 export type GameActions = {
@@ -70,6 +81,10 @@ export type GameActions = {
   closeEditor(): void;
   selectEmployee(id: string | null): void;
   dismissLesson(): void;
+  /** 自動セーブから再開する */
+  continueGame(): void;
+  openEvidence(): void;
+  closeEvidence(): void;
 };
 
 export type GameStore = GameState & GameActions;
@@ -84,6 +99,11 @@ const initial: GameState = {
   editorOpen: false,
   lesson: null,
   cycle: null,
+  savedGame: null,
+  saveProblem: null,
+  saveFailed: false,
+  evidenceOpen: false,
+  canSave: false,
 };
 
 let seedCounter = 0;
@@ -143,11 +163,43 @@ export function optionName<K extends keyof PolicySet>(category: K, option: Polic
   return opts[option]?.[0] ?? String(option);
 }
 
-export function createGameStore(options: { timers?: boolean } = {}) {
+/** 自動セーブの間隔の下限（ミリ秒）。速い速度でも書き込みが続きすぎないように。最後の状態はあとから必ず書く */
+const SAVE_INTERVAL_MS = 1000;
+
+export function createGameStore(options: { timers?: boolean; storage?: SaveStorage | null } = {}) {
   const useTimers = options.timers ?? true;
+  const storage = options.storage === undefined ? browserStorage() : options.storage;
   let timer: ReturnType<typeof setTimeout> | null = null;
+  let lastSaveAt = 0;
+  let saveTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** 起動したときの自動セーブの様子 */
+  const loaded = readSave(storage);
+  const initialSaved: Pick<GameState, 'savedGame' | 'saveProblem'> = loaded.ok
+    ? { savedGame: { name: loaded.data.company.profile.name, month: loaded.data.company.month, status: loaded.data.company.status }, saveProblem: null }
+    : { savedGame: null, saveProblem: loaded.reason === 'empty' ? null : loaded.reason };
 
   const store = createStore<GameStore>()((set, get) => {
+    /** いまの会社を保存する（すぐに書く） */
+    const saveNow = () => {
+      if (saveTimer) clearTimeout(saveTimer);
+      saveTimer = null;
+      const c = get().company;
+      if (!c || !storage) return;
+      lastSaveAt = Date.now();
+      const ok = writeSave(storage, c, { feed: get().feed });
+      set({ saveFailed: !ok, savedGame: ok ? { name: c.profile.name, month: c.month, status: c.status } : get().savedGame });
+    };
+    /** 保存する。直前に保存したばかりなら少し待ってから（最後の状態は必ず書く） */
+    const save = () => {
+      if (!storage) return;
+      const wait = SAVE_INTERVAL_MS - (Date.now() - lastSaveAt);
+      if (!useTimers || wait <= 0) {
+        saveNow();
+        return;
+      }
+      if (!saveTimer) saveTimer = setTimeout(saveNow, wait);
+    };
     /** 状態を新しくし、フィードを足す。終わっていたら終了画面へ */
     const commit = (next: CompanyState, extra: Partial<GameState> = {}) => {
       const prev = get().company;
@@ -163,7 +215,10 @@ export function createGameStore(options: { timers?: boolean } = {}) {
         ...extra,
         ...(ended ? { screen: 'end' as const, speed: 0 } : {}),
       });
-      if (ended) stopTimer();
+      if (ended) {
+        stopTimer();
+        saveNow(); // 終わったときは社史を後で見られるよう、すぐに書く
+      } else save();
     };
     const mutate = (f: (c: CompanyState) => void, extra: Partial<GameState> = {}) => {
       const c = get().company;
@@ -178,8 +233,16 @@ export function createGameStore(options: { timers?: boolean } = {}) {
     };
     /** 時間が進む状態か（速度が0でなく、判断待ちでも見直しの画面を開いてもいない） */
     const running = () => {
-      const { speed, screen, company, editorOpen } = get();
-      return speed > 0 && screen === 'main' && !!company && company.status === 'running' && !isWaitingForDecision(company) && !editorOpen;
+      const { speed, screen, company, editorOpen, evidenceOpen } = get();
+      return (
+        speed > 0 &&
+        screen === 'main' &&
+        !!company &&
+        company.status === 'running' &&
+        !isWaitingForDecision(company) &&
+        !editorOpen &&
+        !evidenceOpen // 数字の根拠を読んでいる間は止める
+      );
     };
     /** 次の1か月を始める（止まる状態なら止める）。状態が変わる操作のたびに呼ぶ */
     const schedule = () => {
@@ -195,13 +258,36 @@ export function createGameStore(options: { timers?: boolean } = {}) {
 
     return {
       ...initial,
+      ...initialSaved,
+      canSave: storage !== null,
       goto(screen) {
         if (screen === 'title') {
           stopTimer();
-          set({ ...initial });
+          if (saveTimer) saveNow(); // 書きかけの保存を先に書く
+          set({ ...initial, savedGame: get().savedGame, saveProblem: get().saveProblem, saveFailed: get().saveFailed, canSave: get().canSave });
           return;
         }
         set({ screen });
+      },
+      continueGame() {
+        const r = readSave(storage);
+        if (!r.ok) {
+          set({ savedGame: null, saveProblem: r.reason === 'empty' ? null : r.reason });
+          return;
+        }
+        const company = r.data.company;
+        const feed = Array.isArray(r.data.ui?.feed) ? (r.data.ui.feed as FeedItem[]) : [];
+        feedId = Math.max(feedId, ...feed.map((f) => f.id), 0);
+        // 再開は一時停止で始める（どこまで進んでいたかを見てから再開できるように）
+        set({ ...initial, savedGame: get().savedGame, canSave: get().canSave, company, feed, screen: company.status === 'running' ? 'main' : 'end', speed: 0 });
+      },
+      openEvidence() {
+        set({ evidenceOpen: true });
+        schedule();
+      },
+      closeEvidence() {
+        set({ evidenceOpen: false });
+        schedule();
       },
       newCandidate(industryId) {
         set({ candidate: generateCompany({ seed: newSeed(), industryId, autoPlay: null }) });
@@ -210,7 +296,9 @@ export function createGameStore(options: { timers?: boolean } = {}) {
         const cand = get().candidate;
         if (!cand) return;
         const company = setFoundingPolicies(structuredClone(cand), policies);
-        set({ ...initial, screen: 'main', company, speed: 1 });
+        // 新しく始めると、自動セーブはこの会社で上書きされる（画面で先に確かめている）
+        set({ ...initial, canSave: get().canSave, screen: 'main', company, speed: 1 });
+        saveNow();
         schedule();
       },
       step() {
