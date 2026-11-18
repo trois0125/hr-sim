@@ -5,7 +5,9 @@ import type { CompanyState, Employee, PolicySet } from '../../engine/types';
 import { MONTHS_PER_YEAR } from '../../engine/types';
 import { optionName } from '../../store/game';
 import { DEV_SPEEDS, SPEEDS, STAFF_PAGE } from '../config';
+import { usesLayerView } from '../../engine/layers';
 import { DecisionModal } from '../parts/DecisionModal';
+import { LayerView } from '../parts/LayerView';
 import { EmployeeDetail } from '../parts/EmployeeDetail';
 import { Lesson } from '../parts/Lesson';
 import { PolicyEditor } from '../parts/PolicyEditor';
@@ -194,7 +196,6 @@ function Staff({ company }: { company: CompanyState }) {
           {t.showMore(list.length - shown)}
         </button>
       )}
-      {company.employees.length >= 100 && <p className="slip-note">{t.layersNote}</p>}
     </section>
   );
 }
@@ -268,7 +269,7 @@ export function Main() {
         </div>
         <div className="main-center">
           <Feed />
-          <Staff company={company} />
+          {usesLayerView(company.employees.length) ? <LayerView company={company} /> : <Staff company={company} />}
         </div>
         <div className="side side-right">
           <Policies company={company} />

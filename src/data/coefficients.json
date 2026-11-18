@@ -1856,5 +1856,19 @@
     "unit": "点",
     "basis": "assumption",
     "source": "仮置き。制度の見直しの試算で、納得感の差が0.5点未満なら「ほぼ変わらない」と出す"
+  },
+  {
+    "id": "ui.layer_view_threshold",
+    "value": 100,
+    "unit": "人",
+    "basis": "assumption",
+    "source": "DESIGN.md §4.1。社員がこの人数を超えたら、社員の一覧を層ごとの表示に切り替える"
+  },
+  {
+    "id": "ui.key_people_max",
+    "value": 20,
+    "unit": "人",
+    "basis": "assumption",
+    "source": "DESIGN.md §4.1。層の表示に切り替えたあとも、一人ずつ見せる主要人物の上限"
   }
 ]

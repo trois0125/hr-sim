@@ -190,7 +190,6 @@ export const mainStrings = {
   secondee: '出向',
   keyPerson: '主要',
   waiting: '判断を待っています',
-  layersNote: '※ 100人を超えたら、層ごとの表示に切り替わります（ステップ10で作ります）。',
   showMore: (n: number) => `ほか${n}人を表示`,
 } as const;
 
@@ -365,4 +364,32 @@ export const eventStrings = {
   /** 休職中の扱いの注記 */
   leaveNote:
     '※ 休職中は給与を払いません（育児休業給付・介護休業給付は雇用保険、傷病手当金は健康保険から出ます）。社会保険料の会社負担は、育児休業中だけ免除されます。',
+} as const;
+
+/** 層の表示（社員が100人を超えたとき。§4.1） */
+export const layerStrings = {
+  lead: (n: number) => `社員が${n}人になったので、職種と年代ごとの層でまとめて表示しています。層を押すと内訳が見られます。`,
+  keyPeopleTitle: '主要人物',
+  reasons: { key: '主要', founding: '創業メンバー', ace: 'エース' },
+  layersTitle: '層',
+  band: (band: number | null) => (band === null ? 'パート' : band <= 20 ? '20代以下' : band >= 60 ? '60代以上' : `${band}代`),
+  name: (role: string, band: number | null) => `${role}・${layerStrings.band(band)}`,
+  gradeFilter: '等級',
+  allGrades: 'すべて',
+  gradeOption: (g: number) => `等級${g}`,
+  columns: {
+    layer: '層',
+    count: '人数',
+    engagement: '納得感',
+    drag: 'いちばんの不満',
+    resignations: '退職（12か月）',
+    salary: '平均月給',
+  },
+  detailTitle: '層の内訳',
+  spread: (sd: number) => `ばらつき ±${sd.toFixed(0)}`,
+  low: (n: number) => `不満の強い人 ${n}人`,
+  onLeave: (n: number) => `休職中 ${n}人`,
+  lowestTitle: '納得感の低い人',
+  factorsTitle: '納得感の内訳（層の平均。50が中立）',
+  none: '-',
 } as const;

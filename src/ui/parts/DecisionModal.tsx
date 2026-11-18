@@ -141,9 +141,9 @@ function EventSlip({ d }: { d: PendingDecision }) {
     <Slip kind={eventStrings.categories[ev.category]} title={ev.title}>
       <p>{renderText(ev.body, d.vars)}</p>
       {ev.onTrigger && (
-        <p className="slip-note">
+        <div className="slip-note">
           {decisionStrings.happened}：<Impacts effects={ev.onTrigger} />
-        </p>
+        </div>
       )}
       <h3 className="sheet-title">{decisionStrings.impactTitle}</h3>
       <ol className="option-list">

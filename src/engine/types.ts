@@ -304,6 +304,8 @@ export type Departure = {
   employeeId: string;
   name: string;
   role: RoleId;
+  /** 雇用形態（層ごとの離職を数えるため。古い記録には無い） */
+  employmentType?: EmploymentType;
   /** 去った月（創業からの経過月） */
   month: number;
   /** resignation＝退職、return＝出向者の帰任（離職率には数えない） */
