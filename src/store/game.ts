@@ -12,6 +12,7 @@ import { createStore } from 'zustand/vanilla';
 import { coef } from '../engine/coefficients';
 import { localizeEvent } from '../engine/eventData';
 import { getEvent, addReflection, renderText, resolveEvent, resolveMilestone, resolveReview } from '../engine/events';
+import type { Period } from '../engine/dashboard';
 import { initiativeAvailability, startInitiative as startInitiativeInEngine } from '../engine/initiatives';
 import { getProgram, stopProgram as stopProgramInEngine } from '../engine/programs';
 import { generateCompany, setFoundingPolicies } from '../engine/generate';
@@ -65,7 +66,13 @@ export type GameState = {
   canSave: boolean;
   /** 施策のメニューを開いているか */
   initiativesOpen: boolean;
+  /** メイン画面のタブ（現場／事業／組織。§14.2） */
+  view: MainView;
+  /** 事業・組織のグラフの期間 */
+  chartPeriod: Period;
 };
+
+export type MainView = 'floor' | 'business' | 'org';
 
 export type GameActions = {
   goto(screen: Screen): void;
@@ -96,6 +103,8 @@ export type GameActions = {
   /** 施策のメニューを開く・閉じる（開いている間は時間を止める） */
   openInitiatives(): void;
   closeInitiatives(): void;
+  setView(view: MainView): void;
+  setChartPeriod(period: Period): void;
 };
 
 export type GameStore = GameState & GameActions;
@@ -116,6 +125,8 @@ const initial: GameState = {
   evidenceOpen: false,
   canSave: false,
   initiativesOpen: false,
+  view: 'floor',
+  chartPeriod: 'year1',
 };
 
 let seedCounter = 0;
@@ -308,6 +319,12 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
         feedId = Math.max(feedId, ...feed.map((f) => f.id), 0);
         // 再開は一時停止で始める（どこまで進んでいたかを見てから再開できるように）
         set({ ...initial, savedGame: get().savedGame, canSave: get().canSave, company, feed, screen: company.status === 'running' ? 'main' : 'end', speed: 0 });
+      },
+      setView(view) {
+        set({ view });
+      },
+      setChartPeriod(chartPeriod) {
+        set({ chartPeriod });
       },
       openInitiatives() {
         set({ initiativesOpen: true });

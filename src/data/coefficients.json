@@ -1844,6 +1844,20 @@
     "source": "仮置き。メイン画面のフィードに残す件数の上限（古いものから消す。記録そのものは状態に残る）"
   },
   {
+    "id": "ui.economy.boom_threshold",
+    "value": 0.05,
+    "unit": "景気の値",
+    "basis": "assumption",
+    "source": "仮置き。事業タブで「好況」と出す景気の下限。ゲームの景気の分布（商社20社×25年）で上位およそ15%にあたる値"
+  },
+  {
+    "id": "ui.economy.slump_threshold",
+    "value": -0.08,
+    "unit": "景気の値",
+    "basis": "assumption",
+    "source": "仮置き。事業タブで「不況」と出す景気の上限。ゲームの景気の分布（商社20社×25年）で下位およそ25%にあたる値（景気後退の月が多く含まれる）"
+  },
+  {
     "id": "ui.forecast.cost_threshold",
     "value": 0.01,
     "unit": "比",

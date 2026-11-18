@@ -14,9 +14,10 @@ import { LayerView } from '../parts/LayerView';
 import { EmployeeDetail } from '../parts/EmployeeDetail';
 import { Lesson } from '../parts/Lesson';
 import { InitiativeMenu, ProgramsPanel } from '../parts/Initiatives';
+import { BusinessView, OrgView } from '../parts/Dashboard';
 import { PolicyEditor } from '../parts/PolicyEditor';
 import { actions, useGame } from '../useGame';
-import { eventStrings, evidenceStrings, mainStrings as t, policyStrings, strings } from '../strings';
+import { dashboardStrings, eventStrings, evidenceStrings, mainStrings as t, policyStrings, strings } from '../strings';
 import { dateLabel, pct, yen } from '../format';
 
 /** 1か月の進み具合。いまの月が始まるたびに、その月の長さで左から右へ伸びる。止まっている間は空 */
@@ -32,6 +33,21 @@ function MonthProgress() {
         />
       )}
     </div>
+  );
+}
+
+/** 現場・事業・組織のタブ（§14.2） */
+function ViewTabs() {
+  const view = useGame((s) => s.view);
+  const views = ['floor', 'business', 'org'] as const;
+  return (
+    <nav className="view-tabs" aria-label={dashboardStrings.tabsLabel}>
+      {views.map((v) => (
+        <button key={v} className="view-tab" aria-pressed={view === v} onClick={() => actions().setView(v)}>
+          {dashboardStrings.tabs[v]}
+        </button>
+      ))}
+    </nav>
   );
 }
 
@@ -319,12 +335,25 @@ export function Main() {
   const editorOpen = useGame((s) => s.editorOpen);
   const selected = useGame((s) => s.selectedEmployeeId);
   const saveFailed = useGame((s) => s.saveFailed);
+  const view = useGame((s) => s.view);
   if (!company) return null;
   const waiting = company.pendingDecisions.length > 0;
   return (
     <>
       <TopBar company={company} />
-      <main className="main-grid">
+      <ViewTabs />
+      {view === 'business' && (
+        <main className="dashboard-page">
+          <BusinessView company={company} />
+        </main>
+      )}
+      {view === 'org' && (
+        <main className="dashboard-page">
+          <OrgView company={company} />
+        </main>
+      )}
+      {view === 'floor' && (
+        <main className="main-grid">
         <div className="side">
           {saveFailed && (
             <p className="save-failed" role="alert">
@@ -342,7 +371,8 @@ export function Main() {
           <Policies company={company} />
           <ProgramsPanel company={company} />
         </div>
-      </main>
+        </main>
+      )}
       {editorOpen ? <PolicyEditor company={company} /> : <DecisionModal company={company} />}
       {!waiting && !editorOpen && <InitiativeMenu company={company} />}
       {selected && !editorOpen && !waiting && <EmployeeDetail company={company} id={selected} />}

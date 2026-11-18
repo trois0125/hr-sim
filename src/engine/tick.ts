@@ -22,6 +22,7 @@ import { generateVoices } from './voices';
 import { runEvents } from './eventTriggers';
 import { processLeaves } from './leave';
 import { programMonthlyCost } from './programs';
+import { orgSnapshot } from './dashboard';
 import { checkObligations, checkViolations, legalMonthlyCost } from './laws';
 import { currentResistance } from './policyChange';
 import { createRng, deriveSeed, getStreamsState, restoreStreams } from './rng';
@@ -260,6 +261,7 @@ export function tickInPlace(state: CompanyState): CompanyState {
   });
 
   record.headcount = state.employees.length;
+  record.org = orgSnapshot(state.employees);
   record.avgEngagement =
     state.employees.length > 0
       ? state.employees.reduce((s, e) => s + e.engagement, 0) / state.employees.length

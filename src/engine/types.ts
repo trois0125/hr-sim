@@ -401,6 +401,18 @@ export type LaborCost = {
   total: number;
 };
 
+/** 月末の組織の様子（組織タブのグラフに使う。ステップ15） */
+export type OrgSnapshot = {
+  /** 納得感の6要因の平均（働いている人。点数のない人は除く）。いなければ null */
+  factors: FactorScores | null;
+  /** 職種ごとの人数（休職中を含む） */
+  roles: Record<RoleId, number>;
+  /** パートの人数 */
+  part: number;
+  /** 休職中の人数 */
+  onLeave: number;
+};
+
 /** 月ごとの記録（§2.1 の10） */
 export type MonthlyRecord = {
   month: number;
@@ -439,6 +451,8 @@ export type MonthlyRecord = {
   funding?: number;
   /** その他の固定費のうち、個別制度の維持費（古い記録には無い） */
   programCost?: number;
+  /** 月末の組織の様子（§14.2 の組織タブ。古い記録には無い） */
+  org?: OrgSnapshot;
   cash: number;
   /** その月の制度（人事スタイル診断で「選んでいた期間の長さ」を数えるため。古い記録には無い） */
   policies?: PolicySet;
