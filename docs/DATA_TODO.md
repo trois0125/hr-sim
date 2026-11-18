@@ -1,6 +1,6 @@
 # 統計で確認が必要な値（DATA_TODO）
 
-source に `TODO` が付いた値の一覧（15件。根拠付きの数値は全部で355件で、いまはすべて `basis: "assumption"`）。
+source に `TODO` が付いた値の一覧（20件。根拠付きの数値は全部で366件で、いまはすべて `basis: "assumption"`）。
 統計で確認できたら値を直し、`basis` を `statistic` にして source を統計名・表番号に書き換える。ステップ6（バランス確認）の前にまとめて差し替える予定。
 
 このファイルは `npx tsx scripts/data-todo.ts` で作り直す（手で編集しない）。
@@ -22,3 +22,8 @@ source に `TODO` が付いた値の一覧（15件。根拠付きの数値は全
 | `coefficients.json` | `[policy.overtime.cap.special]` | 80 | 時間/月 | 仮置き。特別条項つき36協定の上限（月100時間未満・複数月平均80時間以内・年720時間以内、月45時間超は年6か月まで）を月80時間に単純化。TODO: 要確認（年6か月の制限をゲームでどう扱うかはステップ7で決める） |
 | `coefficients.json` | `[market.recession.monthly_probability]` | 0.01 | 確率/月 | 仮置き。景気後退が始まる確率（平均で約8年に1回）。TODO: 要確認（景気基準日付の後退局面の頻度） |
 | `coefficients.json` | `[law.inspection.monthly_probability]` | 0.003 | 確率/月 | 仮置き。1社が1か月に労働基準監督署の臨検（定期監督）を受ける確率（年3〜4%）。TODO: 要確認（労働基準監督年報の監督実施件数 ÷ 事業場数） |
+| `coefficients.json` | `[leave.parental.female_months]` | 12 | か月 | 仮置き。女性の育児休業の期間。雇用均等基本調査（取得期間の分布）で確認する。TODO: 要確認 |
+| `coefficients.json` | `[leave.parental.male_months]` | 1 | か月 | 仮置き。男性の育児休業の期間。雇用均等基本調査（取得期間の分布）で確認する。TODO: 要確認 |
+| `coefficients.json` | `[leave.parental.return_rate]` | 0.9 | 確率 | 仮置き。育児休業から復帰する割合。雇用均等基本調査（育児休業後の復職者割合）で確認する。TODO: 要確認 |
+| `coefficients.json` | `[leave.sick.months]` | 6 | か月 | 仮置き。メンタル不調・健康被害による私傷病休職の期間。労働安全衛生調査・JILPTの調査で確認する。TODO: 要確認 |
+| `coefficients.json` | `[leave.sick.return_rate]` | 0.55 | 確率 | 仮置き。私傷病休職から復帰する割合。JILPT「メンタルヘルス、私傷病などの治療と職業生活の両立支援に関する調査」（休職者のうち退職した割合）で確認する。TODO: 要確認 |

@@ -4,7 +4,8 @@
 import referencesJson from '../../src/data/references.json';
 import { getIndustry } from '../../src/engine/data';
 import type { PeriodMetrics } from '../../src/engine/summary';
-import { ATTRITION_REASONS, type IndustryId, type PolicySet } from '../../src/engine/types';
+import { eventDefs } from '../../src/engine/eventData';
+import { ATTRITION_REASONS, JUDGMENT_AXES, type IndustryId, type JudgmentAxis, type PolicySet } from '../../src/engine/types';
 import { policyOptions, type JobResult } from './batch';
 
 type Sourced = { value: number; source: string; basis: string };
@@ -63,6 +64,7 @@ export function toCsv(results: JobResult[]): string {
     'variant',
     ...POLICY_KEYS,
     'legal',
+    ...JUDGMENT_AXES.map((a) => `style_${a}`),
     'status',
     'months',
     'finalHeadcount',
@@ -71,6 +73,8 @@ export function toCsv(results: JobResult[]): string {
     ...METRICS.map((m) => `early_${m}`),
     ...METRICS.map((m) => `late_${m}`),
     ...ATTRITION_REASONS.map((r) => `reason_${r}`),
+    'events',
+    'leaves',
   ];
   const rows = results.map((r) => {
     const s = r.summary;
@@ -83,6 +87,7 @@ export function toCsv(results: JobResult[]): string {
       r.variantId,
       ...POLICY_KEYS.map((k) => r.job.policies[k]),
       r.job.legal,
+      ...JUDGMENT_AXES.map((a) => (r.job.style ? r.job.style[a].toFixed(3) : '')),
       s.status,
       s.months,
       s.finalHeadcount,
@@ -91,6 +96,8 @@ export function toCsv(results: JobResult[]): string {
       ...period(s.early),
       ...period(s.late),
       ...ATTRITION_REASONS.map((x) => String(s.reasons[x])),
+      s.events,
+      s.leaves,
     ].join(',');
   });
   return [head.join(','), ...rows].join('\n') + '\n';
@@ -253,7 +260,59 @@ export function summarize(results: JobResult[], industryId: IndustryId, label: s
       '',
     );
   }
+  out.push(...eventSections(results));
   return out.join('\n');
+}
+
+const AXIS_NAME: Record<JudgmentAxis, [string, string]> = {
+  reward: ['個人に報いる', '公平を守る'],
+  horizon: ['将来への投資', '今の利益'],
+  rules: ['法令・ルール重視', '柔軟さ重視'],
+  people: ['人を守る', '入れ替える'],
+};
+
+/** イベント（ステップ8）：発生の回数と、判断の傾向による違い */
+function eventSections(results: JobResult[]): string[] {
+  const out: string[] = [];
+  const years = results.reduce((s, r) => s + r.summary.months, 0) / 12;
+  out.push('## イベント', '');
+  out.push(
+    `- 法令以外のイベント：年 ${num(results.reduce((s, r) => s + r.summary.events, 0) / years, 2)} 回（1社あたり ${num(mean(results.map((r) => r.summary.events)), 1)} 回）`,
+    `- 休職：1社あたり ${num(mean(results.map((r) => r.summary.leaves)), 1)} 人`,
+    '',
+  );
+  out.push('| イベント | 起き方 | 起きた会社 | 10年あたりの回数 |', '|---|---|---|---|');
+  for (const e of eventDefs) {
+    const n = results.reduce((s, r) => s + (r.summary.eventCounts[e.id] ?? 0), 0);
+    const companies = results.filter((r) => (r.summary.eventCounts[e.id] ?? 0) > 0).length;
+    out.push(`| ${e.title}（${e.id}） | ${e.trigger.type} | ${pct(companies / results.length, 0)} | ${num((n / years) * 10, 2)} |`);
+  }
+  out.push('');
+
+  const styled = results.filter((r) => r.job.style);
+  if (styled.length === 0) return out;
+  out.push(
+    '### 判断の傾向による違い',
+    '',
+    '各軸の傾向（−1〜+1）が +0.33 より大きい会社と −0.33 より小さい会社を比べる（ほかの軸と制度は抽選なので、その分の誤差を含む）。',
+    '',
+    '| 軸 | 傾向 | 社数 | 利益の合計・創業期（億円） | 利益の合計・成熟期（億円） | 納得感 | 離職率 | 倒産 |',
+    '|---|---|---|---|---|---|---|---|',
+  );
+  const threshold = 1 / 3;
+  for (const a of JUDGMENT_AXES) {
+    for (const [side, test] of [
+      [0, (v: number) => v > threshold],
+      [1, (v: number) => v < -threshold],
+    ] as const) {
+      const rs = styled.filter((r) => test(r.job.style?.[a] ?? 0));
+      out.push(
+        `| ${AXIS_NAME[a][0]} ↔ ${AXIS_NAME[a][1]} | ${AXIS_NAME[a][side]} | ${rs.length} | ${num(mean(rs.map((r) => (r.summary.early?.totalNetProfit ?? 0) / 1e8)), 2)} | ${num(mean(rs.map((r) => (r.summary.late?.totalNetProfit ?? 0) / 1e8)), 2)} | ${num(mean(rs.map((r) => r.summary.all.engagement)))} | ${pct(mean(rs.map((r) => r.summary.all.attritionRate)))} | ${pct(rs.filter((r) => r.summary.status === 'bankrupt').length / Math.max(1, rs.length))} |`,
+      );
+    }
+  }
+  out.push('');
+  return out;
 }
 
 /** 標準から1カテゴリだけ変えた比較（同じ会社どうしで比べる） */

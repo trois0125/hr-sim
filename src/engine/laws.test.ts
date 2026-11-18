@@ -261,13 +261,17 @@ describe('特別条項と長時間労働', () => {
     expect(c.policies.overtime).toBe('limit45');
   });
 
-  it('月45時間を超える残業で健康被害が起き、その人は働けなくなる', () => {
+  it('月45時間を超える残業で健康被害が起き、その人は私傷病で休職する', () => {
     const c = company(5);
+    c.autoPlay = null;
     for (const e of c.employees) e.overtimeHours = 80;
     checkViolations(c, { rng: always, overtimeHours: 80, resigned: [] });
-    expect(c.employees).toHaveLength(4);
-    expect(c.departures.at(-1)?.reason).toBe('workload');
-    expect(c.pendingDecisions.some((d) => d.eventId === 'overwork_health')).toBe(true);
+    expect(c.employees).toHaveLength(5);
+    const onLeave = c.employees.filter((e) => e.leave);
+    expect(onLeave).toHaveLength(1);
+    expect(onLeave[0]?.leave?.kind).toBe('sick');
+    const d = c.pendingDecisions.find((x) => x.eventId === 'overwork_health');
+    expect(d?.targetId).toBe(onLeave[0]?.id);
   });
 
   it('月45時間以内なら健康被害は起きない', () => {

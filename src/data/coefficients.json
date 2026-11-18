@@ -1716,5 +1716,82 @@
     "unit": "点",
     "basis": "assumption",
     "source": "仮置き。違反による「雇用の安定」の低下の上限"
+  },
+  {
+    "id": "event.monthly_probability",
+    "value": 0.166667,
+    "unit": "確率/月",
+    "basis": "assumption",
+    "source": "仮置き（ユーザーと決定）。法令の節目・違反と、連鎖イベント・景気後退への対応を除いたイベントが、平均で半年に1回起きる"
+  },
+  {
+    "id": "event.cooldown_months",
+    "value": 36,
+    "unit": "か月",
+    "basis": "assumption",
+    "source": "仮置き。同じイベントが次に起きるまで空ける月数の標準（25年で同じイベントは多くて数回）"
+  },
+  {
+    "id": "event.auto.choice_noise",
+    "value": 0.6,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。自動で選ぶとき、判断の傾向による点数に足すばらつきの幅（傾向が0なら無作為に選ぶのと同じ）"
+  },
+  {
+    "id": "leave.parental.female_months",
+    "value": 12,
+    "unit": "か月",
+    "basis": "assumption",
+    "source": "仮置き。女性の育児休業の期間。雇用均等基本調査（取得期間の分布）で確認する。TODO: 要確認"
+  },
+  {
+    "id": "leave.parental.male_months",
+    "value": 1,
+    "unit": "か月",
+    "basis": "assumption",
+    "source": "仮置き。男性の育児休業の期間。雇用均等基本調査（取得期間の分布）で確認する。TODO: 要確認"
+  },
+  {
+    "id": "leave.parental.return_rate",
+    "value": 0.9,
+    "unit": "確率",
+    "basis": "assumption",
+    "source": "仮置き。育児休業から復帰する割合。雇用均等基本調査（育児休業後の復職者割合）で確認する。TODO: 要確認"
+  },
+  {
+    "id": "leave.care.months",
+    "value": 3,
+    "unit": "か月",
+    "basis": "assumption",
+    "source": "仮置き。介護休業の期間。育児・介護休業法の上限（対象家族1人につき通算93日）を3か月として扱う"
+  },
+  {
+    "id": "leave.care.return_rate",
+    "value": 0.85,
+    "unit": "確率",
+    "basis": "assumption",
+    "source": "仮置き。介護休業から復帰する割合"
+  },
+  {
+    "id": "leave.sick.months",
+    "value": 6,
+    "unit": "か月",
+    "basis": "assumption",
+    "source": "仮置き。メンタル不調・健康被害による私傷病休職の期間。労働安全衛生調査・JILPTの調査で確認する。TODO: 要確認"
+  },
+  {
+    "id": "leave.sick.return_rate",
+    "value": 0.55,
+    "unit": "確率",
+    "basis": "assumption",
+    "source": "仮置き。私傷病休職から復帰する割合。JILPT「メンタルヘルス、私傷病などの治療と職業生活の両立支援に関する調査」（休職者のうち退職した割合）で確認する。TODO: 要確認"
+  },
+  {
+    "id": "hiring.intensity_fee_elasticity",
+    "value": 1,
+    "unit": "弾力性",
+    "basis": "assumption",
+    "source": "仮置き。採用の強さを上げたときの1人あたりの採用費の伸び（強さ1.5倍で採用費も1.5倍。求人広告・紹介手数料の上乗せ）"
   }
 ]

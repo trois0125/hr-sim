@@ -14,6 +14,7 @@ import { coefGroup } from './coefficients';
 import { gameDate, monthIndexOf } from './calendar';
 import { addExtraordinaryCost, pushDecision } from './events';
 import { overtimePay } from './finance';
+import { startLeave } from './leave';
 import { laws } from './lawData';
 import { overtimeCap } from './performance';
 import type { Rng } from './rng';
@@ -325,41 +326,23 @@ function overworkHealth(state: CompanyState, ctx: ViolationContext): void {
   const healthRule = activeCompliance(state).find((c) => c.ruleId === 'health_management_50');
   const mult = healthRule && healthRule.status === 'noncompliant' ? k.healthNoDoctorMult : 1;
   const p = (k.healthAt80 * mult * (ctx.overtimeHours - k.limitHours)) / (k.specialCap - k.limitHours);
-  const victims = state.employees.filter((e) => e.overtimeHours > k.limitHours && ctx.rng.next() < p);
+  const victims = state.employees.filter((e) => !e.leave && e.overtimeHours > k.limitHours && ctx.rng.next() < p);
   const victim = victims[0];
   if (!victim) return;
-  // 働けなくなった人は退職として扱う（休職は扱わない単純化）
-  state.employees = state.employees.filter((e) => e.id !== victim.id);
-  state.departures.push({
-    employeeId: victim.id,
-    name: victim.name,
-    role: victim.role,
-    month: state.month,
-    kind: 'resignation',
-    reason: 'workload',
-    age: victim.age,
-    tenureMonths: victim.tenureMonths,
-    salaryMonthly: victim.salaryMonthly,
-    engagement: victim.engagement,
-    isKeyPerson: victim.isKeyPerson,
-    factorScores: victim.factorScores,
-  });
+  // 働けなくなった人は私傷病で休職する（期間が終わると、復帰するか退職するかが決まる。leave.ts）
+  startLeave(victim, 'sick', state.month);
   state.legal.log.push({
     month: state.month,
     ruleId: null,
     kind: 'health',
-    text: `${victim.name}さんが長時間労働で体調を崩した（月${Math.round(victim.overtimeHours)}時間）`,
+    text: `${victim.name}さんが長時間労働で体調を崩し、休職した（月${Math.round(ctx.overtimeHours)}時間）`,
   });
-  const rec = state.history[state.history.length - 1];
-  if (rec) {
-    rec.resignations += 1;
-    rec.headcount = state.employees.length;
-  }
   pushDecision(state, {
     kind: 'event',
     eventId: 'overwork_health',
     ruleIds: [],
-    vars: { name: victim.name, hours: Math.round(victim.overtimeHours) },
+    vars: { name: victim.name, hours: Math.round(ctx.overtimeHours) },
+    targetId: victim.id,
   }, ctx.rng);
 }
 

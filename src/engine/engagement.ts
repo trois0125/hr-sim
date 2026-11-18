@@ -305,7 +305,7 @@ export function updateEngagement(employees: Employee[], ctx: EngagementContext):
   const resistance = ctx.resistance ?? 0;
   for (const e of employees) {
     const s = scores.get(e.id);
-    if (!s) continue;
+    if (!s || e.leave) continue; // 休職中の人の納得感は動かさない
     e.factorScores = s;
     const target = targetEngagement(s, e.values) - resistance * resistanceSensitivity(e.values);
     e.engagement = score(e.engagement + rate * (target - e.engagement));

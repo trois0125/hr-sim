@@ -200,5 +200,6 @@ export function createEmployee(input: CreateEmployeeInput): Employee {
     isKeyPerson: input.isKeyPerson ?? false,
     factorScores: null,
     secondmentEndsAt: null,
+    leave: null,
   };
 }

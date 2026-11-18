@@ -38,8 +38,9 @@ export function experienceFactor(age: number): number {
   return Math.pow(ageSalaryFactor(age) / ageSalaryFactor(k.expRefAge), k.expElasticity);
 }
 
-/** 稼働の量（フルタイム＝1.0） */
+/** 稼働の量（フルタイム＝1.0。休職中は0） */
 export function fte(e: Employee): number {
+  if (e.leave) return 0;
   if (e.employmentType === 'part') return K().partHours / K().scheduledHours;
   return 1;
 }

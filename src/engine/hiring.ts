@@ -8,7 +8,7 @@
  * - 採用しても人件費の数か月分の資金が残るときだけ採用する
  *
  * 採用方針（新卒／中途／パート中心）と働き方で、埋まりやすさ・採用費・年齢・パートの割合が変わる。
- * 採用を強化しないといけないイベントはステップ8で足す。そのために「採用の強さ」を持つ。
+ * 採用の強さは、イベント（ステップ8）の一時的な効果で上げ下げする。強めると求人の数・埋まりやすさ・採用費がともに増える。
  */
 import { coef } from './coefficients';
 import { createEmployee } from './employees';
@@ -205,7 +205,11 @@ export function runHiring(input: HiringInput): HiringResult {
         lastYearProfit: 0,
         totalSalaries: 0,
       });
-      const fee = candidate.salaryMonthly * policyEffect('hiring', channel, 'fee_salary_months');
+      // 採用を強めると、1人あたりの採用費も上がる（求人広告・紹介手数料の上乗せ）
+      const fee =
+        candidate.salaryMonthly *
+        policyEffect('hiring', channel, 'fee_salary_months') *
+        Math.pow(intensity, coef('hiring.intensity_fee_elasticity'));
       const payrollAfter = payroll + candidate.salaryMonthly * welfare;
       if (cash - fee < payrollAfter * coef('hiring.cash_runway_months')) continue; // 資金が足りないので見送る
 

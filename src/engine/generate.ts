@@ -192,6 +192,8 @@ export function generateCompany(options: GenerateOptions): CompanyState {
     },
     pendingDecisions: [],
     modifiers: [],
+    decisions: [],
+    scheduledEvents: [],
     autoPlay: options.autoPlay === undefined ? { legal: 'immediate' } : options.autoPlay,
     nextDecisionId: 1,
     unrecordedExtraordinaryCost: 0,

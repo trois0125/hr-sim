@@ -3,7 +3,7 @@
  *
  * 入っているのは 1 市場と景気、2 採用、3 稼働と成果、4 売上・コスト・利益、5 納得感、6 退職、
  * 7 評価と昇給（年1回の決算月。賞与もここで決める）、8 法令（義務の発生は月のはじめ、違反の発覚は月の終わり）、10 記録。
- * 9 イベントの抽選はステップ8で足す（法令のイベントは 8 から起きる）。
+ * 9 イベント（毎月の抽選・条件・連鎖。法令のイベントは 8 から起きる）。休職の終わり（復帰か退職か）は月のはじめに決める。
  *
  * 判断待ち（節目・イベント）は state.pendingDecisions に積まれる。autoPlay があればその場で選ぶ。
  * autoPlay がなければ、判断待ちが残っている間はティックを進めない（画面で選んでから次に進む）。
@@ -17,10 +17,12 @@ import { runHiring } from './hiring';
 import { demandAt, stepEconomy, updateShareFactor } from './market';
 import { computeOvertime, computePerformance, overtimeCap } from './performance';
 import { growAbility, runAnnualReview, stepSalaryTransitions } from './evaluation';
-import { hiringAttractionModifier } from './events';
+import { hiringAttractionModifier, modifierValue, pruneModifiers } from './events';
+import { runEvents } from './eventTriggers';
+import { processLeaves } from './leave';
 import { checkObligations, checkViolations, legalMonthlyCost } from './laws';
 import { currentResistance } from './policyChange';
-import { getStreamsState, restoreStreams } from './rng';
+import { createRng, deriveSeed, getStreamsState, restoreStreams } from './rng';
 import { MONTHS_PER_YEAR, type CompanyState, type CompanyStatus, type MonthlyRecord } from './types';
 
 function variantOf(state: CompanyState) {
@@ -79,12 +81,21 @@ export function tickInPlace(state: CompanyState): CompanyState {
   }
   const { industry, variant } = variantOf(state);
   const location = getLocation(state.profile.locationId);
+  pruneModifiers(state);
+  // イベントと休職の乱数は、月ごとにシードから決める。同じ会社で制度だけ変えて比べるとき、
+  // ある月の抽選が変わっても、ほかの月のイベントの抽選がずれないようにするため（共通の乱数）
+  const eventsRng = createRng(deriveSeed(state.seed, `events:${state.month}`));
+
+  // 休職の期間が終わった人は、復帰するか退職するか
+  processLeaves(state, eventsRng);
 
   // 1. 市場と景気
   const economy = stepEconomy(state.market.economy, streams.market);
   state.market.economy = economy.economy;
   if (economy.recession) state.market.recessionMonths.push(state.month);
-  const demand = demandAt(state.market, state.profile, industry, state.month);
+  // イベントによる一時的な需要の増減（大型案件・取引先の倒産など）
+  const demandMult = modifierValue(state, 'demand');
+  const demand = demandAt(state.market, state.profile, industry, state.month) * demandMult;
 
   // 2. 採用
   const before = computePerformance(state.employees, industry, variant, state.policies);
@@ -98,17 +109,14 @@ export function tickInPlace(state: CompanyState): CompanyState {
     demand,
     capacity: before.capacity,
     cash: state.cash,
-    intensity: state.hiring.intensity,
+    intensity: state.hiring.intensity * modifierValue(state, 'hiringIntensity'),
     nextEmployeeId: state.nextEmployeeId,
     policies: state.policies,
     month: state.month,
     reputation: hiringAttractionModifier(state),
-    projectedDemand: demandAt(
-      state.market,
-      state.profile,
-      industry,
-      state.month + coef('policy.hiring.new_grad.projection_months'),
-    ),
+    projectedDemand:
+      demandAt(state.market, state.profile, industry, state.month + coef('policy.hiring.new_grad.projection_months')) *
+      demandMult,
   });
   state.employees.push(...hiring.hires);
   state.nextEmployeeId += hiring.hires.length;
@@ -118,7 +126,7 @@ export function tickInPlace(state: CompanyState): CompanyState {
   const overtime = computeOvertime(demand, perf, overtimeCap(state.policies.overtime));
   const revenueRoles = new Set(industry.roles.filter((r) => r.kind === 'revenue').map((r) => r.id));
   for (const e of state.employees) {
-    e.overtimeHours = revenueRoles.has(e.role) && e.employmentType !== 'part' ? overtime.hours : 0;
+    e.overtimeHours = revenueRoles.has(e.role) && e.employmentType !== 'part' && !e.leave ? overtime.hours : 0;
   }
 
   // 4. 売上・コスト・利益
@@ -173,7 +181,8 @@ export function tickInPlace(state: CompanyState): CompanyState {
     history: state.history,
     cash: state.cash,
     headcount: state.employees.length,
-    resistance: currentResistance(state),
+    // 制度変更への抵抗と、イベントによる一時的な士気の上下（リストラの不安など）
+    resistance: currentResistance(state) - modifierValue(state, 'morale'),
     violations: state.history[state.history.length - 2]?.violations ?? 0,
   });
 
@@ -187,9 +196,6 @@ export function tickInPlace(state: CompanyState): CompanyState {
   });
   state.employees = attrition.stay;
   state.departures.push(...attrition.departures);
-  record.resignations = attrition.departures.filter((d) => d.kind === 'resignation').length;
-  record.returns = attrition.departures.filter((d) => d.kind === 'return').length;
-  record.headcount = state.employees.length;
 
   // 8b. 法令：違反の判定と発覚、未払い残業代、長時間労働（臨時の支出は record.extraordinaryCost に入る）
   record.violations = checkViolations(state, {
@@ -197,6 +203,19 @@ export function tickInPlace(state: CompanyState): CompanyState {
     overtimeHours: overtime.hours,
     resigned: attrition.departures.filter((d) => d.kind === 'resignation'),
   });
+
+  // 9. イベント（自動の方針があれば、ここで選んで効果まで反映される）
+  runEvents(state, eventsRng);
+
+  // 退職と帰任は、この月に去った人の記録から数える（休職明けの退職・イベントでの退職・画面で選んだ判断を含む）
+  record.resignations = 0;
+  record.returns = 0;
+  for (let i = state.departures.length - 1; i >= 0; i--) {
+    const d = state.departures[i];
+    if (!d || d.month !== state.month) break;
+    if (d.kind === 'resignation') record.resignations++;
+    else record.returns++;
+  }
   record.headcount = state.employees.length;
   record.avgEngagement =
     state.employees.length > 0

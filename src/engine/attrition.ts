@@ -121,7 +121,7 @@ function newcomerRelationshipMult(e: Employee, policies: PolicySet): number {
   return policyEffect('workStyle', policies.workStyle, 'newcomer_relationship_mult');
 }
 
-function toDeparture(e: Employee, month: number, kind: Departure['kind'], reason: AttritionReason | null): Departure {
+export function toDeparture(e: Employee, month: number, kind: Departure['kind'], reason: AttritionReason | null): Departure {
   return {
     employeeId: e.id,
     name: e.name,
@@ -151,6 +151,12 @@ export function runAttrition(
   for (const e of employees) {
     const roll = ctx.rng.next();
     const reasonRoll = ctx.rng.next();
+
+    // 休職中の人は、期間が終わるときに復帰か退職かが決まる（leave.ts）
+    if (e.leave) {
+      stay.push(e);
+      continue;
+    }
 
     if (e.affiliation === 'secondee') {
       const due = e.secondmentEndsAt !== null && ctx.month >= e.secondmentEndsAt;

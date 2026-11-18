@@ -17,13 +17,30 @@ import {
   TRAINING_INVESTMENTS,
   WORK_HOUR_SYSTEMS,
   LEGAL_RESPONSES,
+  JUDGMENT_AXES,
   type IndustryData,
+  type JudgmentStyle,
   type LegalResponse,
   type IndustryId,
   type PolicySet,
 } from '../../src/engine/types';
 
-export type Job = { run: number; seed: number; industryId: IndustryId; policies: PolicySet; legal: LegalResponse };
+export type Job = {
+  run: number;
+  seed: number;
+  industryId: IndustryId;
+  policies: PolicySet;
+  legal: LegalResponse;
+  /** イベントの判断の傾向（省略すると傾向なし＝無作為に近い選び方） */
+  style?: JudgmentStyle;
+};
+
+/** 判断の傾向を抽選する（4軸それぞれ −1〜+1 の一様分布） */
+export function sampleStyle(rng: Rng): JudgmentStyle {
+  const s = {} as JudgmentStyle;
+  for (const a of JUDGMENT_AXES) s[a] = rng.range(-1, 1);
+  return s;
+}
 
 export type JobResult = {
   job: Job;
@@ -74,12 +91,13 @@ export function makeJobs(industryId: IndustryId, runs: number, baseSeed: number)
     industryId,
     policies: samplePolicies(rng, industry),
     legal: rng.pick(LEGAL_RESPONSES),
+    style: sampleStyle(rng),
   }));
 }
 
 export function runJob(job: Job): JobResult {
   const c = setFoundingPolicies(
-    generateCompany({ seed: job.seed, industryId: job.industryId, autoPlay: { legal: job.legal } }),
+    generateCompany({ seed: job.seed, industryId: job.industryId, autoPlay: { legal: job.legal, style: job.style } }),
     job.policies,
   );
   const end = runToEnd(c);

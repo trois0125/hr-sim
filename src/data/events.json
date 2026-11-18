@@ -74,7 +74,11 @@
         "auto": [
           "immediate",
           "outsource"
-        ]
+        ],
+        "axes": {
+          "rules": 1,
+          "people": 1
+        }
       },
       {
         "label": "争う（裁判で決着をつける）",
@@ -90,7 +94,10 @@
         "lesson": "争っても払う義務は消えず、付加金や遅延損害金が上乗せされうる。評判も下がる",
         "auto": [
           "postpone"
-        ]
+        ],
+        "axes": {
+          "rules": -1
+        }
       }
     ]
   },
@@ -119,7 +126,11 @@
         "auto": [
           "immediate",
           "outsource"
-        ]
+        ],
+        "axes": {
+          "rules": 1,
+          "horizon": 1
+        }
       },
       {
         "label": "今は対応しない",
@@ -127,7 +138,11 @@
         "lesson": "未達のままだと毎年指導が続き、100人超なら納付金を払い続ける。企業名が公表されることもある",
         "auto": [
           "postpone"
-        ]
+        ],
+        "axes": {
+          "rules": -1,
+          "horizon": -1
+        }
       }
     ]
   },
@@ -144,7 +159,7 @@
       "advanced"
     ],
     "title": "長時間労働による健康被害",
-    "body": "月{hours}時間の残業が続いていた{name}さんが体調を崩し、働けなくなりました。",
+    "body": "月{hours}時間の残業が続いていた{name}さんが体調を崩し、休職することになりました。",
     "choices": [
       {
         "label": "労災として申請し、残業を月45時間までに抑える",
@@ -153,13 +168,20 @@
           "engagementAll": -2,
           "setPolicies": {
             "overtime": "limit45"
+          },
+          "target": {
+            "returnRateDelta": 0.15
           }
         },
         "lesson": "過労死ラインとされる月80時間に近づくほど、健康被害のリスクは急に高まる。上限を決めて守ることが先",
         "auto": [
           "immediate",
           "outsource"
-        ]
+        ],
+        "axes": {
+          "rules": 1,
+          "people": 1
+        }
       },
       {
         "label": "個人の体調の問題として扱う",
@@ -169,12 +191,19 @@
           "hiringAttraction": {
             "mult": 0.7,
             "months": 36
+          },
+          "target": {
+            "returnRateDelta": -0.2
           }
         },
         "lesson": "会社の責任を認めないと、社員の信頼と採用の評判を大きく失う。のちに労災認定や損害賠償になることもある",
         "auto": [
           "postpone"
-        ]
+        ],
+        "axes": {
+          "rules": -1,
+          "people": -1
+        }
       }
     ]
   },
@@ -203,7 +232,10 @@
         "auto": [
           "immediate",
           "outsource"
-        ]
+        ],
+        "axes": {
+          "rules": 1
+        }
       },
       {
         "label": "公表しない",
@@ -216,8 +248,2394 @@
         "lesson": "公表しないこと自体が「何か隠している」と受け取られ、採用の評判を下げる",
         "auto": [
           "postpone"
-        ]
+        ],
+        "axes": {
+          "rules": -1
+        }
       }
     ]
+  },
+  {
+    "id": "ace_resignation",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 5,
+      "target": {
+        "where": [
+          {
+            "field": "roleKind",
+            "op": "==",
+            "value": "revenue"
+          },
+          {
+            "field": "employmentType",
+            "op": "==",
+            "value": "full"
+          },
+          {
+            "field": "affiliation",
+            "op": "==",
+            "value": "proper"
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          },
+          {
+            "field": "tenureMonths",
+            "op": ">=",
+            "value": 12
+          },
+          {
+            "field": "ability",
+            "op": ">=",
+            "value": 60
+          },
+          {
+            "field": "engagement",
+            "op": "<",
+            "value": 50
+          }
+        ],
+        "sortBy": "ability",
+        "order": "desc"
+      }
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "エースの退職願",
+    "body": "営業でいちばんの成績を上げている{name}さん（{age}歳・勤続{tenure}年）から「他社から年収{offer}万円で誘われている。辞めようと思う」と相談がありました。今の年収は{annual}万円です。",
+    "extraVars": {
+      "offer": {
+        "of": "annual",
+        "mult": 1.2
+      }
+    },
+    "choices": [
+      {
+        "label": "同じ額まで給与を上げて引き留める",
+        "effects": {
+          "target": {
+            "salaryPct": 20,
+            "engagement": 20
+          },
+          "followUp": {
+            "eventId": "pay_negotiation_wave",
+            "afterMonths": 6,
+            "probability": 0.6
+          }
+        },
+        "axes": {
+          "reward": 1,
+          "people": 1,
+          "rules": -1
+        },
+        "lesson": "カウンターオファーはその場は収まるが、社内公平性を崩しやすい。同じ交渉がほかの社員からも来る"
+      },
+      {
+        "label": "制度の範囲で話し合い、役割と評価を見直す",
+        "effects": {
+          "target": {
+            "salaryPct": 5,
+            "engagement": 10
+          }
+        },
+        "axes": {
+          "reward": -1,
+          "rules": 1,
+          "people": 1
+        },
+        "lesson": "辞めたい理由が給与だけとは限らない。役割・評価・成長の見通しを話すと残ることもある"
+      },
+      {
+        "label": "感謝して送り出す",
+        "effects": {
+          "target": {
+            "resign": "pay"
+          },
+          "followUp": {
+            "eventId": "alumni_referral",
+            "afterMonths": 12,
+            "probability": 0.35
+          }
+        },
+        "axes": {
+          "people": -1,
+          "rules": 1
+        },
+        "lesson": "円満に送り出した元社員は、取引先や紹介者として会社を助けることもある（アルムナイ）"
+      }
+    ]
+  },
+  {
+    "id": "pay_negotiation_wave",
+    "category": "people",
+    "trigger": {
+      "type": "followUp",
+      "target": {
+        "where": [
+          {
+            "field": "roleKind",
+            "op": "==",
+            "value": "revenue"
+          },
+          {
+            "field": "employmentType",
+            "op": "==",
+            "value": "full"
+          },
+          {
+            "field": "affiliation",
+            "op": "==",
+            "value": "proper"
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          },
+          {
+            "field": "engagement",
+            "op": "<",
+            "value": 65
+          }
+        ],
+        "sortBy": "ability",
+        "order": "desc"
+      }
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "給与交渉が続く",
+    "body": "{name}さんが「引き留めで給与が上がった人がいると聞いた。自分も上げてほしい」と言ってきました。同じような声がほかの社員からも出ています。",
+    "choices": [
+      {
+        "label": "同じように給与を上げる",
+        "effects": {
+          "target": {
+            "salaryPct": 10,
+            "engagement": 10
+          },
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "roleKind",
+                  "op": "==",
+                  "value": "revenue"
+                },
+                {
+                  "field": "employmentType",
+                  "op": "==",
+                  "value": "full"
+                },
+                {
+                  "field": "affiliation",
+                  "op": "==",
+                  "value": "proper"
+                },
+                {
+                  "field": "onLeave",
+                  "op": "==",
+                  "value": 0
+                }
+              ],
+              "excludeTarget": true,
+              "sortBy": "ability",
+              "order": "desc",
+              "limit": 3,
+              "salaryPct": 5
+            }
+          ]
+        },
+        "axes": {
+          "reward": 1,
+          "people": 1
+        },
+        "lesson": "個別の交渉で上げ続けると、交渉した人だけが得をする制度になる"
+      },
+      {
+        "label": "給与の決め方を見直し、全員に説明する",
+        "effects": {
+          "cash": -500000,
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "employmentType",
+                  "op": "==",
+                  "value": "full"
+                },
+                {
+                  "field": "affiliation",
+                  "op": "==",
+                  "value": "proper"
+                },
+                {
+                  "field": "onLeave",
+                  "op": "==",
+                  "value": 0
+                }
+              ],
+              "salaryPct": 3
+            }
+          ],
+          "engagementAll": 3
+        },
+        "axes": {
+          "reward": -1,
+          "rules": 1,
+          "horizon": 1
+        },
+        "lesson": "個別の例外は、制度の見直しで全員に開くと公平感が戻る"
+      },
+      {
+        "label": "例外だったと説明して断る",
+        "effects": {
+          "target": {
+            "engagement": -15
+          },
+          "engagementOthers": -3
+        },
+        "axes": {
+          "reward": -1,
+          "horizon": -1
+        },
+        "lesson": "一度つくった例外は「交渉すれば上がる」というメッセージとして残る"
+      }
+    ]
+  },
+  {
+    "id": "alumni_referral",
+    "category": "people",
+    "trigger": {
+      "type": "followUp"
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "元社員からの紹介",
+    "body": "以前送り出した元社員から「今の会社で、そちらの商材を扱いたいという話がある」と連絡がありました。",
+    "choices": [
+      {
+        "label": "紹介を受けて取引を始める",
+        "effects": {
+          "demand": {
+            "mult": 1.03,
+            "months": 24
+          }
+        },
+        "axes": {
+          "horizon": 1
+        },
+        "lesson": "元社員とのつながり（アルムナイ）は、取引や採用の入り口になる"
+      },
+      {
+        "label": "取引に加えて、元社員の再入社の窓口もつくる",
+        "effects": {
+          "cash": -300000,
+          "demand": {
+            "mult": 1.02,
+            "months": 24
+          },
+          "hiringAttraction": {
+            "mult": 1.1,
+            "months": 24
+          }
+        },
+        "axes": {
+          "horizon": 1,
+          "people": 1
+        },
+        "lesson": "辞めた人が戻れる会社は、今いる社員にとっても安心材料になる"
+      }
+    ]
+  },
+  {
+    "id": "founder_conflict",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 15,
+      "conditions": [
+        {
+          "metric": "month",
+          "op": ">=",
+          "value": 36
+        }
+      ],
+      "target": {
+        "where": [
+          {
+            "field": "isKeyPerson",
+            "op": "==",
+            "value": true
+          },
+          {
+            "field": "hireChannel",
+            "op": "==",
+            "value": "founding"
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          }
+        ],
+        "sortBy": "tenureMonths",
+        "order": "desc"
+      }
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "創業メンバーと新しい社員の対立",
+    "body": "創業メンバーの{name}さんと、最近入った社員たちの間で、仕事の進め方をめぐる対立が起きています。新しい社員からは「昔のやり方を押しつけられる」、{name}さんからは「会社の文化が壊れる」という声が出ています。",
+    "choices": [
+      {
+        "label": "創業メンバーのやり方を尊重する",
+        "effects": {
+          "target": {
+            "engagement": 10
+          },
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "tenureMonths",
+                  "op": "<",
+                  "value": 24
+                }
+              ],
+              "engagement": -8
+            }
+          ]
+        },
+        "axes": {
+          "people": 1,
+          "horizon": -1
+        },
+        "lesson": "古株を立てると短期的には落ち着くが、新しい社員が定着しにくくなる"
+      },
+      {
+        "label": "新しい社員の意見を取り入れ、進め方を変える",
+        "effects": {
+          "target": {
+            "engagement": -15
+          },
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "tenureMonths",
+                  "op": "<",
+                  "value": 24
+                }
+              ],
+              "engagement": 6
+            }
+          ],
+          "followUp": {
+            "eventId": "founder_departure",
+            "afterMonths": 6,
+            "probability": 0.4,
+            "sameTarget": true
+          }
+        },
+        "axes": {
+          "horizon": 1,
+          "people": -1
+        },
+        "lesson": "変化を選ぶなら、創業メンバーに新しい役割と敬意を示さないと離れていく"
+      },
+      {
+        "label": "話し合いの場をつくり、仕事のルールを言葉にする",
+        "effects": {
+          "cash": -300000,
+          "target": {
+            "engagement": 3
+          },
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "tenureMonths",
+                  "op": "<",
+                  "value": 24
+                }
+              ],
+              "engagement": 3
+            }
+          ]
+        },
+        "axes": {
+          "rules": 1,
+          "people": 1
+        },
+        "lesson": "対立の多くは暗黙のルールから生まれる。言葉にすると、どちらも納得しやすい"
+      }
+    ]
+  },
+  {
+    "id": "founder_departure",
+    "category": "people",
+    "trigger": {
+      "type": "followUp",
+      "target": {
+        "where": [
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          }
+        ]
+      }
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "創業メンバーの退職願",
+    "body": "創業メンバーの{name}さんから「自分の居場所がなくなった」と退職の申し出がありました。",
+    "choices": [
+      {
+        "label": "役員に近い待遇で引き留める",
+        "effects": {
+          "target": {
+            "salaryPct": 15,
+            "engagement": 15
+          }
+        },
+        "axes": {
+          "reward": 1,
+          "people": 1
+        },
+        "lesson": "待遇で引き留めても、役割の問題が解けなければ同じことが起きる"
+      },
+      {
+        "label": "引き継ぎの期間をとって送り出す",
+        "effects": {
+          "target": {
+            "resign": "relationships"
+          },
+          "engagementAll": -2
+        },
+        "axes": {
+          "people": -1,
+          "horizon": 1
+        },
+        "lesson": "会社の段階が変わると、合う人も変わる。送り出し方が残る社員の安心を左右する"
+      }
+    ]
+  },
+  {
+    "id": "promotion_declined",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 20,
+      "target": {
+        "where": [
+          {
+            "field": "roleKind",
+            "op": "==",
+            "value": "revenue"
+          },
+          {
+            "field": "employmentType",
+            "op": "==",
+            "value": "full"
+          },
+          {
+            "field": "affiliation",
+            "op": "==",
+            "value": "proper"
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          },
+          {
+            "field": "ability",
+            "op": ">=",
+            "value": 60
+          },
+          {
+            "field": "age",
+            "op": ">=",
+            "value": 30
+          },
+          {
+            "field": "age",
+            "op": "<=",
+            "value": 50
+          },
+          {
+            "field": "isKeyPerson",
+            "op": "==",
+            "value": false
+          }
+        ],
+        "sortBy": "ability",
+        "order": "desc"
+      }
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "管理職への昇格を断られる",
+    "body": "管理職に昇格させようとした{name}さん（{age}歳）から「管理職にはなりたくない。今の仕事を続けたい」と断られました。",
+    "choices": [
+      {
+        "label": "説得して管理職にする",
+        "effects": {
+          "target": {
+            "roleKind": "management",
+            "salaryPct": 8,
+            "engagement": -12
+          }
+        },
+        "axes": {
+          "horizon": 1,
+          "people": -1
+        },
+        "lesson": "本人が望まない昇格は、成果の高い専門家を、意欲の低い管理職に変えてしまうことがある"
+      },
+      {
+        "label": "専門職として処遇する道をつくる",
+        "effects": {
+          "cash": -500000,
+          "target": {
+            "salaryPct": 5,
+            "engagement": 10
+          }
+        },
+        "axes": {
+          "reward": 1,
+          "people": 1,
+          "horizon": 1
+        },
+        "lesson": "管理職以外の昇進の道（専門職制度）がないと、優秀な専門家ほど伸び悩む"
+      },
+      {
+        "label": "本人の希望を尊重し、別の人を探す",
+        "effects": {
+          "target": {
+            "engagement": 3
+          }
+        },
+        "axes": {
+          "people": 1,
+          "horizon": -1
+        },
+        "lesson": "管理職になりたがらない人は増えている。管理職の役割の魅力を伝える工夫が要る"
+      }
+    ]
+  },
+  {
+    "id": "parental_leave_female",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 3,
+      "target": {
+        "where": [
+          {
+            "field": "gender",
+            "op": "==",
+            "value": "F"
+          },
+          {
+            "field": "age",
+            "op": ">=",
+            "value": 25
+          },
+          {
+            "field": "age",
+            "op": "<=",
+            "value": 40
+          },
+          {
+            "field": "employmentType",
+            "op": "==",
+            "value": "full"
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          }
+        ]
+      }
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "育休の申し出",
+    "body": "{name}さん（{age}歳）から、出産にともなう産休と育休を取りたいと申し出がありました。期間はおよそ1年の予定です。",
+    "choices": [
+      {
+        "label": "取得を後押しし、代わりの人を採用する",
+        "effects": {
+          "target": {
+            "leave": {
+              "kind": "parental",
+              "returnRateBonus": 0.03
+            }
+          },
+          "engagementOthers": 1
+        },
+        "axes": {
+          "rules": 1,
+          "people": 1
+        },
+        "lesson": "育休は法律上の権利（育児・介護休業法）。快く送り出すと、本人の復帰と周りの安心につながる"
+      },
+      {
+        "label": "復帰後の働き方（短時間勤務など）まで面談で決めておく",
+        "effects": {
+          "cash": -200000,
+          "target": {
+            "leave": {
+              "kind": "parental",
+              "returnRateBonus": 0.08
+            },
+            "engagement": 5
+          }
+        },
+        "axes": {
+          "rules": 1,
+          "people": 1,
+          "horizon": 1
+        },
+        "lesson": "復帰後の働き方を先に決めておくと、復帰する人が増え、周りも代わりの体制を組みやすい"
+      },
+      {
+        "label": "業務が回らないので、期間を短くできないか頼む",
+        "effects": {
+          "target": {
+            "leave": {
+              "kind": "parental",
+              "monthsMult": 0.5,
+              "returnRateBonus": -0.25
+            },
+            "engagement": -20
+          },
+          "engagementAll": -2,
+          "hiringAttraction": {
+            "mult": 0.95,
+            "months": 12
+          }
+        },
+        "axes": {
+          "rules": -1,
+          "people": -1,
+          "horizon": -1
+        },
+        "lesson": "育休を短くするよう迫ることは、ハラスメント（マタハラ）にあたりうる。事業主には防止の措置をとる義務がある"
+      }
+    ]
+  },
+  {
+    "id": "parental_leave_male",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 3,
+      "target": {
+        "where": [
+          {
+            "field": "gender",
+            "op": "==",
+            "value": "M"
+          },
+          {
+            "field": "age",
+            "op": ">=",
+            "value": 25
+          },
+          {
+            "field": "age",
+            "op": "<=",
+            "value": 40
+          },
+          {
+            "field": "employmentType",
+            "op": "==",
+            "value": "full"
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          }
+        ]
+      }
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "男性社員の育休",
+    "body": "{name}さん（{age}歳）から「子どもが生まれるので育休を取りたい」と相談がありました。",
+    "choices": [
+      {
+        "label": "取得を後押しし、社内にも広く伝える",
+        "effects": {
+          "target": {
+            "leave": {
+              "kind": "parental"
+            }
+          },
+          "engagementAll": 1,
+          "hiringAttraction": {
+            "mult": 1.05,
+            "months": 24
+          }
+        },
+        "axes": {
+          "rules": 1,
+          "people": 1,
+          "horizon": 1
+        },
+        "lesson": "男性の育休取得は、採用で「働きやすい会社」の評判になる。300人を超える企業は取得率の公表が義務"
+      },
+      {
+        "label": "短い期間なら認める",
+        "effects": {
+          "target": {
+            "leave": {
+              "kind": "parental",
+              "monthsMult": 0.5
+            },
+            "engagement": -5
+          }
+        },
+        "axes": {
+          "horizon": -1
+        },
+        "lesson": "期間を会社が決めることはできない。本人の希望を聞いたうえで、業務の段取りを一緒に考える"
+      },
+      {
+        "label": "前例がないので遠慮してもらう",
+        "effects": {
+          "target": {
+            "engagement": -20
+          },
+          "engagementAll": -2
+        },
+        "axes": {
+          "rules": -1,
+          "people": -1
+        },
+        "lesson": "育休の取得を妨げたり、申し出を理由に不利益に扱ったりするのは法律違反（育児・介護休業法）"
+      }
+    ]
+  },
+  {
+    "id": "mental_health_leave",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 5,
+      "target": {
+        "where": [
+          {
+            "field": "employmentType",
+            "op": "==",
+            "value": "full"
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          },
+          {
+            "field": "engagement",
+            "op": "<",
+            "value": 35
+          }
+        ],
+        "sortBy": "engagement",
+        "order": "asc"
+      }
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "メンタル不調",
+    "body": "{name}さんの様子がおかしいと上司から報告がありました。面談すると、眠れない日が続き、医師から休養をすすめられているそうです。",
+    "choices": [
+      {
+        "label": "休職させ、産業医と復職の計画をつくる",
+        "effects": {
+          "cash": -300000,
+          "target": {
+            "leave": {
+              "kind": "sick",
+              "returnRateBonus": 0.2
+            }
+          }
+        },
+        "axes": {
+          "rules": 1,
+          "people": 1,
+          "horizon": 1
+        },
+        "lesson": "休職中から復職の計画（試し出勤など）をつくると、復帰しやすく、再発もしにくい"
+      },
+      {
+        "label": "休職させ、本人の回復を待つ",
+        "effects": {
+          "target": {
+            "leave": {
+              "kind": "sick"
+            }
+          }
+        },
+        "axes": {
+          "rules": 1
+        },
+        "lesson": "休ませるだけでは、復帰の時期や働き方が決まらず、そのまま退職になりやすい"
+      },
+      {
+        "label": "本人の希望で、仕事を減らして働き続けてもらう",
+        "effects": {
+          "target": {
+            "engagement": 3
+          },
+          "followUp": {
+            "eventId": "mental_relapse",
+            "afterMonths": 4,
+            "probability": 0.6,
+            "sameTarget": true
+          }
+        },
+        "axes": {
+          "rules": -1,
+          "horizon": -1
+        },
+        "lesson": "医師が休養をすすめているのに働き続けさせると、悪化したときに会社の安全配慮義務が問われる"
+      }
+    ]
+  },
+  {
+    "id": "mental_relapse",
+    "category": "people",
+    "trigger": {
+      "type": "followUp",
+      "target": {
+        "where": [
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          }
+        ]
+      }
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "体調の悪化",
+    "body": "働きながら様子を見ていた{name}さんの体調がさらに悪くなり、長めの休職が必要だと医師に言われました。",
+    "choices": [
+      {
+        "label": "休職させ、復職の支援を整える",
+        "effects": {
+          "cash": -300000,
+          "target": {
+            "leave": {
+              "kind": "sick",
+              "monthsMult": 1.5,
+              "returnRateBonus": 0.05
+            }
+          }
+        },
+        "axes": {
+          "rules": 1,
+          "people": 1
+        },
+        "lesson": "悪化してからの休職は長くなりやすい。早めに休ませるほうが本人にも会社にも負担が小さい"
+      },
+      {
+        "label": "退職をすすめる",
+        "effects": {
+          "target": {
+            "resign": "workload"
+          },
+          "engagementAll": -4,
+          "hiringAttraction": {
+            "mult": 0.9,
+            "months": 12
+          }
+        },
+        "axes": {
+          "people": -1,
+          "rules": -1
+        },
+        "lesson": "体調を崩した人に退職をすすめると、周りの社員は「次は自分かもしれない」と感じる"
+      }
+    ]
+  },
+  {
+    "id": "harassment_report",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 10,
+      "target": {
+        "where": [
+          {
+            "field": "employmentType",
+            "op": "==",
+            "value": "full"
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          },
+          {
+            "field": "ability",
+            "op": ">=",
+            "value": 55
+          },
+          {
+            "field": "tenureMonths",
+            "op": ">=",
+            "value": 24
+          }
+        ]
+      }
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "ハラスメントの相談",
+    "body": "成績上位の{name}さんについて、部下から「人格を否定するような叱責を毎日のように受けている」と相談がありました。",
+    "choices": [
+      {
+        "label": "事実を調べ、必要なら処分する",
+        "effects": {
+          "cash": -500000,
+          "target": {
+            "engagement": -20
+          },
+          "engagementOthers": 3
+        },
+        "axes": {
+          "rules": 1,
+          "reward": -1
+        },
+        "lesson": "パワハラを防ぐ措置（相談窓口・調査・再発防止）は事業主の義務（労働施策総合推進法。中小企業も2022年4月から）"
+      },
+      {
+        "label": "当事者どうしで話し合ってもらう",
+        "effects": {
+          "engagementOthers": -2,
+          "followUp": {
+            "eventId": "harassment_escalation",
+            "afterMonths": 3,
+            "probability": 0.5,
+            "sameTarget": true
+          }
+        },
+        "axes": {
+          "rules": -1
+        },
+        "lesson": "力関係のある当事者どうしの話し合いでは、相談した人が黙るしかなくなることが多い"
+      },
+      {
+        "label": "成績を上げている人なので、注意だけにとどめる",
+        "effects": {
+          "target": {
+            "engagement": 2
+          },
+          "engagementOthers": -5,
+          "followUp": {
+            "eventId": "harassment_escalation",
+            "afterMonths": 3,
+            "probability": 0.8,
+            "sameTarget": true
+          }
+        },
+        "axes": {
+          "reward": 1,
+          "rules": -1
+        },
+        "lesson": "成績の良い人のハラスメントを見逃すと、被害を受けた人と周りの人が辞めていく"
+      }
+    ]
+  },
+  {
+    "id": "harassment_escalation",
+    "category": "people",
+    "trigger": {
+      "type": "followUp",
+      "target": {
+        "where": [
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          }
+        ]
+      }
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "ハラスメントが外部の相談窓口へ",
+    "body": "{name}さんのハラスメントを訴えていた社員が退職し、外部の労働相談窓口に相談したと連絡がありました。ほかの社員からも同じような声が出ています。",
+    "onTrigger": {
+      "groups": [
+        {
+          "where": [
+            {
+              "field": "roleKind",
+              "op": "==",
+              "value": "revenue"
+            },
+            {
+              "field": "employmentType",
+              "op": "==",
+              "value": "full"
+            },
+            {
+              "field": "affiliation",
+              "op": "==",
+              "value": "proper"
+            },
+            {
+              "field": "onLeave",
+              "op": "==",
+              "value": 0
+            }
+          ],
+          "excludeTarget": true,
+          "sortBy": "engagement",
+          "order": "asc",
+          "limit": 1,
+          "resign": "relationships"
+        }
+      ]
+    },
+    "choices": [
+      {
+        "label": "第三者に調査を頼み、処分と再発防止を行う",
+        "effects": {
+          "cash": -2000000,
+          "target": {
+            "engagement": -25
+          },
+          "engagementOthers": 2
+        },
+        "axes": {
+          "rules": 1,
+          "reward": -1
+        },
+        "lesson": "遅れて調査すると費用も信頼の回復も高くつく。最初の相談で動くのがいちばん安い"
+      },
+      {
+        "label": "解決金を払って和解する",
+        "effects": {
+          "cash": -3000000,
+          "engagementOthers": -3
+        },
+        "axes": {
+          "rules": -1
+        },
+        "lesson": "お金で外部の問題を収めても、職場の原因が残れば同じことが起きる"
+      }
+    ]
+  },
+  {
+    "id": "caregiving",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 5,
+      "target": {
+        "where": [
+          {
+            "field": "age",
+            "op": ">=",
+            "value": 45
+          },
+          {
+            "field": "employmentType",
+            "op": "==",
+            "value": "full"
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          }
+        ]
+      }
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "親の介護",
+    "body": "{name}さん（{age}歳）から「親の介護が必要になった。仕事を続けられるか不安だ」と相談がありました。",
+    "choices": [
+      {
+        "label": "介護休業を取ってもらい、その間に介護の体制を整える",
+        "effects": {
+          "target": {
+            "leave": {
+              "kind": "care"
+            }
+          }
+        },
+        "axes": {
+          "rules": 1,
+          "people": 1
+        },
+        "lesson": "介護休業（通算93日）は、自分で介護をするためというより、介護の体制を整えるための期間とされる"
+      },
+      {
+        "label": "在宅勤務と時短で、続けられる働き方にする",
+        "effects": {
+          "cash": -200000,
+          "target": {
+            "engagement": 10
+          }
+        },
+        "axes": {
+          "people": 1,
+          "rules": -1,
+          "horizon": 1
+        },
+        "lesson": "仕事と介護の両立は、長く休むより「続けられる働き方」のほうが効くことも多い"
+      },
+      {
+        "label": "両立の方法は本人に任せる",
+        "effects": {
+          "target": {
+            "engagement": -15
+          }
+        },
+        "axes": {
+          "people": -1
+        },
+        "lesson": "介護を理由に仕事を辞める人は年に約10万人。相談を受けたときの対応で、辞めるかどうかが決まる"
+      }
+    ]
+  },
+  {
+    "id": "newgrad_mismatch",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 10,
+      "target": {
+        "where": [
+          {
+            "field": "hireChannel",
+            "op": "==",
+            "value": "new_grad"
+          },
+          {
+            "field": "tenureMonths",
+            "op": "<",
+            "value": 24
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          },
+          {
+            "field": "engagement",
+            "op": "<",
+            "value": 45
+          }
+        ],
+        "sortBy": "engagement",
+        "order": "asc"
+      }
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "新卒社員の悩み",
+    "body": "新卒で入った{name}さん（{age}歳）が「思っていた仕事と違う」と悩んでいると、同期から相談がありました。",
+    "choices": [
+      {
+        "label": "先輩社員をメンターにつける仕組みをつくる",
+        "effects": {
+          "cashPerEmployee": -10000,
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "hireChannel",
+                  "op": "==",
+                  "value": "new_grad"
+                },
+                {
+                  "field": "tenureMonths",
+                  "op": "<",
+                  "value": 36
+                }
+              ],
+              "engagement": 8
+            }
+          ]
+        },
+        "axes": {
+          "horizon": 1,
+          "people": 1,
+          "reward": -1
+        },
+        "lesson": "一人の悩みは、同じ時期に入った人みんなの悩みであることが多い。仕組みで支えると全員に効く"
+      },
+      {
+        "label": "本人と面談し、仕事の割り当てを見直す",
+        "effects": {
+          "target": {
+            "engagement": 12
+          }
+        },
+        "axes": {
+          "reward": 1,
+          "people": 1
+        },
+        "lesson": "早めの面談は効くが、同じ悩みを持つほかの人には届かない"
+      },
+      {
+        "label": "最初はみんな同じ。もう少し様子を見る",
+        "effects": {
+          "target": {
+            "engagement": -5
+          }
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "lesson": "新卒の約3割が3年以内に辞める。最初の1年の手当てが定着を左右する"
+      }
+    ]
+  },
+  {
+    "id": "remote_request",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 10,
+      "conditions": [
+        {
+          "policy": "workStyle",
+          "in": [
+            "office"
+          ]
+        }
+      ]
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "在宅勤務の要望",
+    "body": "社員の間で「在宅勤務を取り入れてほしい」という声が高まっています。子育て中の社員や通勤時間の長い社員からの要望がとくに強いようです。",
+    "choices": [
+      {
+        "label": "ハイブリッド勤務を正式な制度にする",
+        "effects": {
+          "setPolicies": {
+            "workStyle": "hybrid"
+          },
+          "engagementAll": 3
+        },
+        "axes": {
+          "people": 1,
+          "horizon": 1,
+          "rules": 1
+        },
+        "lesson": "在宅勤務は、新人の育ちと一体感をどう保つかとセットで考える"
+      },
+      {
+        "label": "部署ごとに試験的に始める",
+        "effects": {
+          "cash": -300000,
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "values.balance",
+                  "op": ">=",
+                  "value": 0.3
+                }
+              ],
+              "engagement": 4
+            }
+          ]
+        },
+        "axes": {
+          "rules": -1,
+          "horizon": 1
+        },
+        "lesson": "制度にする前に小さく試すと、合う仕事・合わない仕事が見えてくる"
+      },
+      {
+        "label": "対面での仕事を重視し、今のままにする",
+        "effects": {
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "values.balance",
+                  "op": ">=",
+                  "value": 0.3
+                }
+              ],
+              "engagement": -6
+            }
+          ]
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "lesson": "在宅勤務を望む人の多くは仕事と生活の両立を重視する人。認めないなら、別の形で負荷を下げる工夫が要る"
+      }
+    ]
+  },
+  {
+    "id": "overtime_fatigue",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 5,
+      "conditions": [
+        {
+          "metric": "overtime3",
+          "op": ">=",
+          "value": 30
+        }
+      ]
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "職場の疲れ",
+    "body": "残業の多い月が続き、職場に疲れが見えています。「このままでは体がもたない」という声も出ています。",
+    "choices": [
+      {
+        "label": "受注を一部断り、残業を減らす",
+        "effects": {
+          "demand": {
+            "mult": 0.92,
+            "months": 6
+          },
+          "engagementAll": 4
+        },
+        "axes": {
+          "people": 1,
+          "horizon": 1
+        },
+        "lesson": "売上を少し手放してでも負荷を下げると、辞める人が減り、長い目で見て取り戻せることが多い"
+      },
+      {
+        "label": "手当を出して、もうしばらく頑張ってもらう",
+        "effects": {
+          "cashPerEmployee": -30000,
+          "engagementAll": 1
+        },
+        "axes": {
+          "reward": 1,
+          "horizon": -1
+        },
+        "lesson": "お金で負荷の不満は消えにくい。負荷そのものを下げる手を合わせて打つ"
+      },
+      {
+        "label": "繁忙期なので今は乗り切る",
+        "effects": {
+          "engagementAll": -3,
+          "followUp": {
+            "eventId": "mental_health_leave",
+            "afterMonths": 3,
+            "probability": 0.5
+          }
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "lesson": "疲れのサインを見過ごすと、メンタル不調で休む人が出やすくなる"
+      }
+    ]
+  },
+  {
+    "id": "evaluation_complaint",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 10,
+      "conditions": [
+        {
+          "metric": "avgEvaluationScore",
+          "op": "<",
+          "value": 47
+        }
+      ]
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "評価への不満",
+    "body": "評価の時期を過ぎて、「何を基準に評価されているのか分からない」という不満が広がっています。",
+    "choices": [
+      {
+        "label": "評価者研修を行い、評価の基準を全員に説明する",
+        "effects": {
+          "cashPerEmployee": -20000,
+          "engagementAll": 3
+        },
+        "axes": {
+          "rules": 1,
+          "horizon": 1
+        },
+        "lesson": "評価の不満は、結果より「基準が分からない」ことから生まれることが多い"
+      },
+      {
+        "label": "評価制度を360度評価に切り替える",
+        "effects": {
+          "cash": -1000000,
+          "setPolicies": {
+            "evaluation": "multi_rater"
+          }
+        },
+        "axes": {
+          "horizon": 1,
+          "reward": -1
+        },
+        "lesson": "多くの人の目で評価すると偏りは減るが、手間と費用がかかる"
+      },
+      {
+        "label": "評価は上司の裁量。説明はしない",
+        "effects": {
+          "engagementAll": -3
+        },
+        "axes": {
+          "rules": -1,
+          "horizon": -1
+        },
+        "lesson": "説明のない評価は、評価の正確さそのものより納得感を下げる"
+      }
+    ]
+  },
+  {
+    "id": "dispute_claim",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 1,
+      "conditions": [
+        {
+          "metric": "disputeRisk",
+          "op": ">=",
+          "value": 0.3
+        }
+      ]
+    },
+    "weight": 3.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "不利益変更をめぐる訴え",
+    "body": "就業規則の変更で給与が下がった社員たちが「合理性のない不利益変更だ」として、元の給与との差額の支払いを求めてきました。",
+    "choices": [
+      {
+        "label": "話し合いで和解し、変更の理由を説明しなおす",
+        "effects": {
+          "cashPerEmployee": -50000,
+          "resolveDisputes": true,
+          "engagementAll": 2
+        },
+        "axes": {
+          "rules": 1,
+          "people": 1
+        },
+        "lesson": "不利益変更は、必要性・不利益の程度・代わりの措置・話し合いの経過などから合理性が判断される（労働契約法10条）"
+      },
+      {
+        "label": "争う（労働審判・裁判）",
+        "effects": {
+          "cash": -3000000,
+          "resolveDisputes": true,
+          "engagementAll": -4,
+          "hiringAttraction": {
+            "mult": 0.9,
+            "months": 12
+          }
+        },
+        "axes": {
+          "people": -1,
+          "rules": -1
+        },
+        "lesson": "争えば決着はつくが、費用と時間がかかり、残った社員の信頼も下がる"
+      }
+    ]
+  },
+  {
+    "id": "competitor_poaching",
+    "category": "market",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 15
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "競合による引き抜き",
+    "body": "競合が営業部門の強化を進めていて、うちの営業にも次々と声がかかっています。とくに成績上位の人が狙われているようです。",
+    "choices": [
+      {
+        "label": "営業全体の給与水準を引き上げる",
+        "effects": {
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "roleKind",
+                  "op": "==",
+                  "value": "revenue"
+                },
+                {
+                  "field": "employmentType",
+                  "op": "==",
+                  "value": "full"
+                },
+                {
+                  "field": "affiliation",
+                  "op": "==",
+                  "value": "proper"
+                },
+                {
+                  "field": "onLeave",
+                  "op": "==",
+                  "value": 0
+                }
+              ],
+              "salaryPct": 5
+            }
+          ]
+        },
+        "axes": {
+          "reward": -1,
+          "people": 1,
+          "horizon": 1
+        },
+        "lesson": "全体の水準を上げると費用は大きいが、公平感を保ったまま引き抜きに強くなる"
+      },
+      {
+        "label": "狙われている成績上位の人だけ引き留める",
+        "effects": {
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "roleKind",
+                  "op": "==",
+                  "value": "revenue"
+                },
+                {
+                  "field": "employmentType",
+                  "op": "==",
+                  "value": "full"
+                },
+                {
+                  "field": "affiliation",
+                  "op": "==",
+                  "value": "proper"
+                },
+                {
+                  "field": "onLeave",
+                  "op": "==",
+                  "value": 0
+                }
+              ],
+              "sortBy": "ability",
+              "order": "desc",
+              "limitShare": 0.1,
+              "salaryPct": 12,
+              "engagement": 8
+            }
+          ],
+          "followUp": {
+            "eventId": "pay_negotiation_wave",
+            "afterMonths": 9,
+            "probability": 0.4
+          }
+        },
+        "axes": {
+          "reward": 1,
+          "people": 1
+        },
+        "lesson": "上位の人だけ上げると費用は小さいが、ほかの人との差が社内公平性の不満になりうる"
+      },
+      {
+        "label": "引き抜かれる人は仕方がない",
+        "effects": {
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "roleKind",
+                  "op": "==",
+                  "value": "revenue"
+                },
+                {
+                  "field": "employmentType",
+                  "op": "==",
+                  "value": "full"
+                },
+                {
+                  "field": "affiliation",
+                  "op": "==",
+                  "value": "proper"
+                },
+                {
+                  "field": "onLeave",
+                  "op": "==",
+                  "value": 0
+                },
+                {
+                  "field": "engagement",
+                  "op": "<",
+                  "value": 55
+                }
+              ],
+              "sortBy": "ability",
+              "order": "desc",
+              "limitShare": 0.06,
+              "resign": "pay"
+            }
+          ]
+        },
+        "axes": {
+          "people": -1,
+          "horizon": -1
+        },
+        "lesson": "引き抜きは成績上位から起きる。辞めた人の売上と、採り直す費用を比べて判断する"
+      }
+    ]
+  },
+  {
+    "id": "recession_response",
+    "category": "market",
+    "trigger": {
+      "type": "condition",
+      "minHeadcount": 5,
+      "conditions": [
+        {
+          "metric": "recessionAge",
+          "op": "<=",
+          "value": 0
+        }
+      ]
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "景気後退",
+    "body": "景気が急に冷え込み、受注が目に見えて減りはじめました。このままだと赤字になりそうです。",
+    "cooldownMonths": 24,
+    "choices": [
+      {
+        "label": "雇用を守り、賞与を減らして乗り切る",
+        "effects": {
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "employmentType",
+                  "op": "==",
+                  "value": "full"
+                }
+              ],
+              "bonusPct": -50
+            }
+          ],
+          "engagementAll": -3
+        },
+        "axes": {
+          "people": 1,
+          "horizon": 1
+        },
+        "lesson": "雇用を守ると、景気が戻ったときに採り直す費用がかからず、社員の信頼も残る（雇用調整助成金の対象になることもある）"
+      },
+      {
+        "label": "採用を止めて、自然に人が減るのを待つ",
+        "effects": {
+          "hiringIntensity": {
+            "mult": 0.2,
+            "months": 12
+          }
+        },
+        "axes": {
+          "horizon": -1
+        },
+        "lesson": "採用を止めると、景気が戻ったときに人が足りず、受注を取りこぼしやすい"
+      },
+      {
+        "label": "希望退職を募る",
+        "effects": {
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "employmentType",
+                  "op": "==",
+                  "value": "full"
+                },
+                {
+                  "field": "affiliation",
+                  "op": "==",
+                  "value": "proper"
+                },
+                {
+                  "field": "onLeave",
+                  "op": "==",
+                  "value": 0
+                }
+              ],
+              "sortBy": "ability",
+              "order": "desc",
+              "limitShare": 0.1,
+              "resign": "outlook",
+              "severanceMonths": 6
+            }
+          ],
+          "morale": {
+            "delta": -6,
+            "months": 24
+          },
+          "hiringAttraction": {
+            "mult": 0.85,
+            "months": 24
+          }
+        },
+        "axes": {
+          "people": -1,
+          "horizon": -1
+        },
+        "lesson": "希望退職では、ほかの会社でも通用する優秀な人から辞めていきやすい（逆選択）。残った人の不安も長く続く"
+      }
+    ]
+  },
+  {
+    "id": "client_bankruptcy",
+    "category": "market",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 5,
+      "conditions": [
+        {
+          "metric": "month",
+          "op": ">=",
+          "value": 24
+        }
+      ]
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "大口取引先の倒産",
+    "body": "大口の取引先が倒産し、売掛金のうち約{loss}万円が回収できなくなりました。この取引先からの受注もなくなります。",
+    "extraVars": {
+      "loss": {
+        "of": "revenue",
+        "mult": 0.04
+      }
+    },
+    "onTrigger": {
+      "cashRevenueMonths": -0.04
+    },
+    "choices": [
+      {
+        "label": "営業を総動員して新しい取引先を開拓する",
+        "effects": {
+          "demand": {
+            "mult": 0.95,
+            "months": 6
+          },
+          "engagementAll": -3
+        },
+        "axes": {
+          "horizon": 1,
+          "people": -1
+        },
+        "lesson": "穴を早く埋めるほど売上の落ち込みは小さいが、その間の負荷は社員にかかる"
+      },
+      {
+        "label": "受注の減少を受け入れ、経費を絞る",
+        "effects": {
+          "demand": {
+            "mult": 0.88,
+            "months": 12
+          }
+        },
+        "axes": {
+          "horizon": -1
+        },
+        "lesson": "落ち込みを受け入れると負荷は増えないが、取り戻すまでに時間がかかる"
+      },
+      {
+        "label": "与信管理の仕組みをつくり、取引先を分散する",
+        "effects": {
+          "cash": -1000000,
+          "demand": {
+            "mult": 0.9,
+            "months": 9
+          }
+        },
+        "axes": {
+          "rules": 1,
+          "horizon": 1
+        },
+        "lesson": "取引先の信用の確認と取引の上限（与信管理）は、商社の基本の守り。1社に頼りすぎないことが連鎖倒産を防ぐ"
+      }
+    ]
+  },
+  {
+    "id": "minimum_wage_hike",
+    "category": "market",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 3,
+      "conditions": [
+        {
+          "metric": "partCount",
+          "op": ">=",
+          "value": 1
+        },
+        {
+          "metric": "month",
+          "op": ">=",
+          "value": 12
+        }
+      ]
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "最低賃金の大幅な引き上げ",
+    "body": "最低賃金が大きく引き上げられることになり、パートの時給を上げました。あわせて、ほかの給与をどうするか決める必要があります。",
+    "onTrigger": {
+      "groups": [
+        {
+          "where": [
+            {
+              "field": "employmentType",
+              "op": "==",
+              "value": "part"
+            }
+          ],
+          "salaryPct": 4
+        }
+      ]
+    },
+    "choices": [
+      {
+        "label": "最低賃金に合わせるだけにする",
+        "effects": {
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "employmentType",
+                  "op": "==",
+                  "value": "part"
+                }
+              ],
+              "engagement": -4
+            }
+          ]
+        },
+        "axes": {
+          "horizon": -1
+        },
+        "lesson": "最低賃金を下回る賃金は、本人が合意していても無効になる（最低賃金法4条）。合わせるのは最低限の義務"
+      },
+      {
+        "label": "パートにさらに上乗せし、正社員の給与も見直す",
+        "effects": {
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "employmentType",
+                  "op": "==",
+                  "value": "part"
+                }
+              ],
+              "salaryPct": 3,
+              "engagement": 5
+            },
+            {
+              "where": [
+                {
+                  "field": "employmentType",
+                  "op": "==",
+                  "value": "full"
+                },
+                {
+                  "field": "affiliation",
+                  "op": "==",
+                  "value": "proper"
+                },
+                {
+                  "field": "onLeave",
+                  "op": "==",
+                  "value": 0
+                }
+              ],
+              "salaryPct": 1
+            }
+          ]
+        },
+        "axes": {
+          "reward": -1,
+          "people": 1,
+          "horizon": 1
+        },
+        "lesson": "パートだけ上がると正社員との差が縮み、正社員の不満になることもある。全体のバランスで考える"
+      },
+      {
+        "label": "パートの仕事を減らし、正社員に寄せる",
+        "effects": {
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "employmentType",
+                  "op": "==",
+                  "value": "part"
+                }
+              ],
+              "sortBy": "ability",
+              "order": "asc",
+              "limitShare": 0.05,
+              "resign": "outlook"
+            }
+          ]
+        },
+        "axes": {
+          "people": -1
+        },
+        "lesson": "人を減らして費用を抑えても、残った人に仕事が寄って負荷が上がる"
+      }
+    ]
+  },
+  {
+    "id": "talent_shortage",
+    "category": "hiring",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 10,
+      "conditions": [
+        {
+          "metric": "month",
+          "op": ">=",
+          "value": 24
+        }
+      ]
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "業界全体の人手不足",
+    "body": "業界全体で人手不足が深刻になり、求人を出しても応募が集まりにくくなっています。",
+    "onTrigger": {
+      "hiringAttraction": {
+        "mult": 0.75,
+        "months": 24
+      }
+    },
+    "choices": [
+      {
+        "label": "初任給と給与の水準を引き上げる",
+        "effects": {
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "employmentType",
+                  "op": "==",
+                  "value": "full"
+                },
+                {
+                  "field": "affiliation",
+                  "op": "==",
+                  "value": "proper"
+                },
+                {
+                  "field": "onLeave",
+                  "op": "==",
+                  "value": 0
+                }
+              ],
+              "salaryPct": 4
+            }
+          ],
+          "hiringAttraction": {
+            "mult": 1.25,
+            "months": 24
+          }
+        },
+        "axes": {
+          "people": 1,
+          "horizon": 1
+        },
+        "lesson": "給与の水準を上げると、採用だけでなく今いる人の定着にも効く。そのぶん人件費は続けてかかる"
+      },
+      {
+        "label": "採用を強める（求人媒体や紹介会社を増やす）",
+        "effects": {
+          "hiringIntensity": {
+            "mult": 1.6,
+            "months": 12
+          }
+        },
+        "axes": {
+          "horizon": 1
+        },
+        "lesson": "採用を強めると人数は確保しやすいが、1人あたりの採用費も上がる"
+      },
+      {
+        "label": "今いる人で回す",
+        "effects": {
+          "engagementAll": -2
+        },
+        "axes": {
+          "horizon": -1
+        },
+        "lesson": "人手不足のまま受注を取ると残業が増え、辞める人が増える悪循環になりやすい"
+      }
+    ]
+  },
+  {
+    "id": "demand_surge",
+    "category": "hiring",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 5,
+      "conditions": [
+        {
+          "metric": "month",
+          "op": ">=",
+          "value": 12
+        },
+        {
+          "metric": "demandCoverage3",
+          "op": ">=",
+          "value": 0.95
+        }
+      ]
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "需要の急拡大",
+    "body": "取り扱う商材の市場が急に伸びはじめました。今の人数では受注に応えきれません。",
+    "onTrigger": {
+      "demand": {
+        "mult": 1.2,
+        "months": 36
+      },
+      "matureDemandMult": 1.05
+    },
+    "choices": [
+      {
+        "label": "採用を大きく強める",
+        "effects": {
+          "hiringIntensity": {
+            "mult": 1.5,
+            "months": 12
+          }
+        },
+        "axes": {
+          "horizon": 1
+        },
+        "lesson": "伸びる時期に人を採れるかどうかで、そのあとの会社の大きさが決まる"
+      },
+      {
+        "label": "残業で乗り切る",
+        "effects": {
+          "engagementAll": -2
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "lesson": "需要の急増を残業だけで受けると、負荷で人が辞め、結局受注を取りこぼす"
+      },
+      {
+        "label": "受けられる分だけ受ける",
+        "effects": {
+          "demand": {
+            "mult": 0.85,
+            "months": 36
+          }
+        },
+        "axes": {
+          "horizon": -1,
+          "people": 1
+        },
+        "lesson": "受注を絞ると取引先が競合に移り、将来の需要も減る"
+      }
+    ]
+  },
+  {
+    "id": "big_contract",
+    "category": "hiring",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 15
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "大型案件の打診",
+    "body": "大手メーカーから、大型の継続案件の打診がありました。受けるには営業と事務の増員が必要です。",
+    "choices": [
+      {
+        "label": "受注し、採用を強めて体制をつくる",
+        "effects": {
+          "demand": {
+            "mult": 1.15,
+            "months": 36
+          },
+          "hiringIntensity": {
+            "mult": 1.5,
+            "months": 12
+          }
+        },
+        "axes": {
+          "horizon": 1
+        },
+        "lesson": "大きな案件は、受ける前に体制をつくれるかで成否が決まる"
+      },
+      {
+        "label": "受注し、今の人数でこなす",
+        "effects": {
+          "demand": {
+            "mult": 1.15,
+            "months": 36
+          },
+          "engagementAll": -2
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "lesson": "体制をつくらずに受けると、残業と取りこぼしが同時に起きやすい"
+      },
+      {
+        "label": "体制が整わないので断る",
+        "effects": {},
+        "axes": {
+          "horizon": -1,
+          "people": 1
+        },
+        "lesson": "断る判断も経営。ただし大口の取引先との関係は、一度断ると戻りにくい"
+      }
+    ]
+  },
+  {
+    "id": "trading_new_division",
+    "category": "industry",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 30,
+      "conditions": [
+        {
+          "metric": "profit12",
+          "op": ">",
+          "value": 0
+        },
+        {
+          "metric": "cash",
+          "op": ">=",
+          "value": 50000000
+        }
+      ],
+      "target": {
+        "where": [
+          {
+            "field": "roleKind",
+            "op": "==",
+            "value": "revenue"
+          },
+          {
+            "field": "employmentType",
+            "op": "==",
+            "value": "full"
+          },
+          {
+            "field": "affiliation",
+            "op": "==",
+            "value": "proper"
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          },
+          {
+            "field": "ability",
+            "op": ">=",
+            "value": 60
+          }
+        ],
+        "sortBy": "ability",
+        "order": "desc"
+      }
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "新規事業部の立ち上げ",
+    "body": "今の商材に加えて、新しい分野の商材を扱う新規事業部を立ち上げる話が持ち上がりました。候補は社内のエースの{name}さんか、外部の経験者です。",
+    "choices": [
+      {
+        "label": "社内のエースを事業部長に抜擢する",
+        "effects": {
+          "cash": -10000000,
+          "matureDemandMult": 1.04,
+          "target": {
+            "roleKind": "management",
+            "isKeyPerson": true,
+            "salaryPct": 15,
+            "engagement": 15
+          }
+        },
+        "axes": {
+          "reward": 1,
+          "horizon": 1,
+          "people": 1
+        },
+        "lesson": "エースを抜擢すると本人は伸び、社内にも道が見える。ただし、その人の今の売上は失う"
+      },
+      {
+        "label": "外部から経験者を事業部長として迎える",
+        "effects": {
+          "cash": -30000000,
+          "matureDemandMult": 1.05,
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "isKeyPerson",
+                  "op": "==",
+                  "value": true
+                }
+              ],
+              "engagement": -5
+            }
+          ]
+        },
+        "axes": {
+          "horizon": 1,
+          "people": -1
+        },
+        "lesson": "外部の経験者は立ち上げが速いが、社内の人には「上が詰まった」と映ることがある"
+      },
+      {
+        "label": "今は既存の事業に集中する",
+        "effects": {},
+        "axes": {
+          "horizon": -1
+        },
+        "lesson": "既存事業に集中すると今の利益は守れるが、市場が縮んだときの次の柱がない"
+      }
+    ],
+    "cooldownMonths": 1200
   }
 ]

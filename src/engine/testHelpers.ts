@@ -1,7 +1,7 @@
 /** テスト用：属性を指定して社員をつくる */
 import { getIndustry, getLocation } from './data';
 import { createEmployee, marketSalaryFor } from './employees';
-import { createRng } from './rng';
+import { createRng, type Rng } from './rng';
 import type { Employee, IndustryVariant } from './types';
 import { MONTHS_PER_YEAR } from './types';
 
@@ -35,3 +35,19 @@ export function marketPaid(e: Employee, location = tokyo): Employee {
 
 export const staff = (role: string, n: number, overrides: Partial<Employee> = {}) =>
   Array.from({ length: n }, () => makeEmployee(role, overrides));
+
+/** いつも同じ値を返す乱数（next が v。pick・weightedPick は先頭を選ぶ） */
+export function fixedRng(v: number): Rng {
+  return {
+    next: () => v,
+    range: (min) => min,
+    int: (min) => min,
+    chance: (p) => v < p,
+    pick: (xs) => xs[0] as never,
+    weightedPick: (xs) => xs[0] as never,
+    normal: (m = 0) => m,
+    gamma: (s) => s,
+    shuffle: (xs) => [...xs],
+    getState: () => ({ seed: 0, state: 0 }),
+  };
+}
