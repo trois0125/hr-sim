@@ -1,11 +1,25 @@
-import { strings } from './strings';
+import { End } from './screens/End';
+import { Generate } from './screens/Generate';
+import { HowTo } from './screens/HowTo';
+import { Main } from './screens/Main';
+import { Policies } from './screens/Policies';
+import { Title } from './screens/Title';
+import { useGame } from './useGame';
 
 export function App() {
-  return (
-    <main style={{ padding: 16, fontFamily: 'system-ui, sans-serif' }}>
-      <h1>{strings.appTitle}</h1>
-      <p>{strings.appSubtitle}</p>
-      <p>{strings.wip}</p>
-    </main>
-  );
+  const screen = useGame((s) => s.screen);
+  switch (screen) {
+    case 'title':
+      return <Title />;
+    case 'howto':
+      return <HowTo />;
+    case 'generate':
+      return <Generate />;
+    case 'policies':
+      return <Policies />;
+    case 'main':
+      return <Main />;
+    case 'end':
+      return <End />;
+  }
 }

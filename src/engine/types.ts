@@ -734,6 +734,8 @@ export type EventChoice = {
   axes?: AxisMarks;
   /** 人事スタイル診断（§9）の軸の印。どの軸にも当てはまらない選択肢は省く */
   diagnosis?: DiagnosisMarks;
+  /** 予想される影響の補足（効果のデータから自動では出せないこと：あとで起きうること、法令上の問題など）。初級の画面に出す */
+  hint?: string;
   /** 法令のイベントを自動で進めるとき、この方針ならこの選択肢を選ぶ */
   auto?: LegalResponse[];
 };
@@ -779,7 +781,8 @@ export type EventDef = {
 export type PendingDecision = {
   id: string;
   month: number;
-  kind: 'milestone' | 'event';
+  /** milestone：法令の節目、event：イベント、review：毎年の決算月の制度の見直し（画面で遊ぶときだけ） */
+  kind: 'milestone' | 'event' | 'review';
   /** milestone：対象の義務、event：イベントのID */
   ruleIds: string[];
   eventId: string | null;
@@ -800,6 +803,26 @@ export type DecisionRecord = {
   diagnosis: DiagnosisMarks;
   /** 自動で選んだか */
   auto: boolean;
+};
+
+/** 節目の問いかけ（§2.2「人事として今何を大事にしたいか」）への答え */
+export type Reflection = { month: number; text: string };
+
+/** 従業員の声の種類：ふだんの声／退職のあいさつ／休職からの復帰／出向からの帰任 */
+export type VoiceKind = 'voice' | 'farewell' | 'return' | 'secondment';
+export type VoiceTone = 'negative' | 'neutral' | 'positive';
+
+/** 従業員の声（メイン画面のフィードと、社史レポートの「従業員の声」に使う） */
+export type VoiceRecord = {
+  month: number;
+  employeeId: string;
+  name: string;
+  role: RoleId;
+  kind: VoiceKind;
+  tone: VoiceTone;
+  /** どの要因についての声か（ふだんの声のとき） */
+  factor: EngagementFactor | null;
+  text: string;
 };
 
 /** 予約された続きのイベント */
@@ -855,6 +878,10 @@ export type CompanyState = {
   decisions: DecisionRecord[];
   /** 予約された続きのイベント */
   scheduledEvents: ScheduledEvent[];
+  /** 節目の問いかけへの答え */
+  reflections: Reflection[];
+  /** 従業員の声 */
+  voices: VoiceRecord[];
   /** 自動で判断する方針。null なら判断待ちで止まる（画面で選ぶ） */
   autoPlay: AutoPlay | null;
   /** 次に採番する判断待ちの番号 */

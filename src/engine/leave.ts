@@ -76,10 +76,14 @@ export function startLeave(e: Employee, kind: LeaveKind, month: number, options:
 
 /**
  * 期間の終わった休職を片づける（月のはじめに呼ぶ。状態を書き換える）。
- * 乱数は、期間の終わった休職1件につき1回だけ引く。去った人の記録を返す
+ * 乱数は、期間の終わった休職1件につき1回だけ引く。去った人の記録と、復帰した人を返す
  */
-export function processLeaves(state: CompanyState, rng: Rng): Departure[] {
+export function processLeaves(
+  state: CompanyState,
+  rng: Rng,
+): { departures: Departure[]; returned: { employee: Employee; kind: LeaveKind }[] } {
   const out: Departure[] = [];
+  const returned: { employee: Employee; kind: LeaveKind }[] = [];
   const stay: Employee[] = [];
   for (const e of state.employees) {
     const leave = e.leave;
@@ -90,11 +94,12 @@ export function processLeaves(state: CompanyState, rng: Rng): Departure[] {
     if (rng.next() < leave.returnRate) {
       e.leave = null;
       stay.push(e);
+      returned.push({ employee: e, kind: leave.kind });
     } else {
       out.push(toDeparture(e, state.month, 'resignation', RESIGN_REASON[leave.kind]));
     }
   }
   state.employees = stay;
   state.departures.push(...out);
-  return out;
+  return { departures: out, returned };
 }

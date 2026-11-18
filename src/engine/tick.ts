@@ -17,7 +17,8 @@ import { runHiring } from './hiring';
 import { demandAt, stepEconomy, updateShareFactor } from './market';
 import { computeOvertime, computePerformance, overtimeCap } from './performance';
 import { growAbility, runAnnualReview, stepSalaryTransitions } from './evaluation';
-import { hiringAttractionModifier, modifierValue, pruneModifiers } from './events';
+import { hiringAttractionModifier, modifierValue, pruneModifiers, pushDecision } from './events';
+import { generateVoices } from './voices';
 import { runEvents } from './eventTriggers';
 import { processLeaves } from './leave';
 import { checkObligations, checkViolations, legalMonthlyCost } from './laws';
@@ -87,7 +88,7 @@ export function tickInPlace(state: CompanyState): CompanyState {
   const eventsRng = createRng(deriveSeed(state.seed, `events:${state.month}`));
 
   // 休職の期間が終わった人は、復帰するか退職するか
-  processLeaves(state, eventsRng);
+  const leaves = processLeaves(state, eventsRng);
 
   // 1. 市場と景気
   const economy = stepEconomy(state.market.economy, streams.market);
@@ -216,6 +217,12 @@ export function tickInPlace(state: CompanyState): CompanyState {
     if (d.kind === 'resignation') record.resignations++;
     else record.returns++;
   }
+  // 従業員の声（この月に去った人のあいさつ、休職からの復帰、ふだんの声）
+  generateVoices(state, streams.voices, {
+    departures: state.departures.filter((d) => d.month === state.month),
+    returned: leaves.returned,
+  });
+
   record.headcount = state.employees.length;
   record.avgEngagement =
     state.employees.length > 0
@@ -247,6 +254,10 @@ export function tickInPlace(state: CompanyState): CompanyState {
 
   state.rng = getStreamsState(streams);
   state.status = checkEnd(state);
+  // 画面で遊ぶときは、決算月ごとに「制度を変えますか？」で止まる（§2.2）。自動で進めるときは止まらない
+  if (birthday && state.status === 'running' && state.autoPlay === null) {
+    pushDecision(state, { kind: 'review', ruleIds: [], eventId: null, vars: { year: state.month / MONTHS_PER_YEAR } });
+  }
   return state;
 }
 

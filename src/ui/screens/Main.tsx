@@ -1,0 +1,282 @@
+import { useMemo, useState } from 'react';
+import { Line, LineChart, ResponsiveContainer, Tooltip, YAxis } from 'recharts';
+import { getIndustry } from '../../engine/data';
+import type { CompanyState, Employee, PolicySet } from '../../engine/types';
+import { MONTHS_PER_YEAR } from '../../engine/types';
+import { optionName } from '../../store/game';
+import { DEV_SPEEDS, SPEEDS, STAFF_PAGE } from '../config';
+import { DecisionModal } from '../parts/DecisionModal';
+import { EmployeeDetail } from '../parts/EmployeeDetail';
+import { Lesson } from '../parts/Lesson';
+import { PolicyEditor } from '../parts/PolicyEditor';
+import { actions, useGame } from '../useGame';
+import { eventStrings, mainStrings as t, policyStrings } from '../strings';
+import { dateLabel, pct, yen } from '../format';
+
+function TopBar({ company }: { company: CompanyState }) {
+  const speed = useGame((s) => s.speed);
+  const speeds = [...SPEEDS, ...DEV_SPEEDS];
+  return (
+    <header className="topbar">
+      <span className="topbar-company">{company.profile.name}</span>
+      <span className="topbar-date num">{dateLabel(company.month)}</span>
+      <div className="speed" role="group" aria-label={t.speed}>
+        <button aria-pressed={speed === 0} onClick={() => actions().setSpeed(0)}>
+          {t.pause}
+        </button>
+        {speeds.map((s) => (
+          <button key={s} aria-pressed={speed === s} onClick={() => actions().setSpeed(s)}>
+            {s}x
+          </button>
+        ))}
+      </div>
+      <span className="topbar-cash num">
+        {t.cash} <strong className={company.cash < 0 ? 'loss' : ''}>{yen(company.cash)}</strong>
+      </span>
+    </header>
+  );
+}
+
+function Metrics({ company }: { company: CompanyState }) {
+  const h = company.history;
+  const last = h[h.length - 1];
+  const year = h.slice(-MONTHS_PER_YEAR);
+  const resign = year.reduce((s, r) => s + r.resignations, 0);
+  const avgHead = year.reduce((s, r) => s + r.headcount, 0) / Math.max(1, year.length);
+  const chart = year.map((r) => ({ m: dateLabel(r.month), head: r.headcount, eng: Math.round(r.avgEngagement) }));
+  const onLeave = company.employees.filter((e) => e.leave).length;
+  const m = t.metrics;
+  return (
+    <section className="sheet" aria-labelledby="metrics-title">
+      <h2 id="metrics-title" className="sheet-title">
+        {t.metricsTitle}
+      </h2>
+      <dl className="metric-list">
+        <div className="metric">
+          <dt>{m.headcount}</dt>
+          <dd className="num">{company.employees.length}人</dd>
+        </div>
+        <div className="metric">
+          <dt>{m.revenue}</dt>
+          <dd className="num">{last ? yen(last.revenue) : '-'}</dd>
+        </div>
+        <div className="metric">
+          <dt>{m.profit}</dt>
+          <dd className={`num ${last && last.operatingProfit < 0 ? 'loss' : ''}`}>{last ? yen(last.operatingProfit) : '-'}</dd>
+        </div>
+        <div className="metric">
+          <dt>{m.laborCostRatio}</dt>
+          <dd className="num">{last && last.revenue > 0 ? pct(last.labor.total / last.revenue) : '-'}</dd>
+        </div>
+        <div className="metric">
+          <dt>{m.attrition}</dt>
+          <dd className="num">{avgHead > 0 ? pct((resign / avgHead) * (MONTHS_PER_YEAR / Math.max(1, year.length))) : '-'}</dd>
+        </div>
+        <div className="metric">
+          <dt>{m.engagement}</dt>
+          <dd className="num">{last ? last.avgEngagement.toFixed(1) : '-'}</dd>
+        </div>
+        <div className="metric">
+          <dt>{m.overtime}</dt>
+          <dd className="num">{last ? `${Math.round(last.overtimeHours)}時間` : '-'}</dd>
+        </div>
+        {onLeave > 0 && (
+          <div className="metric">
+            <dt>{m.onLeave}</dt>
+            <dd className="num">{onLeave}人</dd>
+          </div>
+        )}
+      </dl>
+      {chart.length > 1 && (
+        <div className="chart-box" aria-label={t.chartTitle}>
+          <ResponsiveContainer>
+            <LineChart data={chart} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+              <YAxis yAxisId="head" tick={{ fontSize: 11 }} width={40} allowDecimals={false} />
+              <YAxis yAxisId="eng" orientation="right" domain={[0, 100]} hide />
+              <Tooltip />
+              <Line yAxisId="head" dataKey="head" name={m.headcount} stroke="#1e2b45" dot={false} isAnimationActive={false} />
+              <Line yAxisId="eng" dataKey="eng" name={m.engagement} stroke="#2e6a4f" dot={false} isAnimationActive={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </section>
+  );
+}
+
+type Sort = keyof typeof t.sorts;
+const SORTERS: Record<Sort, (a: Employee, b: Employee) => number> = {
+  engagement: (a, b) => a.engagement - b.engagement,
+  ability: (a, b) => b.ability - a.ability,
+  tenure: (a, b) => b.tenureMonths - a.tenureMonths,
+};
+
+function Staff({ company }: { company: CompanyState }) {
+  const [sort, setSort] = useState<Sort>('engagement');
+  const [shown, setShown] = useState(STAFF_PAGE);
+  const industry = getIndustry(company.profile.industryId);
+  const roleName = (id: string) => industry.roles.find((r) => r.id === id)?.name ?? id;
+  const list = useMemo(() => [...company.employees].sort(SORTERS[sort]), [company.employees, sort]);
+  const c = t.columns;
+  return (
+    <section className="sheet" aria-labelledby="staff-title">
+      <div className="staff-tools">
+        <h2 id="staff-title" className="staff-title">
+          {t.employeesTitle}（{company.employees.length}人）
+        </h2>
+        <label>
+          {t.sortBy}{' '}
+          <select value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
+            {(Object.keys(t.sorts) as Sort[]).map((k) => (
+              <option key={k} value={k}>
+                {t.sorts[k]}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <table className="staff-table">
+        <thead>
+          <tr>
+            <th>{c.name}</th>
+            <th>{c.role}</th>
+            <th className="right hide-narrow">{c.age}</th>
+            <th>{c.engagement}</th>
+            <th className="right hide-narrow">{c.salary}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {list.slice(0, shown).map((e) => {
+            const tags = [
+              e.isKeyPerson ? t.keyPerson : '',
+              e.employmentType === 'part' ? t.partTime : '',
+              e.affiliation === 'secondee' ? t.secondee : '',
+              e.leave ? eventStrings.leaveKinds[e.leave.kind] : '',
+            ].filter(Boolean);
+            const lv = e.engagement < 40 ? ' low' : e.engagement > 60 ? ' high' : '';
+            return (
+              <tr
+                key={e.id}
+                className="row-button"
+                tabIndex={0}
+                onClick={() => actions().selectEmployee(e.id)}
+                onKeyDown={(ev) => {
+                  if (ev.key === 'Enter' || ev.key === ' ') {
+                    ev.preventDefault();
+                    actions().selectEmployee(e.id);
+                  }
+                }}
+              >
+                <td>
+                  {e.name}
+                  {tags.map((x) => (
+                    <span key={x} className="tag">
+                      {x}
+                    </span>
+                  ))}
+                </td>
+                <td>{roleName(e.role)}</td>
+                <td className="right num hide-narrow">{e.age}</td>
+                <td className="num">
+                  <span className={`bar${lv}`} aria-hidden="true">
+                    <span style={{ width: `${e.engagement}%` }} />
+                  </span>
+                  {e.engagement.toFixed(0)}
+                </td>
+                <td className="right num hide-narrow">{yen(e.salaryMonthly)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      {list.length > shown && (
+        <button className="btn btn-quiet" onClick={() => setShown(list.length)}>
+          {t.showMore(list.length - shown)}
+        </button>
+      )}
+      {company.employees.length >= 100 && <p className="slip-note">{t.layersNote}</p>}
+    </section>
+  );
+}
+
+function Feed() {
+  const feed = useGame((s) => s.feed);
+  return (
+    <section className="sheet" aria-labelledby="feed-title">
+      <h2 id="feed-title" className="sheet-title">
+        {t.feedTitle}
+      </h2>
+      <ul className="feed" aria-live="polite">
+        {feed.map((f) => (
+          <li key={f.id} className={`kind-${f.kind} tone-${f.tone}${f.kind === 'voice' ? ' feed-voice' : ''}`}>
+            <span className="feed-date num">{dateLabel(f.month)}</span>
+            <span>
+              {f.kind === 'voice' ? (
+                <>
+                  <q>{f.text}</q>{' '}
+                  {f.employeeId && (
+                    <button className="feed-name" onClick={() => actions().selectEmployee(f.employeeId ?? null)}>
+                      {f.name}
+                    </button>
+                  )}
+                </>
+              ) : (
+                f.text
+              )}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function Policies({ company }: { company: CompanyState }) {
+  return (
+    <section className="sheet" aria-labelledby="policies-title">
+      <h2 id="policies-title" className="sheet-title">
+        {t.policiesTitle}
+      </h2>
+      <dl className="policy-list">
+        {(Object.keys(policyStrings.categories) as (keyof PolicySet)[]).map((k) => (
+          <div key={k}>
+            <dt>{policyStrings.categories[k]}</dt>
+            <dd>{optionName(k, company.policies[k])}</dd>
+          </div>
+        ))}
+      </dl>
+      <button className="btn" onClick={() => actions().openEditor()}>
+        {t.reviewPolicies}
+      </button>
+    </section>
+  );
+}
+
+export function Main() {
+  const company = useGame((s) => s.company);
+  const editorOpen = useGame((s) => s.editorOpen);
+  const selected = useGame((s) => s.selectedEmployeeId);
+  if (!company) return null;
+  const waiting = company.pendingDecisions.length > 0;
+  return (
+    <>
+      <TopBar company={company} />
+      <main className="main-grid">
+        <div className="side">
+          {waiting && <p className="waiting-note">{t.waiting}</p>}
+          <Metrics company={company} />
+        </div>
+        <div className="main-center">
+          <Feed />
+          <Staff company={company} />
+        </div>
+        <div className="side side-right">
+          <Policies company={company} />
+        </div>
+      </main>
+      {editorOpen ? <PolicyEditor company={company} /> : <DecisionModal company={company} />}
+      {selected && !editorOpen && !waiting && <EmployeeDetail company={company} id={selected} />}
+      <Lesson />
+    </>
+  );
+}

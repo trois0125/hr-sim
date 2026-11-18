@@ -1793,5 +1793,68 @@
     "unit": "弾力性",
     "basis": "assumption",
     "source": "仮置き。採用の強さを上げたときの1人あたりの採用費の伸び（強さ1.5倍で採用費も1.5倍。求人広告・紹介手数料の上乗せ）"
+  },
+  {
+    "id": "voices.per_month",
+    "value": 1,
+    "unit": "件/月",
+    "basis": "assumption",
+    "source": "仮置き。毎月の「ふだんの声」の件数（画面のフィードの演出）"
+  },
+  {
+    "id": "voices.farewell_max",
+    "value": 2,
+    "unit": "件/月",
+    "basis": "assumption",
+    "source": "仮置き。1か月に出す退職のあいさつの上限（大量に辞めた月にフィードが埋まらないように）"
+  },
+  {
+    "id": "voices.negative_below",
+    "value": 40,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。納得感がこれより低い人は、不満の声を出す"
+  },
+  {
+    "id": "voices.positive_above",
+    "value": 62,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。納得感がこれより高い人は、前向きな声を出す"
+  },
+  {
+    "id": "ui.tick_ms_at_1x",
+    "value": 17500,
+    "unit": "ミリ秒",
+    "basis": "assumption",
+    "source": "DESIGN.md §2.1「標準速度では1年あたり3〜4分」の真ん中（3.5分÷12か月）。画面の時間の進み方"
+  },
+  {
+    "id": "ui.forecast_months",
+    "value": 12,
+    "unit": "か月",
+    "basis": "assumption",
+    "source": "仮置き。制度の見直しの画面で、変えた場合と変えない場合を比べる期間"
+  },
+  {
+    "id": "ui.feed_max",
+    "value": 200,
+    "unit": "件",
+    "basis": "assumption",
+    "source": "仮置き。メイン画面のフィードに残す件数の上限（古いものから消す。記録そのものは状態に残る）"
+  },
+  {
+    "id": "ui.forecast.cost_threshold",
+    "value": 0.01,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。制度の見直しの試算で、人件費・利益の差が変えない場合の人件費の1%未満なら「ほぼ変わらない」と出す"
+  },
+  {
+    "id": "ui.forecast.engagement_threshold",
+    "value": 0.5,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。制度の見直しの試算で、納得感の差が0.5点未満なら「ほぼ変わらない」と出す"
   }
 ]

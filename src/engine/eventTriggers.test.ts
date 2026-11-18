@@ -13,7 +13,7 @@ import {
   selectTarget,
   type CompanyMetrics,
 } from './eventTriggers';
-import { groupMembers, modifierValue, resolveEvent, resolveMilestone, styleChoiceIndex } from './events';
+import { groupMembers, modifierValue, resolveEvent, resolveMilestone, resolveReview, styleChoiceIndex } from './events';
 import { generateCompany } from './generate';
 import { createRng } from './rng';
 import { internalFairnessScores } from './engagement';
@@ -543,6 +543,8 @@ describe('画面で選ぶとき', () => {
       const d = c.pendingDecisions[0];
       if (d?.kind === 'milestone') {
         resolveMilestone(c, d.id, 'immediate');
+      } else if (d?.kind === 'review') {
+        resolveReview(c, d.id);
       } else if (d?.kind === 'event' && eventDefs.find((e) => e.id === d.eventId)?.category === 'law') {
         resolveEvent(c, d.id, 0);
       } else if (d?.kind === 'event' && eventDefs.find((e) => e.id === d.eventId)?.category !== 'law') {

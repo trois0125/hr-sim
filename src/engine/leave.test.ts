@@ -116,10 +116,12 @@ describe('休職の終わり', () => {
     const e = makeEmployee('sales');
     startLeave(e, 'parental', 0);
     const c = company([e], (e.leave?.endsAt ?? 0) - 1);
-    expect(processLeaves(c, fixedRng(0))).toHaveLength(0);
+    expect(processLeaves(c, fixedRng(0)).departures).toHaveLength(0);
     expect(isOnLeave(e)).toBe(true); // まだ期間中
     c.month += 1;
-    expect(processLeaves(c, fixedRng(0))).toHaveLength(0);
+    const r = processLeaves(c, fixedRng(0));
+    expect(r.departures).toHaveLength(0);
+    expect(r.returned).toEqual([{ employee: e, kind: 'parental' }]);
     expect(isOnLeave(e)).toBe(false);
   });
 
@@ -129,7 +131,7 @@ describe('休職の終わり', () => {
     startLeave(a, 'parental', 0);
     startLeave(b, 'sick', 0);
     const c = company([a, b], 100);
-    const out = processLeaves(c, fixedRng(0.999));
+    const out = processLeaves(c, fixedRng(0.999)).departures;
     expect(c.employees).toHaveLength(0);
     expect(out.map((d) => d.reason).sort()).toEqual(['family', 'workload']);
     expect(c.departures).toHaveLength(2);

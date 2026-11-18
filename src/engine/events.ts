@@ -67,7 +67,7 @@ export function pushDecision(
 ): void {
   const decision: PendingDecision = { ...d, id: `d${state.nextDecisionId++}`, month: state.month };
   state.pendingDecisions.push(decision);
-  if (!state.autoPlay) return;
+  if (!state.autoPlay || decision.kind === 'review') return;
   if (decision.kind === 'milestone') {
     resolveMilestone(state, decision.id, state.autoPlay.legal, rng);
     return;
@@ -163,6 +163,18 @@ export function resolveMilestone(
     });
   }
   if (streams) state.rng = getStreamsState(streams);
+}
+
+/** 毎年の制度の見直しを終える（制度を変えるときは、先に policyChange.ts の changePolicies を呼ぶ） */
+export function resolveReview(state: CompanyState, decisionId: string): void {
+  const d = takeDecision(state, decisionId);
+  if (d.kind !== 'review') throw new Error(`制度の見直しではありません: ${decisionId}`);
+}
+
+/** 節目の問いかけへの答えを記録する（空なら記録しない） */
+export function addReflection(state: CompanyState, text: string): void {
+  const t = text.trim();
+  if (t) state.reflections.push({ month: state.month, text: t });
 }
 
 /** イベントの選択肢を選ぶ（状態を書き換える） */
