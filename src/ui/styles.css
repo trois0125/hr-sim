@@ -1007,3 +1007,305 @@ body::before {
 .staff-table th:nth-child(2) {
   white-space: nowrap;
 }
+
+/* ---------- 1か月の進み具合 ---------- */
+
+.topbar {
+  position: sticky;
+}
+
+.month-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: rgba(248, 250, 249, 0.18);
+  overflow: hidden;
+}
+
+.month-progress-fill {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: var(--sheet);
+  transform-origin: left center;
+  animation-name: month-fill;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@keyframes month-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- 社史レポート（ステップ11） ---------- */
+
+.report {
+  max-width: 880px;
+}
+
+.report-title {
+  font-size: var(--step-2);
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--ink);
+}
+
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 2px solid var(--rule);
+}
+
+.timeline li {
+  display: grid;
+  grid-template-columns: 6.5em 1fr;
+  gap: 8px;
+  padding: 4px 0 4px 12px;
+  position: relative;
+}
+
+.timeline li::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 12px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--rule);
+}
+
+.timeline .tl-founding::before,
+.timeline .tl-end::before,
+.timeline .tl-headcount::before {
+  background: var(--ink);
+}
+
+.timeline .tl-founding,
+.timeline .tl-end,
+.timeline .tl-headcount {
+  font-weight: 700;
+}
+
+.timeline .tl-violation,
+.timeline .tl-recession {
+  color: var(--warn);
+}
+
+.timeline .tl-reflection {
+  font-family: var(--mincho);
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 20px;
+  margin-top: 12px;
+}
+
+@media (max-width: 640px) {
+  .chart-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.small-chart {
+  margin: 0;
+  min-width: 0;
+}
+
+.small-chart figcaption {
+  font-size: var(--step--1);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.small-chart-box {
+  height: 170px;
+}
+
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 8px;
+}
+
+.compare-table th,
+.compare-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--rule-soft);
+  text-align: right;
+}
+
+.compare-table th[scope='row'] {
+  text-align: left;
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+
+.compare-table thead th {
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+
+.voice-periods {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.voice-periods .feed {
+  max-height: none;
+}
+
+.voice-who {
+  font-size: var(--step--1);
+}
+
+/* 診断：タイプ名を印鑑の朱で押す（決裁の印と同じ「決めたことの記録」） */
+.style-card {
+  border-top: 6px solid var(--ink);
+}
+
+.style-name {
+  display: inline-block;
+  margin: 8px 0 4px;
+  padding: 6px 14px;
+  font-family: var(--mincho);
+  font-size: var(--step-3);
+  line-height: 1.3;
+  color: var(--seal);
+  border: 3px double var(--seal);
+  border-radius: var(--radius-control);
+}
+
+.style-summary {
+  font-size: var(--step-1);
+  margin: 8px 0 16px;
+  max-width: 34em;
+}
+
+.axes {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+  max-width: 520px;
+}
+
+.axis-row {
+  display: grid;
+  grid-template-columns: 3em 1fr 3em;
+  align-items: center;
+  gap: 10px;
+}
+
+.axis-row .axis-end:first-child {
+  text-align: right;
+}
+
+.axis-end {
+  color: var(--ink-soft);
+}
+
+.axis-end.axis-on {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.axis-track {
+  position: relative;
+  display: block;
+  height: 2px;
+  background: var(--rule);
+}
+
+.axis-track::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -5px;
+  height: 12px;
+  width: 1px;
+  background: var(--ink-soft);
+}
+
+.axis-mark {
+  position: absolute;
+  top: -6px;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+.style-notes {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.style-notes dt {
+  font-weight: 700;
+}
+
+.style-notes dd {
+  margin: 0;
+}
+
+.turning-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.turning-list li {
+  display: grid;
+  grid-template-columns: 6.5em 1fr;
+  gap: 8px;
+}
+
+.turning-list p {
+  margin: 4px 0 0;
+}
+
+@media (max-width: 480px) {
+  .timeline li,
+  .turning-list li {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
+/* 退職理由の割合（0〜100%。中立の線はない） */
+.reason-track {
+  display: block;
+  height: 8px;
+  background: var(--rule-soft);
+}
+
+.reason-track > span {
+  display: block;
+  height: 100%;
+  background: var(--ink-soft);
+}

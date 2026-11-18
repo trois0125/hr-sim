@@ -46,6 +46,8 @@ export type GameState = {
   selectedEmployeeId: string | null;
   /** 「制度を見直す」の画面を開いているか（毎年の見直しとは別に、いつでも開ける） */
   editorOpen: boolean;
+  /** いま進んでいる1か月（始まった時刻と長さ。プログレスバー用）。止まっている間は null */
+  cycle: { startedAt: number; ms: number } | null;
   lesson: LessonNote | null;
 };
 
@@ -80,6 +82,7 @@ const initial: GameState = {
   selectedEmployeeId: null,
   editorOpen: false,
   lesson: null,
+  cycle: null,
 };
 
 let seedCounter = 0;
@@ -172,14 +175,21 @@ export function createGameStore(options: { timers?: boolean } = {}) {
       if (timer) clearTimeout(timer);
       timer = null;
     };
+    /** 時間が進む状態か（速度が0でなく、判断待ちでも見直しの画面を開いてもいない） */
+    const running = () => {
+      const { speed, screen, company, editorOpen } = get();
+      return speed > 0 && screen === 'main' && !!company && company.status === 'running' && !isWaitingForDecision(company) && !editorOpen;
+    };
+    /** 次の1か月を始める（止まる状態なら止める）。状態が変わる操作のたびに呼ぶ */
     const schedule = () => {
       stopTimer();
-      const { speed, screen } = get();
-      if (!useTimers || speed <= 0 || screen !== 'main') return;
-      timer = setTimeout(() => {
-        get().step();
-        schedule();
-      }, coef('ui.tick_ms_at_1x') / speed);
+      if (!running()) {
+        if (get().cycle) set({ cycle: null });
+        return;
+      }
+      const ms = coef('ui.tick_ms_at_1x') / get().speed;
+      set({ cycle: { startedAt: Date.now(), ms } });
+      if (useTimers) timer = setTimeout(() => get().step(), ms);
     };
 
     return {
@@ -207,6 +217,7 @@ export function createGameStore(options: { timers?: boolean } = {}) {
         // 判断待ちと、制度の見直しの画面を開いている間は進めない
         if (!c || c.status !== 'running' || isWaitingForDecision(c) || get().editorOpen) return;
         commit(tick(c));
+        schedule();
       },
       setSpeed(speed) {
         set({ speed });
@@ -217,6 +228,7 @@ export function createGameStore(options: { timers?: boolean } = {}) {
           resolveMilestone(c, decisionId, response);
           if (reflection) addReflection(c, reflection);
         });
+        schedule();
       },
       answerEvent(decisionId, choiceIndex) {
         const c = get().company;
@@ -226,9 +238,11 @@ export function createGameStore(options: { timers?: boolean } = {}) {
         mutate((x) => resolveEvent(x, decisionId, choiceIndex), {
           lesson: ev && choice?.lesson ? { title: ev.title, label: choice.label, lesson: choice.lesson } : null,
         });
+        schedule();
       },
       finishReview(decisionId) {
         mutate((c) => resolveReview(c, decisionId), { editorOpen: false });
+        schedule();
       },
       changePolicy(next, opts) {
         const c = get().company;
@@ -239,17 +253,21 @@ export function createGameStore(options: { timers?: boolean } = {}) {
         if (review) {
           if (changed === c) {
             mutate((x) => resolveReview(x, review.id), { editorOpen: false });
+            schedule();
             return;
           }
           resolveReview(changed, review.id);
         }
         commit(changed, { editorOpen: false });
+        schedule();
       },
       openEditor() {
         set({ editorOpen: true });
+        schedule();
       },
       closeEditor() {
         set({ editorOpen: false });
+        schedule();
       },
       selectEmployee(id) {
         set({ selectedEmployeeId: id });

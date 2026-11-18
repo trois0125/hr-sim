@@ -190,6 +190,8 @@ export const mainStrings = {
   secondee: '出向',
   keyPerson: '主要',
   waiting: '判断を待っています',
+  progressRunning: '時間が進んでいます',
+  progressStopped: '時間は止まっています',
   showMore: (n: number) => `ほか${n}人を表示`,
 } as const;
 
@@ -392,4 +394,64 @@ export const layerStrings = {
   lowestTitle: '納得感の低い人',
   factorsTitle: '納得感の内訳（層の平均。50が中立）',
   none: '-',
+} as const;
+
+/** 社史レポート（§9。ステップ11） */
+export const reportStrings = {
+  title: '社史',
+  blocks: {
+    life: '会社の一生',
+    numbers: '数字の推移',
+    rival: '同期創業の他社との比較',
+    voices: '従業員の声',
+    style: '人事スタイル診断',
+    turning: '分岐点の解説',
+  },
+  timeline: {
+    founding: (n: number) => `創業（社員${n}人）`,
+    headcount: (n: number) => `社員が${n}人を超えた`,
+    obligation: (names: string) => `法令の節目：${names}`,
+    violation: (text: string) => `発覚：${text}`,
+    policy: (text: string) => `制度を変えた：${text}`,
+    recession: '景気後退が始まった',
+    event: (title: string, label: string) => `${title}：「${label}」`,
+    reflection: (text: string) => `問いかけへの答え「${text}」`,
+    end: (status: string) => `${status}で幕を閉じた`,
+  },
+  charts: {
+    revenue: '売上（年）',
+    operatingProfit: '営業利益（年）',
+    laborCostRatio: '人件費率',
+    headcount: '社員数（年度末）',
+    attritionRate: '離職率',
+    engagement: '納得感（平均）',
+  },
+  you: 'あなたの会社',
+  rival: '同期の会社（標準の制度）',
+  rivalLead: '同じ年に、同じ条件で創業し、標準の制度のまま経営した会社です。出来事の起き方は同じですが、判断は自動で選ばれています。',
+  rivalRows: {
+    result: '終わり方',
+    years: '期間',
+    finalHeadcount: '最後の社員数',
+    totalProfit: '営業利益の合計',
+    attrition: '平均の離職率',
+    engagement: '平均の納得感',
+  },
+  yearsMonths: (y: number, m: number) => `${y}年${m}か月`,
+  voicePeriod: (from: number, to: number) => {
+    const end = Math.max(from, Math.ceil(to));
+    return end === from ? `${from}年目` : `${from}〜${end}年目`;
+  },
+  voiceKinds: { voice: '', farewell: '退職のあいさつ', return: '復帰', secondment: '帰任' },
+  styleLead: '制度の選び方（選んでいた期間の長さ）と、出来事での判断を半々で合わせて判定しています。',
+  strength: '強み',
+  pitfall: '落とし穴',
+  axisFrom: (from: string) => `材料：${from}・出来事での判断`,
+  turningLead: '主な判断を挙げ、この場面で一般にどうなりやすいかを解説します。別の選択をしていたらどうなったかの試算はしません。',
+  turning: {
+    policy: (text: string) => `制度の変更：${text}`,
+    method: { consent: '（合意を取って）', rules: '（就業規則の変更で）' },
+    law: (name: string, months: number) => `${name}を後回しにした（違反の状態が${months}か月）`,
+  },
+  noVoices: 'この時期の声はありません',
 } as const;

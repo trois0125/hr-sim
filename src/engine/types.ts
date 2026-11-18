@@ -416,6 +416,8 @@ export type MonthlyRecord = {
   /** 違反の状態にある義務の数（月末） */
   violations: number;
   cash: number;
+  /** その月の制度（人事スタイル診断で「選んでいた期間の長さ」を数えるため。古い記録には無い） */
+  policies?: PolicySet;
 };
 
 /** 制度の変更（§5.1）。変更後しばらく納得感が揺れる */

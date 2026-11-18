@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { coef } from '../engine/coefficients';
 import { defaultPolicies } from '../engine/data';
 import { createGameStore, collectFeed } from './game';
 import { previewChange } from '../engine/policyChange';
@@ -119,5 +120,63 @@ describe('ゲームの進行（画面と同じ操作）', () => {
     store.getState().goto('title');
     expect(store.getState().company).toBeNull();
     expect(store.getState().screen).toBe('title');
+  });
+});
+
+describe('1か月の進み具合（プログレスバー）', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('進んでいる間は今の月の始まりと長さを持ち、速度で長さが変わる', () => {
+    const store = createGameStore({ timers: false });
+    store.getState().newCandidate('trading');
+    store.getState().startGame(defaultPolicies);
+    expect(store.getState().cycle?.ms).toBe(coef('ui.tick_ms_at_1x'));
+    store.getState().setSpeed(4);
+    expect(store.getState().cycle?.ms).toBe(coef('ui.tick_ms_at_1x') / 4);
+    store.getState().setSpeed(0);
+    expect(store.getState().cycle).toBeNull();
+  });
+
+  it('判断待ち・見直しの画面を開いている間は止まり、答えると月の頭から始まる', () => {
+    const store = createGameStore({ timers: false });
+    store.getState().newCandidate('trading');
+    store.getState().startGame(defaultPolicies);
+    for (let i = 0; i < 50 && !store.getState().company?.pendingDecisions.length; i++) store.getState().step();
+    expect(store.getState().cycle).toBeNull();
+    const d = store.getState().company?.pendingDecisions[0];
+    if (d?.kind === 'milestone') store.getState().answerMilestone(d.id, 'immediate');
+    else if (d?.kind === 'event') store.getState().answerEvent(d.id, 0);
+    else if (d) store.getState().finishReview(d.id);
+    if (!store.getState().company?.pendingDecisions.length) expect(store.getState().cycle).not.toBeNull();
+    store.getState().openEditor();
+    expect(store.getState().cycle).toBeNull();
+    store.getState().closeEditor();
+    if (!store.getState().company?.pendingDecisions.length) expect(store.getState().cycle).not.toBeNull();
+  });
+
+  it('タイマーで1か月ずつ進み、判断待ちで止まり、答えると再開する', () => {
+    vi.useFakeTimers();
+    const store = createGameStore();
+    store.getState().newCandidate('trading');
+    store.getState().startGame(defaultPolicies);
+    const ms = coef('ui.tick_ms_at_1x');
+    // 1か月たつと進む（最初の月に法令の節目が来て止まる）
+    vi.advanceTimersByTime(ms);
+    const s1 = store.getState().company!;
+    expect(s1.history.length > 0 || s1.pendingDecisions.length > 0).toBe(true);
+    expect(s1.pendingDecisions.length).toBeGreaterThan(0);
+    // 判断待ちの間は、いくら待っても進まない
+    if (s1.pendingDecisions.length > 0) {
+      const month = s1.month;
+      vi.advanceTimersByTime(ms * 5);
+      expect(store.getState().company?.month).toBe(month);
+      const d = s1.pendingDecisions[0]!;
+      if (d.kind === 'milestone') store.getState().answerMilestone(d.id, 'immediate');
+      vi.advanceTimersByTime(ms);
+      expect(store.getState().company?.month).toBeGreaterThan(month);
+    }
+    store.getState().goto('title');
   });
 });

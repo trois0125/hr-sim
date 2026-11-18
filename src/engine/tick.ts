@@ -170,6 +170,7 @@ export function tickInPlace(state: CompanyState): CompanyState {
     extraordinaryCost: state.unrecordedExtraordinaryCost,
     violations: 0,
     cash: state.cash,
+    policies: state.policies,
   };
   state.history.push(record);
   state.unrecordedExtraordinaryCost = 0;

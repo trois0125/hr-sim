@@ -15,8 +15,25 @@ import { actions, useGame } from '../useGame';
 import { eventStrings, mainStrings as t, policyStrings } from '../strings';
 import { dateLabel, pct, yen } from '../format';
 
+/** 1か月の進み具合。いまの月が始まるたびに、その月の長さで左から右へ伸びる。止まっている間は空 */
+function MonthProgress() {
+  const cycle = useGame((s) => s.cycle);
+  return (
+    <div className="month-progress" aria-hidden="true">
+      {cycle && (
+        <span
+          key={cycle.startedAt}
+          className="month-progress-fill"
+          style={{ animationDuration: `${cycle.ms}ms` }}
+        />
+      )}
+    </div>
+  );
+}
+
 function TopBar({ company }: { company: CompanyState }) {
   const speed = useGame((s) => s.speed);
+  const cycle = useGame((s) => s.cycle);
   const speeds = [...SPEEDS, ...DEV_SPEEDS];
   return (
     <header className="topbar">
@@ -35,6 +52,10 @@ function TopBar({ company }: { company: CompanyState }) {
       <span className="topbar-cash num">
         {t.cash} <strong className={company.cash < 0 ? 'loss' : ''}>{yen(company.cash)}</strong>
       </span>
+      <span className="visually-hidden">
+        {cycle ? t.progressRunning : t.progressStopped}
+      </span>
+      <MonthProgress />
     </header>
   );
 }
