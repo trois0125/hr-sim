@@ -4,6 +4,9 @@
  */
 import coefficientsJson from '../data/coefficients.json';
 import foundingsJson from '../data/foundings.json';
+import manufacturingJson from '../data/industries/manufacturing.json';
+import restaurantJson from '../data/industries/restaurant.json';
+import saasJson from '../data/industries/saas.json';
 import tradingJson from '../data/industries/trading.json';
 import locationsJson from '../data/locations.json';
 import namesJson from '../data/names.json';
@@ -25,9 +28,12 @@ export type NamesData = {
   companyStems: string[];
 };
 
-/** 現在データがある業種。ステップ12で残り3業種を足す */
+/** 業種のデータ（初級の4業種。§3.2） */
 export const industries: Partial<Record<IndustryId, IndustryData>> = {
   trading: tradingJson as IndustryData,
+  restaurant: restaurantJson as unknown as IndustryData,
+  saas: saasJson as unknown as IndustryData,
+  manufacturing: manufacturingJson as unknown as IndustryData,
 };
 
 export const foundingPatterns = foundingsJson as FoundingPattern[];

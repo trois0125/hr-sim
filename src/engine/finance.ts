@@ -45,6 +45,8 @@ export type FinanceInput = {
   hiringCost: number;
   /** 法令の義務に対応したあと毎月かかる費用（その他の固定費に入れる） */
   legalCost?: number;
+  /** 売上を外から決める（積み上がる売上の業種）。省略すると min(需要, 売れる上限＋残業) */
+  revenue?: number;
 };
 
 export type FinanceResult = {
@@ -60,7 +62,7 @@ export type FinanceResult = {
 
 export function computeFinance(input: FinanceInput): FinanceResult {
   const { employees, policies } = input;
-  const revenue = Math.min(input.demand, input.capacity + input.overtimeCapacity);
+  const revenue = input.revenue ?? Math.min(input.demand, input.capacity + input.overtimeCapacity);
   const grossProfit = revenue * input.grossMargin;
 
   // 休職中の人には給与・賞与・残業代を払わない

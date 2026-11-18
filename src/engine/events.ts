@@ -57,6 +57,19 @@ export function addExtraordinaryCost(state: CompanyState, amount: number): void 
 }
 
 /**
+ * 資金調達のお金を入れる（利益ではないので臨時の支出には入れず、記録の funding に載せる）。
+ * その月の記録がもうあればそこに、まだなければ次にできる記録に載せる
+ */
+export function addFunding(state: CompanyState, amount: number): void {
+  state.cash += amount;
+  const last = state.history[state.history.length - 1];
+  if (last && last.month === state.month) {
+    last.funding = (last.funding ?? 0) + amount;
+    last.cash = state.cash;
+  } else state.unrecordedFunding = (state.unrecordedFunding ?? 0) + amount;
+}
+
+/**
  * 判断待ちを積む。自動の方針があれば、その場で選ぶ。
  * ティック処理の途中から呼ぶときは、そのティックの乱数（法令は laws 系列、イベントは events 系列）を rng に渡す
  */
@@ -276,6 +289,10 @@ export function applyEffects(state: CompanyState, effects: EventEffects, d: Pend
   const targetId = d.targetId ?? null;
   if (effects.cash) addExtraordinaryCost(state, -effects.cash);
   if (effects.cashPerEmployee) addExtraordinaryCost(state, -effects.cashPerEmployee * state.employees.length);
+  if (effects.fundingPayrollMonths) {
+    const payroll = state.employees.reduce((s, e) => s + e.salaryMonthly, 0);
+    addFunding(state, payroll * effects.fundingPayrollMonths);
+  }
   if (effects.cashRevenueMonths) {
     const revenue = state.history[state.history.length - 1]?.revenue ?? 0;
     addExtraordinaryCost(state, -revenue * effects.cashRevenueMonths);
@@ -290,6 +307,7 @@ export function applyEffects(state: CompanyState, effects: EventEffects, d: Pend
   if (effects.hiringAttraction) addModifier(state, 'hiringAttraction', effects.hiringAttraction.mult, effects.hiringAttraction.months);
   if (effects.hiringIntensity) addModifier(state, 'hiringIntensity', effects.hiringIntensity.mult, effects.hiringIntensity.months);
   if (effects.demand) addModifier(state, 'demand', effects.demand.mult, effects.demand.months);
+  if (effects.hiringHeadroom) addModifier(state, 'hiringHeadroom', effects.hiringHeadroom.delta, effects.hiringHeadroom.months);
   if (effects.matureDemandMult) state.market.matureDemandMonthly *= effects.matureDemandMult;
   // 集団への効果を先に（対象者が退職する場合でも、集団の選び方が変わらないように）
   for (const g of effects.groups ?? []) applyGroupEffect(state, g, targetId);
@@ -336,7 +354,12 @@ export function applyEffects(state: CompanyState, effects: EventEffects, d: Pend
     state.legal.unpaidOvertime = [];
     state.legal.fixedOvertimeMisoperation = false;
   }
-  if (effects.setPolicies) state.policies = { ...state.policies, ...effects.setPolicies };
+  if (effects.setPolicies) {
+    // その業種で選べない働き方にはしない（念のため。そうなるイベントは excludeIndustries で起きないようにしている）
+    const next = { ...state.policies, ...effects.setPolicies };
+    if (!getIndustry(state.profile.industryId).remoteAllowed.includes(next.workStyle)) next.workStyle = state.policies.workStyle;
+    state.policies = next;
+  }
 }
 
 /** 判断待ちの画面に出す、節目の義務の一覧（安衛法の注記が要るかも返す） */
@@ -350,9 +373,9 @@ export function pruneModifiers(state: CompanyState): void {
   state.modifiers = state.modifiers.filter((m) => m.untilMonth > state.month);
 }
 
-/** いま効いている一時的な効果の倍率（morale は点数の合計） */
+/** いま効いている一時的な効果の倍率（morale は点数の合計、hiringHeadroom は割合の合計） */
 export function modifierValue(state: CompanyState, type: TemporaryModifier['type']): number {
-  if (type === 'morale') {
+  if (type === 'morale' || type === 'hiringHeadroom') {
     return state.modifiers.reduce((s, m) => (m.type === type && m.untilMonth > state.month ? s + m.mult : s), 0);
   }
   return state.modifiers.reduce((p, m) => (m.type === type && m.untilMonth > state.month ? p * m.mult : p), 1);

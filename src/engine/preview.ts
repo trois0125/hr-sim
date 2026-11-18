@@ -33,7 +33,7 @@ export function choiceImpacts(effects: EventEffects): Impact[] {
   const dirs: Record<ImpactKey, number> = {
     cash:
       (effects.correct || effects.payUnpaidOvertime || severance ? -1 : 0) ||
-      sign((effects.cash ?? 0) + (effects.cashPerEmployee ?? 0) + (effects.cashRevenueMonths ?? 0)),
+      sign((effects.cash ?? 0) + (effects.cashPerEmployee ?? 0) + (effects.cashRevenueMonths ?? 0) + (effects.fundingPayrollMonths ?? 0)),
     laborCost: sign(
       groups.reduce((s, g) => s + (g.salaryPct ?? 0) + (g.bonusPct ?? 0), 0) + (t?.salaryPct ?? 0),
     ),
@@ -46,7 +46,7 @@ export function choiceImpacts(effects: EventEffects): Impact[] {
     target: sign(t?.engagement ?? 0),
     headcount: t?.resign || groups.some((g) => g.resign) ? -1 : 0,
     leave: t?.leave ? 1 : 0,
-    hiring: sign((effects.hiringIntensity?.mult ?? 1) - 1),
+    hiring: sign((effects.hiringIntensity?.mult ?? 1) - 1) || sign(effects.hiringHeadroom?.delta ?? 0),
     reputation: sign((effects.hiringAttraction?.mult ?? 1) - 1),
     demand: sign((effects.demand?.mult ?? 1) * (effects.matureDemandMult ?? 1) - 1),
     compliance: effects.correct || effects.payUnpaidOvertime ? 1 : 0,

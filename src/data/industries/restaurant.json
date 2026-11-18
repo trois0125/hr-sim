@@ -1,0 +1,379 @@
+{
+  "id": "restaurant",
+  "name": "飲食チェーン",
+  "selectionWeight": {
+    "value": 1.0,
+    "unit": "重み",
+    "basis": "assumption",
+    "source": "仮置き。4業種を同じ重みで抽選する"
+  },
+  "companyNameSuffixes": [
+    "フーズ",
+    "ダイニング",
+    "キッチン",
+    "食堂",
+    "フードサービス"
+  ],
+  "roles": [
+    {
+      "id": "store_staff",
+      "name": "店舗スタッフ",
+      "kind": "revenue",
+      "partTimeAllowed": true,
+      "marketSalaryMonthly": {
+        "value": 230000,
+        "unit": "円/月（20歳）",
+        "basis": "statistic",
+        "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 企業規模計（10人以上）、年齢階級別所定内給与額及び年間賞与その他特別給与額（e-Stat 統計表ID 000040420855「Ｍ７６飲食店」）。20〜59歳の年齢階級に当てはめた20歳の値（241.9千円）は店長を含むので、その0.95倍"
+      },
+      "productivityMonthly": {
+        "value": 1400000,
+        "unit": "円/月",
+        "basis": "assumption",
+        "source": "仮置き。店舗スタッフ1人（フルタイム換算）あたりの月の売上。パートの時間の短さと、入れ替わりによる立ち上がりの遅さを見込んで、売上高人件費率が3割前後になるよう合わせた。TODO: 要確認（経済センサス・法人企業統計）"
+      },
+      "hiringDifficulty": {
+        "value": 1.2,
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。採用難度（1.0が標準）"
+      },
+      "mixWeightRange": {
+        "value": {
+          "min": 0.8,
+          "max": 0.88
+        },
+        "unit": "重み",
+        "basis": "assumption",
+        "source": "仮置き。職種構成の重み"
+      }
+    },
+    {
+      "id": "hq",
+      "name": "本部",
+      "kind": "admin",
+      "partTimeAllowed": true,
+      "marketSalaryMonthly": {
+        "value": 230000,
+        "unit": "円/月（20歳）",
+        "basis": "assumption",
+        "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 企業規模計（10人以上）、年齢階級別所定内給与額及び年間賞与その他特別給与額（e-Stat 統計表ID 000040420855「Ｍ７６飲食店」）。20歳の値（241.9千円）の0.95倍。TODO: 要確認（職種別の事務従事者の賃金）"
+      },
+      "productivityMonthly": {
+        "value": 0,
+        "unit": "円/月",
+        "basis": "assumption",
+        "source": "売上を生まない職種"
+      },
+      "hiringDifficulty": {
+        "value": 0.9,
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。採用難度（1.0が標準）"
+      },
+      "mixWeightRange": {
+        "value": {
+          "min": 0.03,
+          "max": 0.06
+        },
+        "unit": "重み",
+        "basis": "assumption",
+        "source": "仮置き。職種構成の重み"
+      }
+    },
+    {
+      "id": "store_manager",
+      "name": "店長",
+      "kind": "management",
+      "partTimeAllowed": false,
+      "marketSalaryMonthly": {
+        "value": 278000,
+        "unit": "円/月（20歳）",
+        "basis": "assumption",
+        "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 企業規模計（10人以上）、年齢階級別所定内給与額及び年間賞与その他特別給与額（e-Stat 統計表ID 000040420855「Ｍ７６飲食店」）。20歳の値（241.9千円）の1.15倍（店長手当を見込む）。TODO: 要確認"
+      },
+      "productivityMonthly": {
+        "value": 0,
+        "unit": "円/月",
+        "basis": "assumption",
+        "source": "売上を生まない職種"
+      },
+      "hiringDifficulty": {
+        "value": 1.4,
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。採用難度（1.0が標準）"
+      },
+      "mixWeightRange": {
+        "value": {
+          "min": 0.08,
+          "max": 0.12
+        },
+        "unit": "重み",
+        "basis": "assumption",
+        "source": "仮置き。職種構成の重み"
+      }
+    }
+  ],
+  "partTimeRatioRange": {
+    "value": {
+      "min": 0.5,
+      "max": 0.75
+    },
+    "unit": "比",
+    "basis": "statistic",
+    "source": "雇用動向調査 令和7年（厚生労働省）付属統計表2-1 1月1日現在の常用労働者数：宿泊業，飲食サービス業 パートタイム労働者 2,795.0千人 ÷ 計 4,396.0千人 ＝ 63.6% を中心にした範囲"
+  },
+  "baseAttritionRate": {
+    "value": 0.215,
+    "unit": "年率",
+    "basis": "statistic",
+    "source": "雇用動向調査 令和7年（厚生労働省）表4-2 産業、就業形態別入職率・離職率 宿泊業，飲食サービス業 一般労働者の離職率 21.5%",
+    "note": "宿泊業を含む"
+  },
+  "partTimeAttritionMult": {
+    "value": 1.16,
+    "unit": "倍",
+    "basis": "statistic",
+    "source": "雇用動向調査 令和7年（厚生労働省）表4-2 産業、就業形態別入職率・離職率 宿泊業，飲食サービス業 パートタイム労働者 25.0% ÷ 一般労働者 21.5% ＝ 1.16"
+  },
+  "partTimeProductivity": {
+    "value": 0.9,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。飲食ではパートが店舗の中心で、正社員に近い仕事をする（共通の値 0.6 より高い）"
+  },
+  "marketBonusMonths": {
+    "value": 1.3,
+    "unit": "か月分",
+    "basis": "statistic",
+    "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 企業規模計（10人以上）、年齢階級別所定内給与額及び年間賞与その他特別給与額（e-Stat 統計表ID 000040420855「Ｍ７６飲食店」）。年間賞与その他特別給与額 377.4千円 ÷ 所定内給与額 282.8千円 ＝ 1.33か月"
+  },
+  "salaryCurve": {
+    "ageSlope": {
+      "value": 0.0096,
+      "unit": "比/歳",
+      "basis": "statistic",
+      "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 企業規模計（10人以上）、年齢階級別所定内給与額及び年間賞与その他特別給与額（e-Stat 統計表ID 000040420855「Ｍ７６飲食店」）。20〜59歳の年齢階級（平均年齢）に「20歳の値×(1＋傾き×(年齢−20))」を最小二乗で当てはめた傾き"
+    },
+    "agePeak": {
+      "value": 47,
+      "unit": "歳",
+      "basis": "statistic",
+      "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 企業規模計（10人以上）、年齢階級別所定内給与額及び年間賞与その他特別給与額（e-Stat 統計表ID 000040420855「Ｍ７６飲食店」）。45〜49歳（平均47.5歳）が最も高い"
+    },
+    "post60Ratio": {
+      "value": 0.86,
+      "unit": "比",
+      "basis": "statistic",
+      "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 企業規模計（10人以上）、年齢階級別所定内給与額及び年間賞与その他特別給与額（e-Stat 統計表ID 000040420855「Ｍ７６飲食店」）。60〜64歳 262.4千円 ÷ 当てはめた曲線の頂点（47歳）305.8千円"
+    }
+  },
+  "ageMean": {
+    "value": 42,
+    "unit": "歳",
+    "basis": "statistic",
+    "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 企業規模計（10人以上）、年齢階級別所定内給与額及び年間賞与その他特別給与額（e-Stat 統計表ID 000040420855「Ｍ７６飲食店」）。男女計学歴計の平均年齢 41.9歳"
+  },
+  "store": {
+    "staffPerStore": {
+      "value": 12,
+      "unit": "人",
+      "basis": "assumption",
+      "source": "仮置き。1店舗の社員数（パートを含む）。TODO: 要確認（経済センサスの飲食店の1事業所あたり従業者数）"
+    }
+  },
+  "grossMarginRange": {
+    "value": {
+      "min": 0.45,
+      "max": 0.55
+    },
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。売上から食材費・店舗の家賃・水道光熱費を引いた割合。TODO: 要確認（法人企業統計・外食産業の原価率）"
+  },
+  "revenuePerEmployeeRange": {
+    "value": {
+      "min": 6000000,
+      "max": 15000000
+    },
+    "unit": "円/年",
+    "basis": "assumption",
+    "source": "仮置き。TODO: 要確認（経済センサス）"
+  },
+  "laborCostRatioTypical": {
+    "value": 0.3,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。飲食の売上高人件費率は3割前後とされる。TODO: 要確認（法人企業統計）"
+  },
+  "growthCurve": {
+    "growthMonths": {
+      "value": 200,
+      "unit": "月",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    "capHeadcount": {
+      "value": 1300,
+      "unit": "人",
+      "basis": "assumption",
+      "source": "仮置き。成熟ライン1,000人より少し上"
+    }
+  },
+  "cyclicality": {
+    "value": 0.6,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。外食は景気の影響を受けるが、生活に近いぶん商社より小さい"
+  },
+  "maturityHeadcount": {
+    "value": 1000,
+    "unit": "人",
+    "basis": "assumption",
+    "source": "DESIGN.md §2.3 の例（飲食1,000人）"
+  },
+  "remoteAllowed": [
+    "office"
+  ],
+  "adminPerRevenueStaff": {
+    "value": 0.05,
+    "unit": "人/人",
+    "basis": "assumption",
+    "source": "仮置き。本部は店舗スタッフ20人に1人"
+  },
+  "managementSpan": {
+    "value": 12,
+    "unit": "人",
+    "basis": "assumption",
+    "source": "仮置き。飲食は店舗の数で店長の人数が決まる（store）ので使わない"
+  },
+  "marketPotentialRange": {
+    "value": {
+      "min": 0.6,
+      "max": 1.4
+    },
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き"
+  },
+  "specialEvents": [
+    "restaurant_new_store",
+    "restaurant_food_safety",
+    "restaurant_manager_overwork"
+  ],
+  "variants": [
+    {
+      "id": "izakaya",
+      "name": "居酒屋",
+      "productivityMultiplier": {
+        "value": 1.0,
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。夜の需要が中心で景気と宴会需要に左右される"
+      },
+      "grossMarginRange": {
+        "value": {
+          "min": 0.45,
+          "max": 0.55
+        },
+        "unit": "比",
+        "basis": "assumption",
+        "source": "仮置き。夜の需要が中心で景気と宴会需要に左右される。TODO: 要確認（法人企業統計）"
+      },
+      "cyclicalityRange": {
+        "value": {
+          "min": 1.0,
+          "max": 1.4
+        },
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。夜の需要が中心で景気と宴会需要に左右される"
+      }
+    },
+    {
+      "id": "cafe",
+      "name": "カフェ",
+      "productivityMultiplier": {
+        "value": 0.8,
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。客単価は低いが原価率も低い"
+      },
+      "grossMarginRange": {
+        "value": {
+          "min": 0.5,
+          "max": 0.58
+        },
+        "unit": "比",
+        "basis": "assumption",
+        "source": "仮置き。客単価は低いが原価率も低い。TODO: 要確認（法人企業統計）"
+      },
+      "cyclicalityRange": {
+        "value": {
+          "min": 0.5,
+          "max": 0.9
+        },
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。客単価は低いが原価率も低い"
+      }
+    },
+    {
+      "id": "ramen",
+      "name": "ラーメン",
+      "productivityMultiplier": {
+        "value": 1.1,
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。回転が速く、景気の影響は小さい"
+      },
+      "grossMarginRange": {
+        "value": {
+          "min": 0.45,
+          "max": 0.52
+        },
+        "unit": "比",
+        "basis": "assumption",
+        "source": "仮置き。回転が速く、景気の影響は小さい。TODO: 要確認（法人企業統計）"
+      },
+      "cyclicalityRange": {
+        "value": {
+          "min": 0.4,
+          "max": 0.8
+        },
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。回転が速く、景気の影響は小さい"
+      }
+    },
+    {
+      "id": "family",
+      "name": "ファミリーレストラン",
+      "productivityMultiplier": {
+        "value": 0.95,
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。家族連れ中心で安定"
+      },
+      "grossMarginRange": {
+        "value": {
+          "min": 0.45,
+          "max": 0.53
+        },
+        "unit": "比",
+        "basis": "assumption",
+        "source": "仮置き。家族連れ中心で安定。TODO: 要確認（法人企業統計）"
+      },
+      "cyclicalityRange": {
+        "value": {
+          "min": 0.6,
+          "max": 1.0
+        },
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。家族連れ中心で安定"
+      }
+    }
+  ]
+}

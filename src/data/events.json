@@ -1812,6 +1812,10 @@
           "control": 1
         }
       }
+    ],
+    "excludeIndustries": [
+      "restaurant",
+      "manufacturing"
     ]
   },
   {

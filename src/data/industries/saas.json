@@ -1,0 +1,392 @@
+{
+  "id": "saas",
+  "name": "IT・SaaS",
+  "selectionWeight": {
+    "value": 1.0,
+    "unit": "重み",
+    "basis": "assumption",
+    "source": "仮置き。4業種を同じ重みで抽選する"
+  },
+  "companyNameSuffixes": [
+    "テクノロジーズ",
+    "ラボ",
+    "ソフト",
+    "クラウド",
+    "システムズ"
+  ],
+  "roles": [
+    {
+      "id": "engineer",
+      "name": "エンジニア",
+      "kind": "revenue",
+      "partTimeAllowed": false,
+      "marketSalaryMonthly": {
+        "value": 265000,
+        "unit": "円/月（20歳）",
+        "basis": "statistic",
+        "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 企業規模計（10人以上）、年齢階級別所定内給与額及び年間賞与その他特別給与額（e-Stat 統計表ID 000040420849「Ｇ３９情報サービス業」）。20〜59歳の年齢階級に当てはめた20歳の値（252.6千円）の1.05倍（エンジニアは相場が高い）"
+      },
+      "productivityMonthly": {
+        "value": 2000000,
+        "unit": "円/月",
+        "basis": "assumption",
+        "source": "仮置き。売上を生む社員1人あたりの月の売上（契約を支えられる量）。先行投資で体制が売上より3割ほど大きいことを見込んで、売上高人件費率が4〜5割になるよう合わせた。TODO: 要確認"
+      },
+      "hiringDifficulty": {
+        "value": 1.6,
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。採用難度（1.0が標準）"
+      },
+      "mixWeightRange": {
+        "value": {
+          "min": 0.45,
+          "max": 0.6
+        },
+        "unit": "重み",
+        "basis": "assumption",
+        "source": "仮置き。職種構成の重み"
+      }
+    },
+    {
+      "id": "biz",
+      "name": "営業・カスタマーサクセス",
+      "kind": "revenue",
+      "partTimeAllowed": false,
+      "marketSalaryMonthly": {
+        "value": 253000,
+        "unit": "円/月（20歳）",
+        "basis": "statistic",
+        "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 企業規模計（10人以上）、年齢階級別所定内給与額及び年間賞与その他特別給与額（e-Stat 統計表ID 000040420849「Ｇ３９情報サービス業」）。20歳の値（252.6千円）"
+      },
+      "productivityMonthly": {
+        "value": 2000000,
+        "unit": "円/月",
+        "basis": "assumption",
+        "source": "仮置き。売上を生む社員1人あたりの月の売上（契約を支えられる量）。先行投資で体制が売上より3割ほど大きいことを見込んで、売上高人件費率が4〜5割になるよう合わせた。TODO: 要確認"
+      },
+      "hiringDifficulty": {
+        "value": 1.1,
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。採用難度（1.0が標準）"
+      },
+      "mixWeightRange": {
+        "value": {
+          "min": 0.25,
+          "max": 0.35
+        },
+        "unit": "重み",
+        "basis": "assumption",
+        "source": "仮置き。職種構成の重み"
+      }
+    },
+    {
+      "id": "corporate",
+      "name": "コーポレート",
+      "kind": "admin",
+      "partTimeAllowed": true,
+      "marketSalaryMonthly": {
+        "value": 240000,
+        "unit": "円/月（20歳）",
+        "basis": "assumption",
+        "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 企業規模計（10人以上）、年齢階級別所定内給与額及び年間賞与その他特別給与額（e-Stat 統計表ID 000040420849「Ｇ３９情報サービス業」）。20歳の値の0.95倍。TODO: 要確認"
+      },
+      "productivityMonthly": {
+        "value": 0,
+        "unit": "円/月",
+        "basis": "assumption",
+        "source": "売上を生まない職種"
+      },
+      "hiringDifficulty": {
+        "value": 0.9,
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。採用難度（1.0が標準）"
+      },
+      "mixWeightRange": {
+        "value": {
+          "min": 0.08,
+          "max": 0.12
+        },
+        "unit": "重み",
+        "basis": "assumption",
+        "source": "仮置き。職種構成の重み"
+      }
+    },
+    {
+      "id": "manager",
+      "name": "マネージャー",
+      "kind": "management",
+      "partTimeAllowed": false,
+      "marketSalaryMonthly": {
+        "value": 290000,
+        "unit": "円/月（20歳）",
+        "basis": "assumption",
+        "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 企業規模計（10人以上）、年齢階級別所定内給与額及び年間賞与その他特別給与額（e-Stat 統計表ID 000040420849「Ｇ３９情報サービス業」）。20歳の値の1.15倍。TODO: 要確認"
+      },
+      "productivityMonthly": {
+        "value": 0,
+        "unit": "円/月",
+        "basis": "assumption",
+        "source": "売上を生まない職種"
+      },
+      "hiringDifficulty": {
+        "value": 1.5,
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。採用難度（1.0が標準）"
+      },
+      "mixWeightRange": {
+        "value": {
+          "min": 0.05,
+          "max": 0.08
+        },
+        "unit": "重み",
+        "basis": "assumption",
+        "source": "仮置き。職種構成の重み"
+      }
+    }
+  ],
+  "partTimeRatioRange": {
+    "value": {
+      "min": 0.0,
+      "max": 0.06
+    },
+    "unit": "比",
+    "basis": "statistic",
+    "source": "雇用動向調査 令和7年（厚生労働省）付属統計表2-1 1月1日現在の常用労働者数：情報通信業 パートタイム労働者 70.1千人 ÷ 計 1,861.2千人 ＝ 3.8% を中心にした範囲"
+  },
+  "baseAttritionRate": {
+    "value": 0.1,
+    "unit": "年率",
+    "basis": "statistic",
+    "source": "雇用動向調査 令和7年（厚生労働省）表4-2 産業、就業形態別入職率・離職率 情報通信業 一般労働者の離職率 10.0%",
+    "note": "情報サービス業だけの値ではなく通信業・放送業などを含む"
+  },
+  "partTimeAttritionMult": {
+    "value": 2.19,
+    "unit": "倍",
+    "basis": "statistic",
+    "source": "雇用動向調査 令和7年（厚生労働省）表4-2 産業、就業形態別入職率・離職率 情報通信業 パートタイム労働者 21.9% ÷ 一般労働者 10.0% ＝ 2.19"
+  },
+  "marketBonusMonths": {
+    "value": 3.8,
+    "unit": "か月分",
+    "basis": "statistic",
+    "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 企業規模計（10人以上）、年齢階級別所定内給与額及び年間賞与その他特別給与額（e-Stat 統計表ID 000040420849「Ｇ３９情報サービス業」）。年間賞与その他特別給与額 1,507.8千円 ÷ 所定内給与額 400.6千円 ＝ 3.76か月"
+  },
+  "salaryCurve": {
+    "ageSlope": {
+      "value": 0.0307,
+      "unit": "比/歳",
+      "basis": "statistic",
+      "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 企業規模計（10人以上）、年齢階級別所定内給与額及び年間賞与その他特別給与額（e-Stat 統計表ID 000040420849「Ｇ３９情報サービス業」）。20〜59歳の年齢階級（平均年齢）に「20歳の値×(1＋傾き×(年齢−20))」を最小二乗で当てはめた傾き"
+    },
+    "agePeak": {
+      "value": 57,
+      "unit": "歳",
+      "basis": "statistic",
+      "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 企業規模計（10人以上）、年齢階級別所定内給与額及び年間賞与その他特別給与額（e-Stat 統計表ID 000040420849「Ｇ３９情報サービス業」）。55〜59歳（平均57.4歳）が最も高い"
+    },
+    "post60Ratio": {
+      "value": 0.92,
+      "unit": "比",
+      "basis": "statistic",
+      "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 企業規模計（10人以上）、年齢階級別所定内給与額及び年間賞与その他特別給与額（e-Stat 統計表ID 000040420849「Ｇ３９情報サービス業」）。60〜64歳 496.1千円 ÷ 当てはめた曲線の57歳の値 539.5千円"
+    }
+  },
+  "ageMean": {
+    "value": 40,
+    "unit": "歳",
+    "basis": "statistic",
+    "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 企業規模計（10人以上）、年齢階級別所定内給与額及び年間賞与その他特別給与額（e-Stat 統計表ID 000040420849「Ｇ３９情報サービス業」）。男女計学歴計の平均年齢 39.7歳"
+  },
+  "recurringRevenue": {
+    "convergence": {
+      "value": 0.06,
+      "unit": "比/月",
+      "basis": "assumption",
+      "source": "仮置き。売上（契約の合計）が、出せる上限との差の6%ずつ近づく（新しい契約が少しずつ増え、解約も少しずつ起きる）。半分近づくのに約11か月"
+    },
+    "initialShare": {
+      "value": 0.3,
+      "unit": "比",
+      "basis": "assumption",
+      "source": "仮置き。創業時は、需要の3割ぶんの契約だけを持って始める（最初の顧客）"
+    },
+    "hiringHeadroom": {
+      "value": 0.3,
+      "unit": "比",
+      "basis": "assumption",
+      "source": "仮置き。採用は「今の売上の3割増し」までの体制を目安にする（先行投資）。需要いっぱいまで採ると、売上が追いつく前に資金が尽きる"
+    }
+  },
+  "grossMarginRange": {
+    "value": {
+      "min": 0.7,
+      "max": 0.85
+    },
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。SaaSの売上総利益率は7〜8割とされる。TODO: 要確認"
+  },
+  "revenuePerEmployeeRange": {
+    "value": {
+      "min": 10000000,
+      "max": 30000000
+    },
+    "unit": "円/年",
+    "basis": "assumption",
+    "source": "仮置き。TODO: 要確認"
+  },
+  "laborCostRatioTypical": {
+    "value": 0.45,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。人件費が最大のコスト。TODO: 要確認（法人企業統計の情報サービス業）"
+  },
+  "growthCurve": {
+    "growthMonths": {
+      "value": 120,
+      "unit": "月",
+      "basis": "assumption",
+      "source": "仮置き。伸びるときは速い"
+    },
+    "capHeadcount": {
+      "value": 550,
+      "unit": "人",
+      "basis": "assumption",
+      "source": "仮置き。成熟ライン400人より少し上"
+    }
+  },
+  "cyclicality": {
+    "value": 0.5,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。月額の契約なので景気の影響は小さい"
+  },
+  "maturityHeadcount": {
+    "value": 400,
+    "unit": "人",
+    "basis": "assumption",
+    "source": "仮置き"
+  },
+  "remoteAllowed": [
+    "office",
+    "hybrid",
+    "remote"
+  ],
+  "adminPerRevenueStaff": {
+    "value": 0.15,
+    "unit": "人/人",
+    "basis": "assumption",
+    "source": "仮置き。コーポレート（経理・人事・法務）は売上を生む社員7人に1人"
+  },
+  "managementSpan": {
+    "value": 8,
+    "unit": "人",
+    "basis": "assumption",
+    "source": "仮置き"
+  },
+  "marketPotentialRange": {
+    "value": {
+      "min": 0.5,
+      "max": 2.0
+    },
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。当たれば大きく、外れれば小さい"
+  },
+  "specialEvents": [
+    "saas_funding_round",
+    "saas_engineer_poaching",
+    "saas_big_churn"
+  ],
+  "variants": [
+    {
+      "id": "smb",
+      "name": "中小企業向け",
+      "productivityMultiplier": {
+        "value": 0.8,
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。顧客数は多いが単価が低く、景気の影響を受けやすい"
+      },
+      "grossMarginRange": {
+        "value": {
+          "min": 0.75,
+          "max": 0.85
+        },
+        "unit": "比",
+        "basis": "assumption",
+        "source": "仮置き。顧客数は多いが単価が低く、景気の影響を受けやすい。TODO: 要確認（法人企業統計）"
+      },
+      "cyclicalityRange": {
+        "value": {
+          "min": 0.6,
+          "max": 0.9
+        },
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。顧客数は多いが単価が低く、景気の影響を受けやすい"
+      }
+    },
+    {
+      "id": "enterprise",
+      "name": "大企業向け",
+      "productivityMultiplier": {
+        "value": 1.3,
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。単価が高く解約も少ないが、立ち上がりに時間がかかる"
+      },
+      "grossMarginRange": {
+        "value": {
+          "min": 0.7,
+          "max": 0.8
+        },
+        "unit": "比",
+        "basis": "assumption",
+        "source": "仮置き。単価が高く解約も少ないが、立ち上がりに時間がかかる。TODO: 要確認（法人企業統計）"
+      },
+      "cyclicalityRange": {
+        "value": {
+          "min": 0.3,
+          "max": 0.6
+        },
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。単価が高く解約も少ないが、立ち上がりに時間がかかる"
+      }
+    },
+    {
+      "id": "vertical",
+      "name": "業界特化",
+      "productivityMultiplier": {
+        "value": 1.0,
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。特定の業界向けで、競合は少ないが市場は小さめ"
+      },
+      "grossMarginRange": {
+        "value": {
+          "min": 0.72,
+          "max": 0.85
+        },
+        "unit": "比",
+        "basis": "assumption",
+        "source": "仮置き。特定の業界向けで、競合は少ないが市場は小さめ。TODO: 要確認（法人企業統計）"
+      },
+      "cyclicalityRange": {
+        "value": {
+          "min": 0.4,
+          "max": 0.8
+        },
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。特定の業界向けで、競合は少ないが市場は小さめ"
+      }
+    }
+  ]
+}

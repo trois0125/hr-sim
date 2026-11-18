@@ -33,6 +33,7 @@ type VoiceData = {
   farewell: Record<AttritionReason, string[]>;
   return: Record<LeaveKind, string[]>;
   secondment: string[];
+  retirement: string[];
 };
 export const voiceData = voicesJson as unknown as VoiceData;
 
@@ -92,6 +93,7 @@ export function everydayVoice(e: Employee, month: number, rng: Rng): VoiceRecord
 function departureVoice(d: Departure, rng: Rng): VoiceRecord {
   const base = { month: d.month, employeeId: d.employeeId, name: d.name, role: d.role, factor: null };
   if (d.kind === 'return') return { ...base, kind: 'secondment', tone: 'neutral', text: rng.pick(voiceData.secondment) };
+  if (d.kind === 'retirement') return { ...base, kind: 'retirement', tone: 'positive', text: rng.pick(voiceData.retirement) };
   const reason = d.reason ?? 'family';
   const tone: VoiceTone = reason === 'family' ? 'neutral' : 'negative';
   return { ...base, kind: 'farewell', tone, text: rng.pick(voiceData.farewell[reason]) };

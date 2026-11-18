@@ -55,7 +55,8 @@ const CHANGE_MONTH_RANGE = { min: 24, max: 180 };
 /** 途中の制度変更を抽選する（今の制度と違う選択肢を1つ選ぶ） */
 export function sampleChange(rng: Rng, industry: IndustryData, policies: PolicySet): PolicyChangePlan {
   const opts = policyOptions(industry);
-  const category = rng.pick(Object.keys(opts) as (keyof PolicySet)[]);
+  // 選択肢が1つしかないカテゴリ（飲食・製造の働き方など）は変えられないので除く
+  const category = rng.pick((Object.keys(opts) as (keyof PolicySet)[]).filter((k) => opts[k].length > 1));
   const others = (opts[category] as readonly string[]).filter((o) => o !== policies[category]);
   return {
     month: rng.int(CHANGE_MONTH_RANGE.min, CHANGE_MONTH_RANGE.max),

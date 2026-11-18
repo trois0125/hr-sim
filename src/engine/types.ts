@@ -111,6 +111,22 @@ export type IndustryData = {
   /** 業種ごとのイベントID（イベントの型はステップ8で定義） */
   specialEvents: string[];
   variants: IndustryVariant[];
+
+  // --- ステップ12：業種ごとの違い（省略すると係数台帳の共通の値。商社は省略） ---
+  /** 年齢による賃金カーブ（賃金構造基本統計調査の業種別の年齢階級別所定内給与額に当てはめたもの） */
+  salaryCurve?: { ageSlope: Sourced<number>; agePeak: Sourced<number>; post60Ratio: Sourced<number> };
+  /** 社員の年齢の平均（生成するとき） */
+  ageMean?: Sourced<number>;
+  /** 経験（年齢）による生産性の伸びの強さ（賃金カーブの何乗か）。製造業は熟練が強く効く */
+  experienceElasticity?: Sourced<number>;
+  /** パートの辞めやすさ（一般労働者の離職率に対する倍率） */
+  partTimeAttritionMult?: Sourced<number>;
+  /** パートの時間あたりの生産性（飲食はパートが店舗の中心で、正社員に近い仕事をする） */
+  partTimeProductivity?: Sourced<number>;
+  /** 店舗（飲食）。店舗ごとに店長（管理の職種）が1人要る。店舗の数＝管理以外の社員数÷1店舗の人数 */
+  store?: { staffPerStore: Sourced<number> };
+  /** 積み上がる売上（SaaS）。売上は毎月、出せる上限に向かってこの割合だけ近づく（契約が少しずつ増え、少しずつ減る） */
+  recurringRevenue?: { convergence: Sourced<number>; initialShare: Sourced<number>; hiringHeadroom: Sourced<number> };
 };
 
 // ---------------------------------------------------------------------------
@@ -308,8 +324,8 @@ export type Departure = {
   employmentType?: EmploymentType;
   /** 去った月（創業からの経過月） */
   month: number;
-  /** resignation＝退職、return＝出向者の帰任（離職率には数えない） */
-  kind: 'resignation' | 'return';
+  /** resignation＝退職、return＝出向者の帰任、retirement＝定年（帰任と定年は離職率に数えない） */
+  kind: 'resignation' | 'return' | 'retirement';
   /** 退職理由。帰任のときは null */
   reason: AttritionReason | null;
   age: number;
@@ -364,6 +380,8 @@ export type MarketState = {
   shareFactor: number;
   /** 景気後退が始まった月（記録用） */
   recessionMonths: number[];
+  /** 積み上がる売上の業種（SaaS）で、いまの月の売上（契約の合計）。それ以外の業種では使わない */
+  recurringRevenue?: number;
 };
 
 /** 採用の状態（§2.1 の2） */
@@ -415,6 +433,10 @@ export type MonthlyRecord = {
   extraordinaryCost: number;
   /** 違反の状態にある義務の数（月末） */
   violations: number;
+  /** 定年で退職した人数（離職率には数えない。古い記録には無い） */
+  retirements?: number;
+  /** 資金調達で入ったお金（円。利益ではない。古い記録には無い） */
+  funding?: number;
   cash: number;
   /** その月の制度（人事スタイル診断で「選んでいた期間の長さ」を数えるため。古い記録には無い） */
   policies?: PolicySet;
@@ -559,6 +581,7 @@ export type Comparison = '<' | '<=' | '>' | '>=' | '==' | '!=';
  * - avgEvaluationScore：納得感の要因「評価の正確さ」の平均
  * - disputeRisk：決着していない「紛争の種」のうち、いちばん合理性の低いものの（1−合理性）。無ければ0
  * - recessionAge：直近の景気後退が始まってからの月数（無ければ大きな値）
+ * - runway：直近3か月の赤字が続いたら手元資金が何か月もつか（黒字なら大きな値）
  */
 export const COMPANY_METRICS = [
   'headcount',
@@ -576,6 +599,7 @@ export const COMPANY_METRICS = [
   'avgEvaluationScore',
   'disputeRisk',
   'recessionAge',
+  'runway',
 ] as const;
 export type CompanyMetric = (typeof COMPANY_METRICS)[number];
 
@@ -695,6 +719,8 @@ export type EventEffects = {
   cashPerEmployee?: number;
   /** 直近の月の売上の何か月分を、手元資金から増減するか（取引先の倒産の貸し倒れなど） */
   cashRevenueMonths?: number;
+  /** 資金調達：月の給与の合計の何か月分を手元資金に入れる（利益ではないので臨時の支出には入れない） */
+  fundingPayrollMonths?: number;
   /** 全員の納得感の増減（点） */
   engagementAll?: number;
   /** 対象者以外の全員の納得感の増減（点） */
@@ -707,6 +733,8 @@ export type EventEffects = {
   hiringIntensity?: { mult: number; months: number };
   /** 一定期間、需要に掛ける倍率 */
   demand?: { mult: number; months: number };
+  /** 一定期間、積み上がる売上の業種（SaaS）で「今の売上より何割多い体制まで採るか」を足す（資金調達して先行投資する） */
+  hiringHeadroom?: { delta: number; months: number };
   /** 成熟時の需要に掛ける倍率（新規事業など、ずっと続く変化） */
   matureDemandMult?: number;
   /** 対象者への効果 */
@@ -770,6 +798,8 @@ export type EventDef = {
   weight: number;
   /** 同じイベントが次に起きるまで空ける月数（省略すると係数台帳の標準） */
   cooldownMonths?: number;
+  /** この業種では起きない（在宅勤務の要望は、在宅勤務を選べない業種では起きない、など） */
+  excludeIndustries?: IndustryId[];
   difficulty: ('beginner' | 'intermediate' | 'advanced')[];
   title: string;
   /** {name} のような差し込みを使える。対象者がいれば name・age・tenure・annual（年収・万円）が入る */
@@ -813,7 +843,7 @@ export type DecisionRecord = {
 export type Reflection = { month: number; text: string };
 
 /** 従業員の声の種類：ふだんの声／退職のあいさつ／休職からの復帰／出向からの帰任 */
-export type VoiceKind = 'voice' | 'farewell' | 'return' | 'secondment';
+export type VoiceKind = 'voice' | 'farewell' | 'return' | 'secondment' | 'retirement';
 export type VoiceTone = 'negative' | 'neutral' | 'positive';
 
 /** 従業員の声（メイン画面のフィードと、社史レポートの「従業員の声」に使う） */
@@ -839,8 +869,8 @@ export type ScheduledEvent = {
 
 /** 一時的な効果（期限つき） */
 export type TemporaryModifier = {
-  type: 'hiringAttraction' | 'hiringIntensity' | 'demand' | 'morale';
-  /** 倍率（morale のときは点数） */
+  type: 'hiringAttraction' | 'hiringIntensity' | 'demand' | 'morale' | 'hiringHeadroom';
+  /** 倍率（morale のときは点数、hiringHeadroom のときは足す割合） */
   mult: number;
   untilMonth: number;
 };
@@ -892,6 +922,8 @@ export type CompanyState = {
   nextDecisionId: number;
   /** その月の記録ができる前に払った臨時の支出（次にできる記録に載せる） */
   unrecordedExtraordinaryCost: number;
+  /** その月の記録ができる前に入った資金調達（次にできる記録に載せる。古い状態には無い） */
+  unrecordedFunding?: number;
   rng: RngStreamsState;
 };
 

@@ -77,7 +77,14 @@ export function companyMetrics(state: CompanyState): CompanyMetrics {
       scored.length > 0 ? scored.reduce((s, e) => s + (e.factorScores?.evaluation ?? 0), 0) / scored.length : 50,
     disputeRisk,
     recessionAge: lastRecession === undefined ? NEVER : state.month - lastRecession,
+    runway: runwayMonths(state.cash, recent.reduce((s, r) => s + r.operatingProfit, 0) / Math.max(1, recent.length)),
   };
+}
+
+/** 月の利益がこのままなら、手元資金が何か月もつか（黒字なら大きな値） */
+export function runwayMonths(cash: number, monthlyProfit: number): number {
+  if (monthlyProfit >= 0) return NEVER;
+  return Math.max(0, cash) / -monthlyProfit;
 }
 
 // ---------------------------------------------------------------------------
@@ -124,6 +131,7 @@ export function meetsConditions(event: EventDef, state: CompanyState, metrics: C
 
 /** 業種ごとのイベントは、その業種の specialEvents にあるときだけ起きる */
 export function availableInIndustry(event: EventDef, industry: IndustryData): boolean {
+  if (event.excludeIndustries?.includes(industry.id)) return false;
   return event.category !== 'industry' || industry.specialEvents.includes(event.id);
 }
 

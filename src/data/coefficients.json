@@ -1870,5 +1870,12 @@
     "unit": "人",
     "basis": "assumption",
     "source": "DESIGN.md §4.1。層の表示に切り替えたあとも、一人ずつ見せる主要人物の上限"
+  },
+  {
+    "id": "retirement.age",
+    "value": 65,
+    "unit": "歳",
+    "basis": "assumption",
+    "source": "高年齢者雇用安定法：60歳未満の定年は禁止（8条）、65歳までの雇用確保措置が義務（9条。70歳までは努力義務）。ゲームでは「60歳定年＋65歳まで継続雇用」とし、65歳になった年度末に退職する（賃金は60歳から下がる：generation.salary.post60_ratio）"
   }
 ]

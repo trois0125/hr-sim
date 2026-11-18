@@ -442,7 +442,7 @@ export const reportStrings = {
     const end = Math.max(from, Math.ceil(to));
     return end === from ? `${from}年目` : `${from}〜${end}年目`;
   },
-  voiceKinds: { voice: '', farewell: '退職のあいさつ', return: '復帰', secondment: '帰任' },
+  voiceKinds: { voice: '', farewell: '退職のあいさつ', return: '復帰', secondment: '帰任', retirement: '定年' },
   styleLead: '制度の選び方（選んでいた期間の長さ）と、出来事での判断を半々で合わせて判定しています。',
   strength: '強み',
   pitfall: '落とし穴',

@@ -32,10 +32,14 @@ const K = coefGroup({
   expRefAge: 'performance.experience_reference_age',
 });
 
-/** 経験（年齢）による生産性（基準の年齢で1.0）。賃金カーブより緩やかに伸びる */
-export function experienceFactor(age: number): number {
+/**
+ * 経験（年齢）による生産性（基準の年齢で1.0）。賃金カーブの「強さ」乗。
+ * 強さは業種の experienceElasticity（製造業は熟練が強く効く）、なければ係数台帳の共通の値
+ */
+export function experienceFactor(age: number, industry?: Pick<IndustryData, 'salaryCurve' | 'experienceElasticity'>): number {
   const k = K();
-  return Math.pow(ageSalaryFactor(age) / ageSalaryFactor(k.expRefAge), k.expElasticity);
+  const elasticity = industry?.experienceElasticity?.value ?? k.expElasticity;
+  return Math.pow(ageSalaryFactor(age, industry) / ageSalaryFactor(k.expRefAge, industry), elasticity);
 }
 
 /** 稼働の量（フルタイム＝1.0。休職中は0） */
@@ -45,9 +49,10 @@ export function fte(e: Employee): number {
   return 1;
 }
 
-/** 時間あたりの生産性（パートは任される仕事の範囲が狭い） */
-export function hourlyProductivity(e: Employee): number {
-  return e.employmentType === 'part' ? K().partProductivity : 1;
+/** 時間あたりの生産性（パートは任される仕事の範囲が狭い。業種の値があればそれ） */
+export function hourlyProductivity(e: Employee, industry?: Pick<IndustryData, 'partTimeProductivity'>): number {
+  if (e.employmentType !== 'part') return 1;
+  return industry?.partTimeProductivity?.value ?? K().partProductivity;
 }
 
 /** 入社からの立ち上がり（一人前で1.0）。months・start を省くと創業メンバーの値 */
@@ -75,14 +80,19 @@ export function engagementFactor(engagement: number): number {
  * 社員1人の実効的な稼働（稼働量×立ち上がり×実力×納得感×働き方×成果連動の効果）。
  * incentive は incentiveStrength の値（会社全体で共通）。money を重視する人ほど強く効く
  */
-export function effectiveWork(e: Employee, policies: PolicySet = defaultPolicies, incentive = 0): number {
+export function effectiveWork(
+  e: Employee,
+  policies: PolicySet = defaultPolicies,
+  incentive = 0,
+  industry?: Pick<IndustryData, 'salaryCurve' | 'experienceElasticity' | 'partTimeProductivity'>,
+): number {
   const ramp = rampParams(e, policies);
   const motivation = 1 + incentive * (SCORE_MID / SCORE_MAX + e.values.money);
   return (
     motivation *
-    experienceFactor(e.age) *
+    experienceFactor(e.age, industry) *
     fte(e) *
-    hourlyProductivity(e) *
+    hourlyProductivity(e, industry) *
     rampFactor(e.tenureMonths, ramp.months, ramp.start) *
     abilityFactor(e.ability) *
     engagementFactor(e.engagement) *
@@ -99,7 +109,18 @@ export type PerformanceResult = {
   managementFactor: number;
   /** 売上を生むフルタイム社員の稼働の合計（残業の配分に使う） */
   overtimeEligibleOutput: number;
+  /** 店舗のある業種（飲食）：店舗の数と、店長のいない店舗の数（ほかの業種では0） */
+  stores: number;
+  storesWithoutManager: number;
+  /** 管理の職種の人数（休職中を除く、フルタイム換算） */
+  managementFte: number;
 };
+
+/** 店舗の数（店舗のある業種だけ。それ以外は0）。社員数 ÷ 1店舗の人数 の切り上げ（最低1） */
+export function storeCount(industry: Pick<IndustryData, 'store'>, headcount: number): number {
+  if (!industry.store) return 0;
+  return Math.max(1, Math.ceil(headcount / industry.store.staffPerStore.value));
+}
 
 function roleKindMap(industry: IndustryData): Map<string, RoleKind> {
   return new Map(industry.roles.map((r) => [r.id, r.kind]));
@@ -119,7 +140,10 @@ export function founderOutput(industry: IndustryData, variant: IndustryVariant):
   return coef('performance.founder_revenue_fte') * nominalOutputPerRevenueStaff(industry, variant, revenueRole.id);
 }
 
-/** 事務と管理が何人分必要か */
+/** 店舗のある業種で、社長が店長を兼ねられる店舗の数 */
+const FOUNDER_STORES = 1;
+
+/** 事務と管理が何人分必要か。店舗のある業種では、管理＝店舗ごとの店長（社長が1店舗を見る） */
 export function supportRequirement(
   industry: IndustryData,
   revenueStaffFte: number,
@@ -131,7 +155,9 @@ export function supportRequirement(
       0,
       revenueStaffFte * industry.adminPerRevenueStaff.value - coef('performance.founder_admin_allowance'),
     ),
-    management: Math.max(0, (headcount - span) / span),
+    management: industry.store
+      ? Math.max(0, storeCount(industry, headcount) - FOUNDER_STORES)
+      : Math.max(0, (headcount - span) / span),
   };
 }
 
@@ -159,10 +185,11 @@ export function computePerformance(
   let revenueStaffFte = 0;
   let adminWork = 0;
   let managementWork = 0;
+  let managementFte = 0;
 
   for (const e of employees) {
     const kind = kinds.get(e.role);
-    const work = effectiveWork(e, policies, incentive) * cohesion;
+    const work = effectiveWork(e, policies, incentive, industry) * cohesion;
     if (kind === 'revenue') {
       const out = work * nominalOutputPerRevenueStaff(industry, variant, e.role);
       revenueOutput += out;
@@ -172,6 +199,7 @@ export function computePerformance(
       adminWork += work;
     } else if (kind === 'management') {
       managementWork += work;
+      managementFte += fte(e);
     }
   }
 
@@ -179,13 +207,16 @@ export function computePerformance(
   const adminCovered =
     (adminWork + coef('performance.founder_admin_allowance')) / industry.adminPerRevenueStaff.value;
   const adminFactor = coverageFactor(adminCovered, revenueStaffFte, coef('performance.admin_gap_penalty'));
-  // 管理：社長と管理職が見られる社員の人数
-  const managed = industry.managementSpan.value * (1 + managementWork);
-  const managementFactor = coverageFactor(
-    managed,
-    employees.length,
-    coef('performance.management_gap_penalty'),
-  );
+  // 管理：社長と管理職が見られる社員の人数。店舗のある業種では、店長のいる店舗の割合
+  const stores = storeCount(industry, employees.length);
+  const storesWithoutManager = Math.max(0, stores - FOUNDER_STORES - managementFte);
+  const managementFactor = industry.store
+    ? coverageFactor(FOUNDER_STORES + managementWork, stores, coef('performance.management_gap_penalty'))
+    : coverageFactor(
+        industry.managementSpan.value * (1 + managementWork),
+        employees.length,
+        coef('performance.management_gap_penalty'),
+      );
   const support = adminFactor * managementFactor;
 
   return {
@@ -193,12 +224,24 @@ export function computePerformance(
     adminFactor,
     managementFactor,
     overtimeEligibleOutput: overtimeEligible * support,
+    stores,
+    storesWithoutManager,
+    managementFte,
   };
 }
 
 /** 残業の方針ごとの月の上限（時間） */
 export function overtimeCap(policy: OvertimePolicy): number {
   return coefPath('policy', 'overtime', 'cap', policy);
+}
+
+/**
+ * 店長の負荷（店舗のある業種）：店長のいない店舗を、いまの店長が分担して見る残業時間（方針の上限まで）。
+ * 店長1人あたり「店舗1つぶん＝所定労働時間」の仕事が増えるとみなす
+ */
+export function managerOvertimeHours(perf: Pick<PerformanceResult, 'storesWithoutManager' | 'managementFte'>, capHours: number): number {
+  if (perf.storesWithoutManager <= 0 || perf.managementFte <= 0) return 0;
+  return Math.min(capHours, (perf.storesWithoutManager / perf.managementFte) * coef('labor.scheduled_hours_monthly'));
 }
 
 /** 需要が上限を超えたぶんを埋めるのに必要な残業時間（方針の上限まで）と、それで増える売上の上限 */

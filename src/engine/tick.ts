@@ -10,12 +10,12 @@
  */
 import { coef } from './coefficients';
 import { getIndustry, getLocation } from './data';
-import { runAttrition } from './attrition';
+import { retireEmployees, runAttrition } from './attrition';
 import { updateEngagement } from './engagement';
 import { computeFinance } from './finance';
 import { runHiring } from './hiring';
 import { demandAt, stepEconomy, updateShareFactor } from './market';
-import { computeOvertime, computePerformance, overtimeCap } from './performance';
+import { computeOvertime, computePerformance, managerOvertimeHours, nominalOutputPerRevenueStaff, overtimeCap } from './performance';
 import { growAbility, runAnnualReview, stepSalaryTransitions } from './evaluation';
 import { hiringAttractionModifier, modifierValue, pruneModifiers, pushDecision } from './events';
 import { generateVoices } from './voices';
@@ -100,6 +100,14 @@ export function tickInPlace(state: CompanyState): CompanyState {
 
   // 2. 採用
   const before = computePerformance(state.employees, industry, variant, state.policies);
+  // 積み上がる売上の業種（SaaS）は、需要いっぱいではなく「今の売上＋先行投資の分」までの体制を目指して採る
+  const rr = industry.recurringRevenue;
+  // 小さい会社でも1人は先に採れるよう、売上を生む職種1人ぶんの売上を足す
+  const oneHire = rr
+    ? Math.max(...industry.roles.filter((r) => r.kind === 'revenue').map((r) => nominalOutputPerRevenueStaff(industry, variant, r.id)))
+    : 0;
+  const headroom = rr ? rr.hiringHeadroom.value + modifierValue(state, 'hiringHeadroom') : 0;
+  const hiringCeiling = rr ? (state.market.recurringRevenue ?? 0) * (1 + headroom) + oneHire : Infinity;
   const hiring = runHiring({
     rng: streams.hiring,
     employees: state.employees,
@@ -107,7 +115,7 @@ export function tickInPlace(state: CompanyState): CompanyState {
     variant,
     location,
     partTimeRatio: state.profile.partTimeRatio,
-    demand,
+    demand: Math.min(demand, hiringCeiling),
     capacity: before.capacity,
     cash: state.cash,
     intensity: state.hiring.intensity * modifierValue(state, 'hiringIntensity'),
@@ -115,19 +123,37 @@ export function tickInPlace(state: CompanyState): CompanyState {
     policies: state.policies,
     month: state.month,
     reputation: hiringAttractionModifier(state),
-    projectedDemand:
+    projectedDemand: Math.min(
       demandAt(state.market, state.profile, industry, state.month + coef('policy.hiring.new_grad.projection_months')) *
-      demandMult,
+        demandMult,
+      hiringCeiling,
+    ),
   });
   state.employees.push(...hiring.hires);
   state.nextEmployeeId += hiring.hires.length;
 
   // 3. 社員ごとの稼働と成果（足りないぶんは、売上を生むフルタイム社員の残業で埋める）
   const perf = computePerformance(state.employees, industry, variant, state.policies);
-  const overtime = computeOvertime(demand, perf, overtimeCap(state.policies.overtime));
+  const cap = overtimeCap(state.policies.overtime);
+  // 積み上がる売上の業種（SaaS）は、採用と同じく「今の売上＋先行投資の分」までを残業で埋める
+  const overtime = computeOvertime(Math.min(demand, hiringCeiling), perf, cap);
   const revenueRoles = new Set(industry.roles.filter((r) => r.kind === 'revenue').map((r) => r.id));
+  const managementRoles = new Set(industry.roles.filter((r) => r.kind === 'management').map((r) => r.id));
+  // 店舗のある業種（飲食）：店長のいない店舗は、いまの店長が残業で見る（店長の負荷）
+  const managerHours = industry.store ? managerOvertimeHours(perf, cap) : 0;
   for (const e of state.employees) {
-    e.overtimeHours = revenueRoles.has(e.role) && e.employmentType !== 'part' && !e.leave ? overtime.hours : 0;
+    const working = e.employmentType !== 'part' && !e.leave;
+    e.overtimeHours = !working ? 0 : revenueRoles.has(e.role) ? overtime.hours : managementRoles.has(e.role) ? managerHours : 0;
+  }
+
+  // 売上にできる上限（需要と、残業を含めた売れる上限の小さいほう）
+  const servable = Math.min(demand, perf.capacity + overtime.extraCapacity);
+  // 積み上がる売上の業種（SaaS）：売上は、出せる上限に向かって少しずつ近づく（契約が少しずつ増え、少しずつ減る）
+  let revenue: number | undefined;
+  if (industry.recurringRevenue) {
+    const prev = state.market.recurringRevenue ?? 0;
+    revenue = prev + industry.recurringRevenue.convergence.value * (servable - prev);
+    state.market.recurringRevenue = revenue;
   }
 
   // 4. 売上・コスト・利益
@@ -140,12 +166,13 @@ export function tickInPlace(state: CompanyState): CompanyState {
     grossMargin: state.profile.grossMargin,
     hiringCost: hiring.cost,
     legalCost: legalMonthlyCost(state),
+    revenue,
   });
   state.cash += fin.operatingProfit;
-  // 取りこぼした需要は、将来の取り分を減らす
+  // 取りこぼした需要は、将来の取り分を減らす（積み上がる売上の業種でも、取りこぼしは「出せる上限」で見る）
   state.market.shareFactor = updateShareFactor(
     state.market.shareFactor,
-    demand > 0 ? (demand - fin.revenue) / demand : 0,
+    demand > 0 ? (demand - servable) / demand : 0,
   );
 
   // 10. 記録（納得感の計算で今月の業績を使うので、先につくっておく）
@@ -168,12 +195,14 @@ export function tickInPlace(state: CompanyState): CompanyState {
     legalCost: fin.legalCost,
     operatingProfit: fin.operatingProfit,
     extraordinaryCost: state.unrecordedExtraordinaryCost,
+    funding: state.unrecordedFunding ?? 0,
     violations: 0,
     cash: state.cash,
     policies: state.policies,
   };
   state.history.push(record);
   state.unrecordedExtraordinaryCost = 0;
+  state.unrecordedFunding = 0;
 
   // 5. 納得感
   updateEngagement(state.employees, {
@@ -212,11 +241,13 @@ export function tickInPlace(state: CompanyState): CompanyState {
   // 退職と帰任は、この月に去った人の記録から数える（休職明けの退職・イベントでの退職・画面で選んだ判断を含む）
   record.resignations = 0;
   record.returns = 0;
+  record.retirements = 0;
   for (let i = state.departures.length - 1; i >= 0; i--) {
     const d = state.departures[i];
     if (!d || d.month !== state.month) break;
     if (d.kind === 'resignation') record.resignations++;
-    else record.returns++;
+    else if (d.kind === 'return') record.returns++;
+    else record.retirements++;
   }
   // 従業員の声（この月に去った人のあいさつ、休職からの復帰、ふだんの声）
   generateVoices(state, streams.voices, {
@@ -251,6 +282,12 @@ export function tickInPlace(state: CompanyState): CompanyState {
   for (const e of state.employees) {
     e.tenureMonths += 1;
     if (birthday) e.age += 1;
+  }
+  // 定年：年度末に定年の年齢に達した人は退職する（次の月の記録に数える）
+  if (birthday) {
+    const r = retireEmployees(state.employees, state.month);
+    state.employees = r.stay;
+    state.departures.push(...r.retired);
   }
 
   state.rng = getStreamsState(streams);

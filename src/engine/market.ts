@@ -84,5 +84,7 @@ export function createMarket(
     stableDemandMonthly: initialDemandMonthly * profile.stableDemandShare,
     shareFactor: 1,
     recessionMonths: [],
+    // 積み上がる売上の業種（SaaS）は、創業時の需要の一部だけを売上として持って始める
+    ...(industry.recurringRevenue ? { recurringRevenue: initialDemandMonthly * industry.recurringRevenue.initialShare.value } : {}),
   };
 }
