@@ -6,6 +6,8 @@ import { MONTHS_PER_YEAR } from '../../engine/types';
 import { optionName } from '../../store/game';
 import { DEV_SPEEDS, SPEEDS, STAFF_PAGE } from '../config';
 import { usesLayerView } from '../../engine/layers';
+import { storeCount } from '../../engine/performance';
+import { runwayMonths } from '../../engine/eventTriggers';
 import { DecisionModal } from '../parts/DecisionModal';
 import { LayerView } from '../parts/LayerView';
 import { EmployeeDetail } from '../parts/EmployeeDetail';
@@ -69,6 +71,13 @@ function Metrics({ company }: { company: CompanyState }) {
   const chart = year.map((r) => ({ m: dateLabel(r.month), head: r.headcount, eng: Math.round(r.avgEngagement) }));
   const onLeave = company.employees.filter((e) => e.leave).length;
   const m = t.metrics;
+  const industry = getIndustry(company.profile.industryId);
+  // 飲食：店舗の数と店長のいない店。SaaS：いまの赤字が続いたら資金が何か月もつか
+  const stores = industry.store ? storeCount(industry, company.employees.length) : 0;
+  const managers = company.employees.filter((e) => !e.leave && industry.roles.find((r) => r.id === e.role)?.kind === 'management').length;
+  const recent = h.slice(-3);
+  const monthlyProfit = recent.reduce((s, r) => s + r.operatingProfit, 0) / Math.max(1, recent.length);
+  const runway = monthlyProfit >= 0 ? null : runwayMonths(company.cash, monthlyProfit);
   return (
     <section className="sheet" aria-labelledby="metrics-title">
       <h2 id="metrics-title" className="sheet-title">
@@ -107,6 +116,18 @@ function Metrics({ company }: { company: CompanyState }) {
           <div className="metric">
             <dt>{m.onLeave}</dt>
             <dd className="num">{onLeave}人</dd>
+          </div>
+        )}
+        {industry.store && (
+          <div className="metric">
+            <dt>{m.stores}</dt>
+            <dd className={`num ${stores - 1 - managers > 0 ? 'warn' : ''}`}>{m.storesValue(stores, Math.max(0, stores - 1 - managers))}</dd>
+          </div>
+        )}
+        {industry.recurringRevenue && (
+          <div className="metric">
+            <dt>{m.runway}</dt>
+            <dd className={`num ${runway !== null && runway < 12 ? 'loss' : ''}`}>{m.runwayValue(runway)}</dd>
           </div>
         )}
       </dl>

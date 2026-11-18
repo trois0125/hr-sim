@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { coef } from './coefficients';
 import { getIndustry } from './data';
-import { eventDefs } from './eventData';
+import { eventDefs, localizeEvent } from './eventData';
 import { employeeField, matchesEmployee } from './eventConditions';
 import {
   availableInIndustry,
@@ -27,7 +27,7 @@ import type {
   EventDef,
   JudgmentStyle,
 } from './types';
-import { COMPANY_METRICS, DIAGNOSIS_AXES, EMPLOYEE_FIELDS, JUDGMENT_AXES } from './types';
+import { COMPANY_METRICS, DIAGNOSIS_AXES, EMPLOYEE_FIELDS, INDUSTRY_IDS, JUDGMENT_AXES } from './types';
 
 const nonLaw = eventDefs.filter((e) => e.category !== 'law');
 
@@ -201,9 +201,48 @@ describe('イベントのデータ', () => {
     const div = eventDefs.find((e) => e.id === 'trading_new_division') as EventDef;
     expect(availableInIndustry(div, trading)).toBe(true);
     expect(availableInIndustry(div, { ...trading, specialEvents: [] })).toBe(false);
-    for (const e of eventDefs.filter((x) => x.category === 'industry')) {
-      expect(getIndustry('trading').specialEvents).toContain(e.id);
+    // 業種のイベントは、どれかの業種の specialEvents にある。specialEvents のイベントはすべて存在する
+    const all = INDUSTRY_IDS.flatMap((id) => getIndustry(id).specialEvents);
+    for (const e of eventDefs.filter((x) => x.category === 'industry')) expect(all).toContain(e.id);
+    for (const id of all) expect(eventDefs.some((e) => e.id === id), id).toBe(true);
+  });
+});
+
+describe('業種ごとの文（ステップ12）', () => {
+  it('業種ごとの差し替えは、正しい業種で、選択肢の数がそろっている', () => {
+    for (const e of eventDefs) {
+      for (const [ind, t] of Object.entries(e.textByIndustry ?? {})) {
+        expect(INDUSTRY_IDS as readonly string[], e.id).toContain(ind);
+        if (t?.choices) expect(t.choices.length, `${e.id} ${ind}`).toBe(e.choices.length);
+      }
     }
+  });
+
+  it('商社以外の業種で出る文に、商社向けの言葉が残っていない', () => {
+    for (const ind of INDUSTRY_IDS.filter((x) => x !== 'trading')) {
+      const industry = getIndustry(ind);
+      for (const e of eventDefs.filter((x) => availableInIndustry(x, industry) && x.category !== 'law')) {
+        const l = localizeEvent(e, ind);
+        const texts = [l.title, l.body, ...l.choices.flatMap((c) => [c.label, c.lesson ?? '', c.hint ?? ''])];
+        for (const t of texts) expect(t, `${e.id} (${ind})`).not.toMatch(/商社|商材/);
+      }
+    }
+  });
+
+  it('差し込み {name}・{role} は、対象者のいるイベントだけで使う（業種ごとの文も）', () => {
+    for (const e of nonLaw) {
+      for (const ind of INDUSTRY_IDS) {
+        const body = localizeEvent(e, ind).body;
+        if (/\{(name|role)\}/.test(body)) expect(e.trigger.type !== 'law' && e.trigger.target, `${e.id} (${ind})`).toBeTruthy();
+      }
+    }
+  });
+
+  it('業種に合わせて文が変わり、ほかの業種はそのまま', () => {
+    const big = eventDefs.find((e) => e.id === 'big_contract') as EventDef;
+    expect(localizeEvent(big, 'restaurant').title).not.toBe(big.title);
+    expect(localizeEvent(big, 'trading')).toBe(big);
+    expect(localizeEvent(big, 'restaurant').choices[2]?.label).toBe(big.choices[2]?.label);
   });
 });
 

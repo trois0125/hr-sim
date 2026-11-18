@@ -410,7 +410,32 @@
         },
         "hint": "円満に送り出すと、のちに元社員から良い話が来ることもある"
       }
-    ]
+    ],
+    "textByIndustry": {
+      "restaurant": {
+        "body": "店舗でいちばん頼りにされている{name}さん（{age}歳・勤続{tenure}年）から「ほかの飲食チェーンから年収{offer}万円で誘われている。辞めようと思う」と相談がありました。今の年収は{annual}万円です。",
+        "choices": [
+          null,
+          null,
+          {
+            "lesson": "円満に送り出した元社員は、お客さんや人の紹介で会社を助けることもある（アルムナイ）"
+          }
+        ]
+      },
+      "saas": {
+        "body": "チームでいちばん成果を出している{role}の{name}さん（{age}歳・勤続{tenure}年）から「他社から年収{offer}万円で誘われている。辞めようと思う」と相談がありました。今の年収は{annual}万円です。",
+        "choices": [
+          null,
+          null,
+          {
+            "lesson": "円満に送り出した元社員は、顧客や採用の紹介者として会社を助けることもある（アルムナイ）"
+          }
+        ]
+      },
+      "manufacturing": {
+        "body": "現場でいちばんの腕を持つ{name}さん（{age}歳・勤続{tenure}年）から「ほかのメーカーから年収{offer}万円で誘われている。辞めようと思う」と相談がありました。今の年収は{annual}万円です。"
+      }
+    }
   },
   {
     "id": "pay_negotiation_wave",
@@ -616,7 +641,36 @@
           "develop": -1
         }
       }
-    ]
+    ],
+    "textByIndustry": {
+      "restaurant": {
+        "body": "以前送り出した元社員が、勤め先の歓送迎会や宴会の予約をまとめて入れてくれることになりました。",
+        "choices": [
+          {
+            "label": "予約を受けて、元社員の会社を常連として大事にする",
+            "lesson": "元社員とのつながり（アルムナイ）は、お客さんや採用の入り口になる"
+          },
+          {
+            "label": "予約に加えて、元社員の再入社の窓口もつくる"
+          }
+        ]
+      },
+      "saas": {
+        "body": "以前送り出した元社員から「今の会社で、そちらのサービスを導入したい」と連絡がありました。",
+        "choices": [
+          {
+            "label": "導入を受けて契約する",
+            "lesson": "元社員とのつながり（アルムナイ）は、顧客や採用の入り口になる"
+          },
+          {
+            "label": "契約に加えて、元社員の再入社の窓口もつくる"
+          }
+        ]
+      },
+      "manufacturing": {
+        "body": "以前送り出した元社員から「今の会社で、そちらの部品を使いたいという話がある」と連絡がありました。"
+      }
+    }
   },
   {
     "id": "founder_conflict",
@@ -1891,7 +1945,27 @@
         },
         "hint": "メンタル不調で休む人が出るかもしれない"
       }
-    ]
+    ],
+    "textByIndustry": {
+      "restaurant": {
+        "choices": [
+          {
+            "label": "営業時間を短くし、残業を減らす"
+          },
+          null,
+          null
+        ]
+      },
+      "saas": {
+        "choices": [
+          {
+            "label": "新しい契約の受付を絞り、残業を減らす"
+          },
+          null,
+          null
+        ]
+      }
+    }
   },
   {
     "id": "evaluation_complaint",
@@ -2175,7 +2249,40 @@
           "develop": -1
         }
       }
-    ]
+    ],
+    "textByIndustry": {
+      "restaurant": {
+        "title": "大手チェーンの出店",
+        "body": "近くに大手の飲食チェーンが出店し、時給と待遇の良さで店舗スタッフが次々と誘われています。とくに頼りにしている人が狙われているようです。",
+        "choices": [
+          {
+            "label": "店舗スタッフ全体の給与を引き上げる"
+          },
+          null,
+          null
+        ]
+      },
+      "saas": {
+        "body": "大手のIT企業が採用を強めていて、うちのエンジニアや営業にも次々と声がかかっています。とくに成果を出している人が狙われているようです。",
+        "choices": [
+          {
+            "label": "エンジニアと営業の給与水準を全体で引き上げる"
+          },
+          null,
+          null
+        ]
+      },
+      "manufacturing": {
+        "body": "近くに大手メーカーの工場ができ、製造の社員に次々と声がかかっています。とくに腕のいい人が狙われているようです。",
+        "choices": [
+          {
+            "label": "製造の社員全体の給与水準を引き上げる"
+          },
+          null,
+          null
+        ]
+      }
+    }
   },
   {
     "id": "recession_response",
@@ -2289,7 +2396,29 @@
         },
         "hint": "他社でも通用する優秀な人から辞めやすい。残った人の不安も長く続く"
       }
-    ]
+    ],
+    "textByIndustry": {
+      "restaurant": {
+        "body": "景気が急に冷え込み、来店するお客さんが目に見えて減りはじめました。このままだと赤字になりそうです。",
+        "choices": [
+          null,
+          {
+            "lesson": "採用を止めると、景気が戻ったときに人が足りず、お客さんを取りこぼしやすい"
+          },
+          null
+        ]
+      },
+      "saas": {
+        "body": "景気が急に冷え込み、新しい契約が止まり、解約の相談も増えてきました。このままだと赤字になりそうです。",
+        "choices": [
+          null,
+          {
+            "lesson": "採用を止めると、景気が戻ったときに人が足りず、契約を取りこぼしやすい"
+          },
+          null
+        ]
+      }
+    }
   },
   {
     "id": "client_bankruptcy",
@@ -2372,6 +2501,36 @@
           "proactive": 1
         }
       }
+    ],
+    "textByIndustry": {
+      "saas": {
+        "title": "大口顧客の倒産",
+        "body": "大口の顧客が倒産し、未回収の利用料のうち約{loss}万円が回収できなくなりました。この顧客との契約もなくなります。",
+        "choices": [
+          {
+            "label": "営業を総動員して新しい顧客を開拓する"
+          },
+          {
+            "label": "契約の減少を受け入れ、経費を絞る"
+          },
+          {
+            "label": "顧客の信用の確認と、顧客の分散を進める",
+            "lesson": "1社に頼りすぎないことと、支払いの信用を確かめておくことが、売上の急な落ち込みを防ぐ"
+          }
+        ]
+      },
+      "manufacturing": {
+        "choices": [
+          null,
+          null,
+          {
+            "lesson": "取引先の信用の確認と取引の上限（与信管理）は、掛けで売る会社の基本の守り。1社に頼りすぎないことが連鎖倒産を防ぐ"
+          }
+        ]
+      }
+    },
+    "excludeIndustries": [
+      "restaurant"
     ]
   },
   {
@@ -2604,7 +2763,27 @@
         },
         "lesson": "人手不足のまま受注を取ると残業が増え、辞める人が増える悪循環になりやすい"
       }
-    ]
+    ],
+    "textByIndustry": {
+      "restaurant": {
+        "choices": [
+          null,
+          null,
+          {
+            "lesson": "人手不足のまま店を開け続けると残業が増え、辞める人が増える悪循環になりやすい"
+          }
+        ]
+      },
+      "saas": {
+        "choices": [
+          null,
+          null,
+          {
+            "lesson": "人手不足のまま契約を増やすと残業が増え、辞める人が増える悪循環になりやすい"
+          }
+        ]
+      }
+    }
   },
   {
     "id": "demand_surge",
@@ -2685,7 +2864,37 @@
         },
         "lesson": "受注を絞ると取引先が競合に移り、将来の需要も減る"
       }
-    ]
+    ],
+    "textByIndustry": {
+      "restaurant": {
+        "title": "来店客の急増",
+        "body": "近くに大きな商業施設ができ、お客さんが急に増えはじめました。今の人数では店が回りません。",
+        "choices": [
+          null,
+          {
+            "lesson": "客の急増を残業だけで受けると、負荷で人が辞め、結局お客さんを取りこぼす"
+          },
+          {
+            "lesson": "受け入れを絞るとお客さんが競合の店に移り、将来の来店も減る"
+          }
+        ]
+      },
+      "saas": {
+        "body": "サービスの市場が急に伸びはじめました。今の人数では新しい契約に応えきれません。",
+        "choices": [
+          null,
+          {
+            "lesson": "需要の急増を残業だけで受けると、負荷で人が辞め、結局契約を取りこぼす"
+          },
+          {
+            "lesson": "契約を絞ると顧客が競合に移り、将来の需要も減る"
+          }
+        ]
+      },
+      "manufacturing": {
+        "body": "製品の需要が急に伸びはじめました。今の人数では注文に応えきれません。"
+      }
+    }
   },
   {
     "id": "big_contract",
@@ -2750,7 +2959,40 @@
         },
         "lesson": "断る判断も経営。ただし大口の取引先との関係は、一度断ると戻りにくい"
       }
-    ]
+    ],
+    "textByIndustry": {
+      "restaurant": {
+        "title": "社員食堂の運営の打診",
+        "body": "近くの大企業から、社員食堂の運営を任せたいという打診がありました。受けるには店舗スタッフと店長の増員が必要です。",
+        "choices": [
+          {
+            "label": "引き受け、採用を強めて体制をつくる"
+          },
+          {
+            "label": "引き受け、今の人数でこなす"
+          },
+          null
+        ]
+      },
+      "saas": {
+        "title": "全社導入の大型契約",
+        "body": "大企業から、全社で導入したいという大型契約の打診がありました。受けるにはエンジニアと導入支援の増員が必要です。",
+        "choices": [
+          {
+            "label": "契約し、採用を強めて体制をつくる"
+          },
+          {
+            "label": "契約し、今の人数でこなす"
+          },
+          {
+            "lesson": "断る判断も経営。ただし大口の顧客との関係は、一度断ると戻りにくい"
+          }
+        ]
+      },
+      "manufacturing": {
+        "body": "大手メーカーから、大型の継続案件の打診がありました。受けるには製造と品質管理の増員が必要です。"
+      }
+    }
   },
   {
     "id": "trading_new_division",
@@ -2870,5 +3112,897 @@
       }
     ],
     "cooldownMonths": 1200
+  },
+  {
+    "id": "restaurant_new_store",
+    "category": "industry",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 20,
+      "conditions": [
+        {
+          "metric": "profit12",
+          "op": ">",
+          "value": 0
+        }
+      ],
+      "target": {
+        "where": [
+          {
+            "field": "roleKind",
+            "op": "==",
+            "value": "revenue"
+          },
+          {
+            "field": "employmentType",
+            "op": "==",
+            "value": "full"
+          },
+          {
+            "field": "affiliation",
+            "op": "==",
+            "value": "proper"
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          },
+          {
+            "field": "ability",
+            "op": ">=",
+            "value": 55
+          },
+          {
+            "field": "tenureMonths",
+            "op": ">=",
+            "value": 24
+          }
+        ],
+        "sortBy": "ability",
+        "order": "desc"
+      }
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "新店舗の出店と店長不足",
+    "body": "新しい店舗を出す話が持ち上がりました。ただ、任せられる店長が足りません。候補は店舗スタッフの{name}さん（勤続{tenure}年）か、外から採る経験者です。",
+    "cooldownMonths": 24,
+    "choices": [
+      {
+        "label": "店舗スタッフから店長に抜擢して出店する",
+        "effects": {
+          "cash": -20000000,
+          "matureDemandMult": 1.05,
+          "target": {
+            "roleKind": "management",
+            "salaryPct": 10,
+            "engagement": 10
+          }
+        },
+        "axes": {
+          "reward": 1,
+          "horizon": 1,
+          "people": 1
+        },
+        "diagnosis": {
+          "develop": 1
+        },
+        "lesson": "現場から店長を育てると定着につながる。ただし店長の仕事を教えないまま任せると、負荷でつぶれやすい",
+        "hint": "店長の仕事に慣れるまで、負荷が重くなりやすい"
+      },
+      {
+        "label": "外から経験のある店長を採ってから出店する",
+        "effects": {
+          "cash": -25000000,
+          "matureDemandMult": 1.05,
+          "hiringIntensity": {
+            "mult": 1.3,
+            "months": 6
+          }
+        },
+        "axes": {
+          "horizon": 1,
+          "people": -1
+        },
+        "diagnosis": {
+          "develop": -1
+        },
+        "lesson": "経験者を採ると立ち上がりは速いが、採用に時間とお金がかかり、今いる人には「上が詰まった」と映ることもある"
+      },
+      {
+        "label": "店長が育つまで出店を見送る",
+        "effects": {},
+        "axes": {
+          "horizon": -1,
+          "people": 1
+        },
+        "lesson": "出店を急がないと、店長が育ち既存の店も安定する。ただし良い場所は待ってくれない"
+      }
+    ]
+  },
+  {
+    "id": "restaurant_food_safety",
+    "category": "industry",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 10
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "食中毒の疑い",
+    "body": "店舗で食中毒の疑いが出て、保健所の調査が入ることになりました。",
+    "choices": [
+      {
+        "label": "店を一時休業し、原因を調べて公表する",
+        "effects": {
+          "cash": -3000000,
+          "demand": {
+            "mult": 0.85,
+            "months": 3
+          },
+          "engagementAll": 2
+        },
+        "axes": {
+          "rules": 1,
+          "people": 1
+        },
+        "diagnosis": {
+          "proactive": 1
+        },
+        "lesson": "衛生管理（HACCPに沿った衛生管理は2021年6月から原則すべての飲食店の義務）と、起きたときの公表の早さが信頼を左右する"
+      },
+      {
+        "label": "保健所の指示の範囲で対応する",
+        "effects": {
+          "cash": -1000000,
+          "demand": {
+            "mult": 0.9,
+            "months": 6
+          }
+        },
+        "axes": {
+          "rules": 1,
+          "horizon": -1
+        },
+        "lesson": "最低限の対応では、原因がはっきりしないまま客足が戻りにくい"
+      },
+      {
+        "label": "口外しないよう店に指示する",
+        "effects": {
+          "demand": {
+            "mult": 0.8,
+            "months": 12
+          },
+          "engagementAll": -6,
+          "hiringAttraction": {
+            "mult": 0.8,
+            "months": 24
+          }
+        },
+        "axes": {
+          "rules": -1,
+          "people": -1
+        },
+        "diagnosis": {
+          "proactive": -1
+        },
+        "lesson": "隠しても、発覚したときに信頼を大きく失う。口止めされた社員の会社への信頼も下がる",
+        "hint": "あとで発覚すると、客足と評判を大きく失う"
+      }
+    ]
+  },
+  {
+    "id": "restaurant_manager_overwork",
+    "category": "industry",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 15,
+      "target": {
+        "where": [
+          {
+            "field": "roleKind",
+            "op": "==",
+            "value": "management"
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          },
+          {
+            "field": "overtimeHours",
+            "op": ">=",
+            "value": 30
+          }
+        ],
+        "sortBy": "overtimeHours",
+        "order": "desc"
+      }
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "店長の過重労働",
+    "body": "{name}店長が、店長のいない店を掛け持ちして休みなく働いています。「店長は管理職だから残業代は出ない」と思い込んでいるようです。",
+    "choices": [
+      {
+        "label": "店長を増やし、残業代も正しく払う",
+        "effects": {
+          "cashPerEmployee": -20000,
+          "hiringIntensity": {
+            "mult": 1.3,
+            "months": 6
+          },
+          "target": {
+            "engagement": 10
+          }
+        },
+        "axes": {
+          "rules": 1,
+          "people": 1
+        },
+        "diagnosis": {
+          "proactive": 1
+        },
+        "lesson": "管理監督者にあたるかは、肩書きではなく権限・働き方・待遇で決まる（労働基準法41条）。多くの店長は管理監督者にあたらず、残業代が必要（いわゆる名ばかり管理職）"
+      },
+      {
+        "label": "手当を出して、もう少し頑張ってもらう",
+        "effects": {
+          "target": {
+            "salaryPct": 5,
+            "engagement": 3
+          },
+          "followUp": {
+            "eventId": "mental_health_leave",
+            "afterMonths": 4,
+            "probability": 0.4
+          }
+        },
+        "axes": {
+          "reward": 1,
+          "rules": -1
+        },
+        "lesson": "手当では負荷そのものは減らない。管理監督者にあたらなければ、残業代を請求されることもある",
+        "hint": "負荷は減らないので、体調を崩す人が出るかもしれない"
+      },
+      {
+        "label": "店長に任せたままにする",
+        "effects": {
+          "target": {
+            "engagement": -10
+          },
+          "followUp": {
+            "eventId": "mental_health_leave",
+            "afterMonths": 3,
+            "probability": 0.6
+          }
+        },
+        "axes": {
+          "people": -1,
+          "rules": -1
+        },
+        "diagnosis": {
+          "proactive": -1
+        },
+        "lesson": "店長の負荷を放っておくと、店長から辞め、店が回らなくなる",
+        "hint": "体調を崩す人が出るかもしれない"
+      }
+    ]
+  },
+  {
+    "id": "saas_funding_round",
+    "category": "industry",
+    "trigger": {
+      "type": "condition",
+      "minHeadcount": 2,
+      "conditions": [
+        {
+          "metric": "runway",
+          "op": "<",
+          "value": 9
+        },
+        {
+          "metric": "month",
+          "op": ">=",
+          "value": 12
+        }
+      ]
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "資金調達",
+    "body": "このままの赤字が続くと、1年もたたずに手元資金が尽きそうです。ベンチャーキャピタルから出資の話が来ています。",
+    "cooldownMonths": 24,
+    "choices": [
+      {
+        "label": "出資を受け、採用を一気に強める",
+        "effects": {
+          "fundingPayrollMonths": 18,
+          "hiringHeadroom": {
+            "delta": 1.0,
+            "months": 24
+          }
+        },
+        "axes": {
+          "horizon": 1,
+          "people": -1
+        },
+        "diagnosis": {
+          "develop": -1
+        },
+        "lesson": "調達した資金で先に人を採ると伸びは速いが、売上が追いつかなければ次の調達が必要になる",
+        "hint": "次の調達までに売上を伸ばせないと、また資金が尽きる"
+      },
+      {
+        "label": "出資を受け、赤字を減らしながら進める",
+        "effects": {
+          "fundingPayrollMonths": 12
+        },
+        "axes": {
+          "horizon": 1,
+          "people": 1
+        },
+        "lesson": "調達しても使い方を抑えると、時間を買える。ただし伸びる市場では先を越されることもある"
+      },
+      {
+        "label": "出資は受けず、採用を止めて黒字化を急ぐ",
+        "effects": {
+          "hiringIntensity": {
+            "mult": 0.2,
+            "months": 12
+          },
+          "engagementAll": -2
+        },
+        "axes": {
+          "horizon": -1
+        },
+        "lesson": "自己資金で黒字化を急ぐと会社の自由は守れるが、伸びる市場では競合に先を越されやすい",
+        "hint": "資金が尽きる前に黒字にできなければ、倒産する"
+      }
+    ]
+  },
+  {
+    "id": "saas_engineer_poaching",
+    "category": "industry",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 8,
+      "target": {
+        "where": [
+          {
+            "field": "roleKind",
+            "op": "==",
+            "value": "revenue"
+          },
+          {
+            "field": "employmentType",
+            "op": "==",
+            "value": "full"
+          },
+          {
+            "field": "affiliation",
+            "op": "==",
+            "value": "proper"
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          }
+        ],
+        "sortBy": "ability",
+        "order": "desc"
+      }
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "エンジニアの引き抜き",
+    "body": "外資系のIT企業が、{name}さんをはじめ、成果を出している人たちに今の1.5倍の年収で声をかけています。",
+    "choices": [
+      {
+        "label": "給与テーブルを相場に合わせて見直す",
+        "effects": {
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "roleKind",
+                  "op": "==",
+                  "value": "revenue"
+                },
+                {
+                  "field": "employmentType",
+                  "op": "==",
+                  "value": "full"
+                },
+                {
+                  "field": "affiliation",
+                  "op": "==",
+                  "value": "proper"
+                },
+                {
+                  "field": "onLeave",
+                  "op": "==",
+                  "value": 0
+                }
+              ],
+              "salaryPct": 8
+            }
+          ]
+        },
+        "axes": {
+          "reward": -1,
+          "people": 1,
+          "horizon": 1
+        },
+        "diagnosis": {
+          "outcome": -1
+        },
+        "lesson": "相場に合わせて全体を上げると、費用は大きいが公平感を保ったまま引き抜きに強くなる"
+      },
+      {
+        "label": "狙われた人だけ個別に上げる",
+        "effects": {
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "roleKind",
+                  "op": "==",
+                  "value": "revenue"
+                },
+                {
+                  "field": "employmentType",
+                  "op": "==",
+                  "value": "full"
+                },
+                {
+                  "field": "affiliation",
+                  "op": "==",
+                  "value": "proper"
+                },
+                {
+                  "field": "onLeave",
+                  "op": "==",
+                  "value": 0
+                }
+              ],
+              "sortBy": "ability",
+              "order": "desc",
+              "limitShare": 0.1,
+              "salaryPct": 15,
+              "engagement": 8
+            }
+          ],
+          "followUp": {
+            "eventId": "pay_negotiation_wave",
+            "afterMonths": 6,
+            "probability": 0.5
+          }
+        },
+        "axes": {
+          "reward": 1,
+          "people": 1
+        },
+        "diagnosis": {
+          "outcome": 1
+        },
+        "lesson": "上位の人だけ上げると費用は小さいが、ほかの人との差が社内公平性の不満になりうる",
+        "hint": "ほかの社員も、給与の交渉に来るかもしれない"
+      },
+      {
+        "label": "技術への投資と裁量の大きさで勝負する",
+        "effects": {
+          "cashPerEmployee": -50000,
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "roleKind",
+                  "op": "==",
+                  "value": "revenue"
+                },
+                {
+                  "field": "employmentType",
+                  "op": "==",
+                  "value": "full"
+                },
+                {
+                  "field": "affiliation",
+                  "op": "==",
+                  "value": "proper"
+                },
+                {
+                  "field": "onLeave",
+                  "op": "==",
+                  "value": 0
+                }
+              ],
+              "engagement": 6
+            },
+            {
+              "where": [
+                {
+                  "field": "roleKind",
+                  "op": "==",
+                  "value": "revenue"
+                },
+                {
+                  "field": "employmentType",
+                  "op": "==",
+                  "value": "full"
+                },
+                {
+                  "field": "affiliation",
+                  "op": "==",
+                  "value": "proper"
+                },
+                {
+                  "field": "onLeave",
+                  "op": "==",
+                  "value": 0
+                },
+                {
+                  "field": "engagement",
+                  "op": "<",
+                  "value": 50
+                }
+              ],
+              "sortBy": "ability",
+              "order": "desc",
+              "limitShare": 0.03,
+              "resign": "pay"
+            }
+          ]
+        },
+        "axes": {
+          "horizon": 1,
+          "reward": -1
+        },
+        "diagnosis": {
+          "develop": 1
+        },
+        "lesson": "成長できる環境は、お金だけで動かない人を引き留める。ただし給与の差が大きすぎると、何人かは移っていく"
+      }
+    ]
+  },
+  {
+    "id": "saas_big_churn",
+    "category": "industry",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 5,
+      "conditions": [
+        {
+          "metric": "month",
+          "op": ">=",
+          "value": 24
+        }
+      ]
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "大口顧客の解約",
+    "body": "いちばん大きな顧客から、来月で解約したいと連絡がありました。理由は「問い合わせへの対応が遅い」とのことです。",
+    "choices": [
+      {
+        "label": "カスタマーサクセスを増員し、既存の顧客を守る",
+        "effects": {
+          "hiringIntensity": {
+            "mult": 1.3,
+            "months": 6
+          },
+          "demand": {
+            "mult": 0.95,
+            "months": 6
+          }
+        },
+        "axes": {
+          "horizon": 1,
+          "people": 1
+        },
+        "diagnosis": {
+          "proactive": 1
+        },
+        "lesson": "SaaSは、解約を減らすほうが新しい顧客を取るより安い。既存の顧客を支える人への投資は後から効く"
+      },
+      {
+        "label": "値引きして引き留める",
+        "effects": {
+          "demand": {
+            "mult": 0.97,
+            "months": 12
+          },
+          "cashRevenueMonths": -0.05
+        },
+        "axes": {
+          "horizon": -1
+        },
+        "lesson": "値引きで引き留めても、不満の原因が残ればいずれ解約される"
+      },
+      {
+        "label": "新しい顧客の獲得に集中する",
+        "effects": {
+          "demand": {
+            "mult": 0.88,
+            "months": 12
+          }
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "diagnosis": {
+          "proactive": -1
+        },
+        "lesson": "既存の顧客の不満を放っておくと、解約が続き、新しい契約で埋めきれなくなる"
+      }
+    ]
+  },
+  {
+    "id": "manufacturing_skill_succession",
+    "category": "industry",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 10,
+      "target": {
+        "where": [
+          {
+            "field": "roleKind",
+            "op": "==",
+            "value": "revenue"
+          },
+          {
+            "field": "employmentType",
+            "op": "==",
+            "value": "full"
+          },
+          {
+            "field": "affiliation",
+            "op": "==",
+            "value": "proper"
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          },
+          {
+            "field": "age",
+            "op": ">=",
+            "value": 58
+          },
+          {
+            "field": "ability",
+            "op": ">=",
+            "value": 55
+          }
+        ],
+        "sortBy": "ability",
+        "order": "desc"
+      }
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "熟練工の定年と技能継承",
+    "body": "熟練の{name}さん（{age}歳）が、あと数年で定年を迎えます。{name}さんにしかできない加工があり、後を継げる人がいません。",
+    "choices": [
+      {
+        "label": "若手と組ませて、技能を記録し伝える時間をつくる",
+        "effects": {
+          "cashPerEmployee": -20000,
+          "target": {
+            "engagement": 5
+          },
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "roleKind",
+                  "op": "==",
+                  "value": "revenue"
+                },
+                {
+                  "field": "employmentType",
+                  "op": "==",
+                  "value": "full"
+                },
+                {
+                  "field": "affiliation",
+                  "op": "==",
+                  "value": "proper"
+                },
+                {
+                  "field": "onLeave",
+                  "op": "==",
+                  "value": 0
+                },
+                {
+                  "field": "age",
+                  "op": "<",
+                  "value": 35
+                }
+              ],
+              "ability": 4,
+              "engagement": 3
+            }
+          ]
+        },
+        "axes": {
+          "horizon": 1,
+          "people": 1
+        },
+        "diagnosis": {
+          "develop": 1
+        },
+        "lesson": "技能の継承は、定年の数年前から計画しないと間に合わない。教える側にも時間と評価が要る"
+      },
+      {
+        "label": "経験のある人を中途で採る",
+        "effects": {
+          "hiringIntensity": {
+            "mult": 1.3,
+            "months": 12
+          }
+        },
+        "axes": {
+          "horizon": 1,
+          "people": -1
+        },
+        "diagnosis": {
+          "develop": -1
+        },
+        "lesson": "経験者を採っても、その会社の設備や製品に固有の技能はすぐには身につかない"
+      },
+      {
+        "label": "今は手を打たない",
+        "effects": {
+          "demand": {
+            "mult": 0.93,
+            "months": 36
+          }
+        },
+        "axes": {
+          "horizon": -1
+        },
+        "lesson": "熟練の人が辞めたあとで、品質の低下や不良の増加として表れ、取引先の信頼を失う",
+        "hint": "定年のあと、品質が落ちて受注が減るかもしれない"
+      }
+    ]
+  },
+  {
+    "id": "manufacturing_work_accident",
+    "category": "industry",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 10,
+      "target": {
+        "where": [
+          {
+            "field": "roleKind",
+            "op": "==",
+            "value": "revenue"
+          },
+          {
+            "field": "employmentType",
+            "op": "==",
+            "value": "full"
+          },
+          {
+            "field": "affiliation",
+            "op": "==",
+            "value": "proper"
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          }
+        ]
+      }
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "労働災害",
+    "body": "製造の{name}さんが、機械に手を挟まれてけがをしました。長い時間の作業で疲れていたようです。",
+    "onTrigger": {
+      "target": {
+        "leave": {
+          "kind": "sick",
+          "monthsMult": 0.5
+        }
+      }
+    },
+    "choices": [
+      {
+        "label": "労災として申請し、設備と作業手順を見直す",
+        "effects": {
+          "cash": -5000000,
+          "engagementAll": 2,
+          "target": {
+            "returnRateDelta": 0.2
+          }
+        },
+        "axes": {
+          "rules": 1,
+          "people": 1
+        },
+        "diagnosis": {
+          "proactive": 1
+        },
+        "lesson": "労働災害で休業したら、労働基準監督署への報告（労働者死傷病報告）が必要。原因を調べて再発を防ぐことが、いちばんの安全対策"
+      },
+      {
+        "label": "労災として申請するが、作業はそのまま続ける",
+        "effects": {
+          "cash": -1000000,
+          "engagementAll": -2,
+          "followUp": {
+            "eventId": "manufacturing_work_accident",
+            "afterMonths": 12,
+            "probability": 0.3
+          }
+        },
+        "axes": {
+          "rules": 1,
+          "horizon": -1
+        },
+        "lesson": "原因に手を打たないと、同じ事故がまた起きる",
+        "hint": "同じような事故がまた起きるかもしれない"
+      },
+      {
+        "label": "健康保険で治療してもらい、労災にしない",
+        "effects": {
+          "cash": -300000,
+          "engagementAll": -6,
+          "hiringAttraction": {
+            "mult": 0.85,
+            "months": 24
+          }
+        },
+        "axes": {
+          "rules": -1,
+          "people": -1
+        },
+        "diagnosis": {
+          "proactive": -1
+        },
+        "lesson": "労災を健康保険で処理させる「労災かくし」は違法。発覚すると処罰され、社員の信頼も失う",
+        "hint": "労災かくしは違法"
+      }
+    ]
   }
 ]

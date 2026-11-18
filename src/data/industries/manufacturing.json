@@ -250,8 +250,7 @@
   },
   "specialEvents": [
     "manufacturing_skill_succession",
-    "manufacturing_work_accident",
-    "manufacturing_shift_work"
+    "manufacturing_work_accident"
   ],
   "variants": [
     {

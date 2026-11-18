@@ -124,12 +124,18 @@ describe('計算が重くならない', () => {
     expect(cloned).toBeLessThan(100);
   });
 
-  it('1,000人を層にまとめるのは10ms以内', () => {
+  it('1,000人を層にまとめるのは25ms以内（5回の中央値。ほかのテストと並んで走っても安定するように）', () => {
     const c = bigCompany(1000);
-    const t0 = performance.now();
+    const once = () => {
+      const t0 = performance.now();
+      summarizeLayers(c.employees, { industry: trading, departures: c.departures, month: c.month });
+      keyPeople(c.employees);
+      return performance.now() - t0;
+    };
+    once(); // 準備
+    const times = Array.from({ length: 5 }, once).sort((a, b) => a - b);
+    expect(times[2]).toBeLessThan(25);
     const layers = summarizeLayers(c.employees, { industry: trading, departures: c.departures, month: c.month });
-    keyPeople(c.employees);
-    expect(performance.now() - t0).toBeLessThan(10);
     expect(layers.reduce((s, l) => s + l.count, 0)).toBe(1000);
   });
 });

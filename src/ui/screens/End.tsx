@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { getIndustry } from '../../engine/data';
-import { eventDefs } from '../../engine/eventData';
+import { eventDefs, localizeEvent } from '../../engine/eventData';
 import { getLaw } from '../../engine/lawData';
 import { summarizeRun } from '../../engine/summary';
-import type { CompanyState, DiagnosisAxis, PolicySet } from '../../engine/types';
+import type { CompanyState, DiagnosisAxis, IndustryId, PolicySet } from '../../engine/types';
 import { ATTRITION_REASONS, DIAGNOSIS_AXES, MONTHS_PER_YEAR } from '../../engine/types';
 import { computeDiagnosis, diagnosisData } from '../../report/diagnosis';
 import {
@@ -26,13 +26,17 @@ const INK = '#1e2b45';
 const RIVAL = '#8a93a6';
 const GRID = '#dde2df';
 
-const eventOf = (id: string) => eventDefs.find((e) => e.id === id);
+/** 業種に合わせた文のイベント */
+const eventOf = (id: string, industryId: IndustryId) => {
+  const e = eventDefs.find((x) => x.id === id);
+  return e ? localizeEvent(e, industryId) : undefined;
+};
 const changesText = (changes: { category: keyof PolicySet; option: string }[]) =>
   changes
     .map((c) => `${policyStrings.categories[c.category]}→${optionName(c.category, c.option as PolicySet[typeof c.category])}`)
     .join('、');
 
-function timelineText(e: TimelineEntry): string {
+function timelineText(e: TimelineEntry, industryId: IndustryId): string {
   switch (e.kind) {
     case 'founding':
       return t.timeline.founding(e.headcount);
@@ -47,7 +51,7 @@ function timelineText(e: TimelineEntry): string {
     case 'recession':
       return t.timeline.recession;
     case 'event': {
-      const ev = eventOf(e.eventId);
+      const ev = eventOf(e.eventId, industryId);
       return t.timeline.event(ev?.title ?? e.eventId, ev?.choices[e.choiceIndex]?.label ?? '');
     }
     case 'reflection':
@@ -57,9 +61,9 @@ function timelineText(e: TimelineEntry): string {
   }
 }
 
-function turningTitle(p: TurningPoint): string {
+function turningTitle(p: TurningPoint, industryId: IndustryId): string {
   if (p.kind === 'event') {
-    const ev = eventOf(p.eventId);
+    const ev = eventOf(p.eventId, industryId);
     return t.timeline.event(ev?.title ?? p.eventId, ev?.choices[p.choiceIndex]?.label ?? '');
   }
   if (p.kind === 'policy') {
@@ -201,7 +205,7 @@ function Report({ company }: { company: CompanyState }) {
           {report.timeline.map((e, i) => (
             <li key={i} className={`tl-${e.kind}`}>
               <span className="feed-date num">{dateLabel(e.month)}</span>
-              <span>{timelineText(e)}</span>
+              <span>{timelineText(e, company.profile.industryId)}</span>
             </li>
           ))}
         </ol>
@@ -338,7 +342,7 @@ function Report({ company }: { company: CompanyState }) {
             <li key={i}>
               <span className="feed-date num">{dateLabel(p.month)}</span>
               <div>
-                <strong>{turningTitle(p)}</strong>
+                <strong>{turningTitle(p, company.profile.industryId)}</strong>
                 <p>{p.lesson}</p>
               </div>
             </li>

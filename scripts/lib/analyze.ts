@@ -5,6 +5,7 @@ import referencesJson from '../../src/data/references.json';
 import { getIndustry } from '../../src/engine/data';
 import type { PeriodMetrics } from '../../src/engine/summary';
 import { eventDefs } from '../../src/engine/eventData';
+import { availableInIndustry } from '../../src/engine/eventTriggers';
 import { ATTRITION_REASONS, JUDGMENT_AXES, type IndustryId, type JudgmentAxis, type PolicySet } from '../../src/engine/types';
 import { policyOptions, type JobResult } from './batch';
 
@@ -236,7 +237,7 @@ export function summarize(results: JobResult[], industryId: IndustryId, label: s
   out.push(dominance.length ? dominance.map((d) => `- 要注意：${d}`).join('\n') : '- 利益・納得感・離職率のすべてで最良になる選択肢はなかった', '');
   out.push('### 会社の段階で、利益が最も大きくなる選択肢が変わるか', '');
   out.push(stageShift.map((s) => `- ${s}`).join('\n'), '');
-  out.push('### 業種ごとに最も良い組み合わせが違うか', '', '- いまは商社だけなので確認できない（ステップ12で4業種そろってから確かめる）', '');
+  out.push('### 業種ごとに最も良い組み合わせが違うか', '', '- 4業種をまとめて回したときの比較（`--industry all` の simulate-all-*.md）で確かめる', '');
   out.push('### 法令違反を放置すると平均的に損をするか', '');
   out.push(
     '| 法令対応の方針 | 社数 | 利益の合計・創業期（億円） | 利益の合計・成熟期（億円） | 臨時の支出の合計（億円） | 違反の月数 | 発覚の回数 | 納得感 | 倒産 |',
@@ -317,7 +318,10 @@ function eventSections(results: JobResult[]): string[] {
     '',
   );
   out.push('| イベント | 起き方 | 起きた会社 | 10年あたりの回数 |', '|---|---|---|---|');
-  for (const e of eventDefs) {
+  // その業種で起きうるイベントだけ（ほかの業種のイベントと、その業種で起きないイベントは載せない）
+  const industryId = results[0]?.job.industryId;
+  const industry = industryId ? getIndustry(industryId) : null;
+  for (const e of eventDefs.filter((x) => !industry || availableInIndustry(x, industry))) {
     const n = results.reduce((s, r) => s + (r.summary.eventCounts[e.id] ?? 0), 0);
     const companies = results.filter((r) => (r.summary.eventCounts[e.id] ?? 0) > 0).length;
     out.push(`| ${e.title}（${e.id}） | ${e.trigger.type} | ${pct(companies / results.length, 0)} | ${num((n / years) * 10, 2)} |`);
@@ -398,4 +402,52 @@ export function summarizeOneAtATime(results: JobResult[], industryId: IndustryId
     );
   }
   return out.join('\n') + '\n';
+}
+
+// ---------------------------------------------------------------------------
+// 4業種の比較（--industry all。ステップ12）
+// ---------------------------------------------------------------------------
+
+/** 成熟期の利益の合計が最も大きい選択肢（途中で制度を変えなかった会社だけで集計） */
+function bestOption(results: JobResult[], key: keyof PolicySet, options: readonly string[]): { option: string; profit: number } {
+  const fixed = results.filter((r) => !r.job.change);
+  let best = { option: options[0] ?? '', profit: -Infinity };
+  for (const o of options) {
+    const m = marginal(fixed, key, o, 'late');
+    if (m.n > 0 && m.profit > best.profit) best = { option: o, profit: m.profit };
+  }
+  return best;
+}
+
+export function compareIndustries(byIndustry: Map<IndustryId, JobResult[]>, runs: number): string {
+  const out: string[] = [];
+  out.push(`# 4業種の比較（制度の組み合わせを抽選、各${runs}社）`, '');
+  out.push(
+    '| 業種 | 倒産 | 成熟 | 離職率（中央値／統計） | 売上高人件費率（中央値／参照） | 残業（中央値／統計） | 営業利益率（中央値） | 納得感（中央値） | 需要を売上にできた割合（中央値） |',
+    '|---|---|---|---|---|---|---|---|---|',
+  );
+  for (const [id, rs] of byIndustry) {
+    const ref = refs.industries[id];
+    const a = rs.map((r) => r.summary.all);
+    const share = (st: string) => pct(rs.filter((r) => r.summary.status === st).length / rs.length, 0);
+    const med = (f: (p: PeriodMetrics) => number) => quantile(a.map(f), 0.5);
+    out.push(
+      `| ${getIndustry(id).name} | ${share('bankrupt')} | ${share('matured')} | ${pct(med((p) => p.attritionRate))}／${ref ? pct(ref.attritionRate.value) : '-'} | ${pct(med((p) => p.laborCostRatio))}／${ref ? pct(ref.laborCostRatio.value) : '-'} | ${num(med((p) => p.overtimeHours))}h／${ref ? `${ref.overtimeHours.value}h` : '-'} | ${pct(med((p) => p.operatingMargin))} | ${num(med((p) => p.engagement))} | ${pct(med((p) => p.demandCoverage))} |`,
+    );
+  }
+  out.push('', '人件費率の参照値は仮置き（法人企業統計で要確認）。離職率と残業は統計。', '');
+
+  out.push('## 業種ごとに、成熟期の利益が最も大きくなる制度', '', '途中で制度を変えなかった会社の、選択肢ごとの平均で比べる（抽選の集計なので誤差を含む）。', '');
+  const ids = [...byIndustry.keys()];
+  out.push(`| カテゴリ | ${ids.map((id) => getIndustry(id).name).join(' | ')} | 業種で違うか |`, `|---|${ids.map(() => '---').join('|')}|---|`);
+  let differs = 0;
+  const keys = Object.keys(policyOptions(getIndustry(ids[0] as IndustryId))) as (keyof PolicySet)[];
+  for (const key of keys) {
+    const bests = ids.map((id) => bestOption(byIndustry.get(id) ?? [], key, policyOptions(getIndustry(id))[key] as readonly string[]).option);
+    const diff = new Set(bests).size > 1;
+    if (diff) differs++;
+    out.push(`| ${key} | ${bests.join(' | ')} | ${diff ? '違う' : '同じ'} |`);
+  }
+  out.push('', `- ${keys.length}カテゴリのうち ${differs}カテゴリで、最も良い選択肢が業種によって違う`, '');
+  return out.join('\n');
 }

@@ -10,6 +10,8 @@
 //     制度の組み合わせとシードを抽選して回す（--base-seed で抽選のシードを変えられる）
 //     途中で制度を1カテゴリ変える会社を3割混ぜる（--change-share で割合を変えられる）
 //   npx tsx scripts/simulate.ts --industry trading --runs 100 --mode oat
+//   npx tsx scripts/simulate.ts --industry all --runs 1000
+//     4業種を回して比べる（業種ごとに最も良い制度が違うか）
 //     標準の制度から1カテゴリだけ変えた組み合わせを、それぞれ同じ100社で回す
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { Worker } from 'node:worker_threads';
@@ -20,6 +22,7 @@ import { createRng } from '../src/engine/rng';
 import { runToEnd } from '../src/engine/tick';
 import {
   ENGAGEMENT_FACTORS,
+  INDUSTRY_IDS,
   MONTHS_PER_YEAR,
   type AttritionReason,
   type EngagementFactor,
@@ -29,7 +32,7 @@ import {
   type OvertimePolicy,
   type PolicySet,
 } from '../src/engine/types';
-import { summarize, summarizeOneAtATime, toCsv } from './lib/analyze';
+import { compareIndustries, summarize, summarizeOneAtATime, toCsv } from './lib/analyze';
 import { makeJobs, policyOptions, type Job, type JobResult } from './lib/batch';
 
 /** 途中で制度を変える会社の割合（シミュレーションの設定。ゲームの係数ではない） */
@@ -79,8 +82,7 @@ async function runParallel(jobs: Job[]): Promise<JobResult[]> {
   return results.sort((a, b) => a.job.run - b.job.run);
 }
 
-async function batch(): Promise<void> {
-  const industryId = (arg('industry') ?? 'trading') as IndustryId;
+async function batch(industryId: IndustryId): Promise<JobResult[]> {
   const runs = Number(arg('runs'));
   const mode = arg('mode') ?? 'random';
   const baseSeed = Number(arg('base-seed') ?? 1);
@@ -123,6 +125,18 @@ async function batch(): Promise<void> {
   writeFileSync(`${base}.md`, md);
   console.log(md);
   process.stderr.write(`書き出し：${base}.csv / ${base}.md\n`);
+  return results;
+}
+
+/** 4業種をまとめて回し、業種どうしを比べる（--industry all） */
+async function batchAll(): Promise<void> {
+  const runs = Number(arg('runs'));
+  const byIndustry = new Map<IndustryId, JobResult[]>();
+  for (const id of INDUSTRY_IDS) byIndustry.set(id, await batch(id));
+  const md = compareIndustries(byIndustry, runs);
+  writeFileSync(`out/simulate-all-random-${runs}.md`, md);
+  console.log(md);
+  process.stderr.write(`書き出し：out/simulate-all-random-${runs}.md\n`);
 }
 
 // ---------------------------------------------------------------------------
@@ -246,7 +260,8 @@ function single(): void {
 }
 
 if (arg('runs')) {
-  await batch();
+  if (arg('industry') === 'all') await batchAll();
+  else await batch((arg('industry') ?? 'trading') as IndustryId);
 } else {
   single();
 }

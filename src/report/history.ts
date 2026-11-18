@@ -3,7 +3,7 @@
  * 文言は画面（src/ui/strings.ts）でつける。ここでは何が起きたかだけを返す。
  */
 import { defaultPolicies } from '../engine/data';
-import { eventDefs } from '../engine/eventData';
+import { eventDefs, localizeEvent } from '../engine/eventData';
 import { generateCompany, setFoundingPolicies } from '../engine/generate';
 import { getLaw } from '../engine/lawData';
 import { runToEnd } from '../engine/tick';
@@ -197,7 +197,8 @@ export function pickTurningPoints(state: CompanyState): TurningPoint[] {
   }
   const seen = new Set<string>();
   for (const d of state.decisions) {
-    const e = eventDefs.find((x) => x.id === d.eventId);
+    const def = eventDefs.find((x) => x.id === d.eventId);
+    const e = def ? localizeEvent(def, state.profile.industryId) : undefined;
     const lesson = e?.choices[d.choiceIndex]?.lesson;
     if (!e || !lesson || seen.has(e.id)) continue;
     seen.add(e.id);

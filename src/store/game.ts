@@ -10,6 +10,7 @@
  */
 import { createStore } from 'zustand/vanilla';
 import { coef } from '../engine/coefficients';
+import { localizeEvent } from '../engine/eventData';
 import { getEvent, addReflection, resolveEvent, resolveMilestone, resolveReview } from '../engine/events';
 import { generateCompany, setFoundingPolicies } from '../engine/generate';
 import { changePolicies, type ChangeOptions } from '../engine/policyChange';
@@ -123,7 +124,7 @@ export function collectFeed(prev: CompanyState | null, next: CompanyState): Feed
     item({ month: l.month, kind: 'law', tone: l.kind === 'response' || l.kind === 'obligation' ? 'neutral' : 'negative', text: l.text });
   }
   for (const d of from(next.decisions, prev?.decisions)) {
-    const ev = getEvent(d.eventId);
+    const ev = localizeEvent(getEvent(d.eventId), next.profile.industryId);
     item({ month: d.month, kind: 'decision', tone: 'neutral', text: feedStrings.decision(ev.title, ev.choices[d.choiceIndex]?.label ?? '') });
   }
   for (const c of from(next.policyChanges, prev?.policyChanges)) {
@@ -233,7 +234,7 @@ export function createGameStore(options: { timers?: boolean } = {}) {
       answerEvent(decisionId, choiceIndex) {
         const c = get().company;
         const d = c?.pendingDecisions.find((x) => x.id === decisionId);
-        const ev = d?.eventId ? getEvent(d.eventId) : null;
+        const ev = d?.eventId && c ? localizeEvent(getEvent(d.eventId), c.profile.industryId) : null;
         const choice = ev?.choices[choiceIndex];
         mutate((x) => resolveEvent(x, decisionId, choiceIndex), {
           lesson: ev && choice?.lesson ? { title: ev.title, label: choice.label, lesson: choice.lesson } : null,

@@ -177,7 +177,9 @@ export function eventVars(
   const revenue = Math.round((state.history[state.history.length - 1]?.revenue ?? 0) / YEN_PER_MAN);
   const vars: Record<string, string | number> = { headcount: state.employees.length };
   if (target) {
+    const industry = getIndustry(state.profile.industryId);
     Object.assign(vars, {
+      role: industry.roles.find((r) => r.id === target.role)?.name ?? target.role,
       name: target.name,
       age: target.age,
       tenure: Math.floor(target.tenureMonths / MONTHS_PER_YEAR),

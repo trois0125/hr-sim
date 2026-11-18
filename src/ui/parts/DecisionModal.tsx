@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { getEvent, renderText } from '../../engine/events';
 import { getLaw } from '../../engine/lawData';
 import { choiceImpacts, type Impact } from '../../engine/preview';
-import type { CompanyState, EventEffects, LegalResponse, PendingDecision } from '../../engine/types';
+import { localizeEvent } from '../../engine/eventData';
+import type { CompanyState, EventEffects, IndustryId, LegalResponse, PendingDecision } from '../../engine/types';
 import { LEGAL_RESPONSES, MONTHS_PER_YEAR } from '../../engine/types';
 import { actions } from '../useGame';
 import { decisionStrings, eventStrings, lawStrings, reviewStrings } from '../strings';
@@ -134,8 +135,8 @@ function MilestoneSlip({ d }: { d: PendingDecision }) {
   );
 }
 
-function EventSlip({ d }: { d: PendingDecision }) {
-  const ev = getEvent(d.eventId ?? '');
+function EventSlip({ d, industryId }: { d: PendingDecision; industryId: IndustryId }) {
+  const ev = localizeEvent(getEvent(d.eventId ?? ''), industryId);
   const { chosen, choose } = useStamp();
   return (
     <Slip kind={eventStrings.categories[ev.category]} title={ev.title}>
@@ -214,6 +215,6 @@ export function DecisionModal({ company }: { company: CompanyState }) {
   const d = company.pendingDecisions[0];
   if (!d) return null;
   if (d.kind === 'milestone') return <MilestoneSlip key={d.id} d={d} />;
-  if (d.kind === 'event') return <EventSlip key={d.id} d={d} />;
+  if (d.kind === 'event') return <EventSlip key={d.id} d={d} industryId={company.profile.industryId} />;
   return <ReviewSlip key={d.id} d={d} company={company} />;
 }

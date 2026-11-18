@@ -800,6 +800,10 @@ export type EventDef = {
   cooldownMonths?: number;
   /** この業種では起きない（在宅勤務の要望は、在宅勤務を選べない業種では起きない、など） */
   excludeIndustries?: IndustryId[];
+  /** 業種ごとの文の差し替え（共通のイベントの、商社向けの言い回しを業種に合わせる）。choices は番号順、null は差し替えなし */
+  textByIndustry?: Partial<
+    Record<IndustryId, { title?: string; body?: string; choices?: ({ label?: string; lesson?: string; hint?: string } | null)[] }>
+  >;
   difficulty: ('beginner' | 'intermediate' | 'advanced')[];
   title: string;
   /** {name} のような差し込みを使える。対象者がいれば name・age・tenure・annual（年収・万円）が入る */
