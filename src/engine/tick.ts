@@ -15,7 +15,15 @@ import { updateEngagement } from './engagement';
 import { computeFinance } from './finance';
 import { runHiring } from './hiring';
 import { demandAt, stepEconomy, updateShareFactor } from './market';
-import { computeOvertime, computePerformance, managerOvertimeHours, nominalOutputPerRevenueStaff, overtimeCap } from './performance';
+import {
+  computeOvertime,
+  computePerformance,
+  isBusyMonth,
+  managerOvertimeHours,
+  nominalOutputPerRevenueStaff,
+  overtimeCap,
+  overtimeCeiling,
+} from './performance';
 import { growAbility, runAnnualReview, stepSalaryTransitions } from './evaluation';
 import { hiringAttractionModifier, modifierValue, pruneModifiers, pushDecision } from './events';
 import { generateVoices } from './voices';
@@ -39,7 +47,7 @@ function variantOf(state: CompanyState) {
 /** 終了条件（§2.3）を確かめる */
 export function checkEnd(state: CompanyState): CompanyStatus {
   if (state.negativeCashMonths >= coef('end.bankruptcy_months')) return 'bankrupt';
-  if (state.month >= coef('end.max_months')) return 'timeout';
+  if (state.month >= (state.maxMonths ?? coef('end.max_months'))) return 'timeout';
 
   // 成熟：成熟ラインに届き、直近の数年とも社員数の伸びが小さい（年の区切りで判定）
   const industry = getIndustry(state.profile.industryId);
@@ -146,7 +154,14 @@ export function tickInPlace(state: CompanyState): CompanyState {
 
   // 3. 社員ごとの稼働と成果（足りないぶんは、売上を生むフルタイム社員の残業で埋める）
   const perf = computePerformance(state.employees, industry, variant, state.policies, orgPerf());
-  const cap = overtimeCap(state.policies.overtime);
+  // 残業の上限：ふだんは方針の上限の半分、繁忙（需要の急増・人手の急減）の月だけ方針の上限まで（§14.5）
+  const busy = isBusyMonth(state.history.slice(-coef('overtime.lookback_months')), demand, perf.capacity);
+  const fiscalYear = Math.floor(state.month / MONTHS_PER_YEAR);
+  const cap = overtimeCeiling({
+    cap: overtimeCap(state.policies.overtime),
+    busy,
+    over45MonthsThisYear: state.legal.overtimeOver45Months.filter((m) => Math.floor(m / MONTHS_PER_YEAR) === fiscalYear).length,
+  });
   // 積み上がる売上の業種（SaaS）は、採用と同じく「今の売上＋先行投資の分」までを残業で埋める
   const overtime = computeOvertime(Math.min(demand, hiringCeiling), perf, cap);
   const revenueRoles = new Set(industry.roles.filter((r) => r.kind === 'revenue').map((r) => r.id));
@@ -207,6 +222,8 @@ export function tickInPlace(state: CompanyState): CompanyState {
     hrSystemCost: fin.hrSystemCost,
     legalCost: fin.legalCost,
     programCost: fin.programCost,
+    busy,
+    overtimeCeiling: cap,
     operatingProfit: fin.operatingProfit,
     extraordinaryCost: state.unrecordedExtraordinaryCost,
     funding: state.unrecordedFunding ?? 0,

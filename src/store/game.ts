@@ -75,9 +75,15 @@ export type GameState = {
   guide: { ref: GuideRef | null } | null;
   /** 事業・組織のグラフの期間 */
   chartPeriod: Period;
+  /** 1回に進める月数（1か月ずつ／四半期ずつ。§14.5） */
+  stepMonths: StepMonths;
+  /** 会社の生成の画面で選んだゲームの長さ（年） */
+  gameYears: number;
 };
 
 export type MainView = 'floor' | 'business' | 'org';
+/** 1回に進める月数：1か月ずつ／四半期ずつ */
+export type StepMonths = 1 | 3;
 
 export type GameActions = {
   goto(screen: Screen): void;
@@ -118,6 +124,10 @@ export type GameActions = {
   showDecision(): void;
   closeGuide(): void;
   setChartPeriod(period: Period): void;
+  /** 1か月ずつ／四半期ずつを切り替える（途中でも変えられる。結果は同じ） */
+  setStepMonths(months: StepMonths): void;
+  /** ゲームの長さ（年）を選ぶ（会社の生成の画面） */
+  setGameYears(years: number): void;
 };
 
 export type GameStore = GameState & GameActions;
@@ -140,6 +150,8 @@ const initial: GameState = {
   initiativesOpen: false,
   view: 'floor',
   chartPeriod: 'year1',
+  stepMonths: 1,
+  gameYears: 25,
   guide: null,
   decisionHidden: false,
 };
@@ -248,7 +260,7 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
       const c = get().company;
       if (!c || !storage) return;
       lastSaveAt = Date.now();
-      const ok = writeSave(storage, c, { feed: get().feed });
+      const ok = writeSave(storage, c, { feed: get().feed, stepMonths: get().stepMonths });
       set({ saveFailed: !ok, savedGame: ok ? { name: c.profile.name, month: c.month, status: c.status } : get().savedGame });
     };
     /** 保存する。直前に保存したばかりなら少し待ってから（最後の状態は必ず書く） */
@@ -344,7 +356,17 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
         const feed = Array.isArray(r.data.ui?.feed) ? (r.data.ui.feed as FeedItem[]) : [];
         feedId = Math.max(feedId, ...feed.map((f) => f.id), 0);
         // 再開は一時停止で始める（どこまで進んでいたかを見てから再開できるように）
-        set({ ...initial, savedGame: get().savedGame, canSave: get().canSave, company, feed, screen: company.status === 'running' ? 'main' : 'end', speed: 0 });
+        const stepMonths: StepMonths = r.data.ui?.stepMonths === 3 ? 3 : 1;
+        set({
+          ...initial,
+          savedGame: get().savedGame,
+          canSave: get().canSave,
+          company,
+          feed,
+          stepMonths,
+          screen: company.status === 'running' ? 'main' : 'end',
+          speed: 0,
+        });
       },
       hideDecision() {
         set({ decisionHidden: true });
@@ -365,6 +387,14 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
       },
       setChartPeriod(chartPeriod) {
         set({ chartPeriod });
+      },
+      setStepMonths(stepMonths) {
+        set({ stepMonths });
+        save(); // 再開したときも同じ進め方にする
+        schedule();
+      },
+      setGameYears(gameYears) {
+        set({ gameYears });
       },
       openInitiatives() {
         set({ initiativesOpen: true });
@@ -401,8 +431,9 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
         const cand = get().candidate;
         if (!cand) return;
         const company = setFoundingPolicies(structuredClone(cand), policies);
+        company.maxMonths = get().gameYears * MONTHS_PER_YEAR; // 会社の生成の画面で選んだ長さ
         // 新しく始めると、自動セーブはこの会社で上書きされる（画面で先に確かめている）
-        set({ ...initial, canSave: get().canSave, screen: 'main', company, speed: 1 });
+        set({ ...initial, canSave: get().canSave, gameYears: get().gameYears, screen: 'main', company, speed: 1 });
         saveNow();
         schedule();
       },
@@ -410,7 +441,12 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
         const c = get().company;
         // 判断待ちと、制度の見直しの画面を開いている間は進めない
         if (!c || c.status !== 'running' || isWaitingForDecision(c) || get().editorOpen) return;
-        commit(tick(c));
+        // 四半期ずつなら、3か月ぶん進めてから画面を1回だけ更新する。途中で判断待ちや終わりになったら、そこで止まる
+        let next = tick(c);
+        for (let i = 1; i < get().stepMonths && next.status === 'running' && !isWaitingForDecision(next); i++) {
+          next = tick(next);
+        }
+        commit(next);
         schedule();
       },
       setSpeed(speed) {

@@ -117,6 +117,7 @@ export function runRival(state: CompanyState): CompanyState {
     locationId: state.profile.locationId,
     autoPlay: { legal: 'immediate' },
   });
+  c.maxMonths = state.maxMonths; // 同じ長さで回す
   return runToEnd(setFoundingPolicies(c, defaultPolicies));
 }
 

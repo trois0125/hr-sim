@@ -45,7 +45,7 @@ export const howToStrings = {
     },
     {
       heading: '終わり方',
-      body: '会社が成熟する（社員数が伸びなくなる）か、創業から25年たつか、資金が尽きて倒産すると終わります。点数はありません。',
+      body: '会社が成熟する（社員数が伸びなくなる）か、はじめに選んだ年数（10〜25年）がたつか、資金が尽きて倒産すると終わります。点数はありません。',
     },
   ],
   note: '数字は統計や研究を参考にしていますが、多くは仮の値です。現実の会社の将来を予測するものではありません。',
@@ -57,6 +57,9 @@ export const generateStrings = {
   lead: 'どんな会社に入るかを決めます。',
   random: 'おまかせ',
   chooseIndustry: '業種を選ぶ',
+  lengthTitle: 'ゲームの長さ',
+  lengthLead: '会社の歩みを何年見届けるかを選びます。成熟（伸びが止まる）か倒産したら、その前でも終わります。',
+  lengthOption: (years: number) => `${years}年`,
   reroll: '別の会社にする',
   profile: '会社のプロフィール',
   fields: {
@@ -168,12 +171,14 @@ export const reasonNames = {
 export const statusNames = {
   running: '進行中',
   matured: '成熟',
-  timeout: '25年経過',
+  timeout: '期間満了',
   bankrupt: '倒産',
 } as const;
 
 /** メイン画面 */
 export const mainStrings = {
+  stepLabel: '1回に進める長さ',
+  stepOptions: { 1: '1か月ずつ', 3: '四半期ずつ' } as Record<1 | 3, string>,
   speed: '速度',
   pause: '一時停止',
   play: '再開',
@@ -635,7 +640,8 @@ export const dashboardStrings = {
     },
     overtimeTitle: '残業（売上を生む社員、月あたり）',
     overtime: '残業',
-    overtimeCap: (h: number) => `残業の方針の上限 ${h}時間`,
+    overtimeCap: (h: number, normal: number) =>
+      `残業の方針の上限 ${h}時間。ふだんはその半分（${normal}時間）までで、需要が急に増えた月・人手が急に減った月（繁忙）だけ上限まで使う`,
   },
   columns: { period: '期間' },
   people: (n: number) => `${n}人`,

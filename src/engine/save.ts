@@ -7,6 +7,7 @@
  * - 新しい版のセーブ（このゲームより新しい）と、壊れたセーブは読まない
  */
 import { autoForm } from './organization';
+import { coef } from './coefficients';
 import type { CompanyState, SaveData } from './types';
 import { SAVE_VERSION } from './types';
 
@@ -40,6 +41,7 @@ export function normalizeCompany(c: CompanyState): CompanyState {
   // 組織の形のない古いセーブは、人数に合った形（自動で進めるときの規則）で始める
   c.organization ??= { form: autoForm(c.employees.length), since: c.month, transition: null, log: [] };
   c.programs ??= [];
+  c.maxMonths ??= coef('end.max_months');
   c.programLog ??= [];
   c.mitigations ??= [];
   for (const e of c.employees) e.leave ??= null;

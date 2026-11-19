@@ -2171,5 +2171,61 @@
     "unit": "人",
     "basis": "assumption",
     "source": "仮置き。自動で進めるときに、事業部制にする人数"
+  },
+  {
+    "id": "end.length.short",
+    "value": 10,
+    "unit": "年",
+    "basis": "assumption",
+    "source": "ユーザーの要望（ステップ18）。会社の生成の画面で選べるゲームの長さ"
+  },
+  {
+    "id": "end.length.medium",
+    "value": 15,
+    "unit": "年",
+    "basis": "assumption",
+    "source": "ユーザーの要望（ステップ18）。会社の生成の画面で選べるゲームの長さ"
+  },
+  {
+    "id": "end.length.long",
+    "value": 20,
+    "unit": "年",
+    "basis": "assumption",
+    "source": "ユーザーの要望（ステップ18）。会社の生成の画面で選べるゲームの長さ"
+  },
+  {
+    "id": "end.length.full",
+    "value": 25,
+    "unit": "年",
+    "basis": "assumption",
+    "source": "同上。DESIGN.md §2.3 の25年（いちばん長い）"
+  },
+  {
+    "id": "overtime.normal_share",
+    "value": 0.5,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "ユーザーと決めた（DESIGN.md §14.5）。ふだんの残業は、残業の方針の上限のおよそ半分まで"
+  },
+  {
+    "id": "overtime.lookback_months",
+    "value": 6,
+    "unit": "か月",
+    "basis": "assumption",
+    "source": "仮置き。「繁忙」を判定するときに比べる直近の期間"
+  },
+  {
+    "id": "overtime.surge_threshold",
+    "value": 0.2,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。今月の需要が直近の平均よりこの割合以上多いと「繁忙」（需要が増えたとき）（はじめ0.1にしたら、伸びている会社では繁忙が3〜4割の月になったので上げた）"
+  },
+  {
+    "id": "overtime.capacity_drop_threshold",
+    "value": 0.1,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。今月の売れる上限（残業なし）が直近の平均よりこの割合以上少ないと「繁忙」（退職や休職で人手が減ったとき）（はじめ0.05にしたら繁忙が多すぎたので上げた）"
   }
 ]

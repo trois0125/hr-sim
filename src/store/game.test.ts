@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { coef } from '../engine/coefficients';
 import { defaultPolicies } from '../engine/data';
+import { generateCompany } from '../engine/generate';
 import { createGameStore, collectFeed } from './game';
 import { previewChange } from '../engine/policyChange';
 import { AUTOSAVE_KEY, memoryStorage } from './persist';
@@ -348,5 +349,74 @@ describe('判断待ちの稟議書をいったん閉じる', () => {
     }
     expect(d.id).toBeTruthy();
     expect(store.getState().decisionHidden).toBe(false);
+  });
+});
+
+describe('四半期ずつ進める・ゲームの長さ（ステップ18）', () => {
+  function start(store: ReturnType<typeof createGameStore>) {
+    store.getState().newCandidate('trading');
+    store.getState().startGame(defaultPolicies);
+  }
+  /** 判断待ちを片づける（最初の選択肢・今の形のまま） */
+  function clear(store: ReturnType<typeof createGameStore>) {
+    for (const d of [...(store.getState().company?.pendingDecisions ?? [])]) {
+      if (d.kind === 'milestone') store.getState().answerMilestone(d.id, 'immediate');
+      else if (d.kind === 'event') store.getState().answerEvent(d.id, 0);
+      else store.getState().finishReview(d.id);
+    }
+  }
+
+  it('四半期ずつなら1回で3か月進み、途中で判断待ちになったらそこで止まる', () => {
+    const store = createGameStore({ timers: false, storage: null });
+    start(store);
+    store.getState().setStepMonths(3);
+    let moved3 = false;
+    for (let i = 0; i < 40; i++) {
+      clear(store);
+      const before = store.getState().company!.month;
+      store.getState().step();
+      const after = store.getState().company!;
+      const delta = after.month - before;
+      // 月のはじめに法令の節目が出たときは、その月を進めずに止まる（0）
+      expect(delta).toBeGreaterThanOrEqual(0);
+      expect(delta).toBeLessThanOrEqual(3);
+      if (delta < 3) expect(after.pendingDecisions.length > 0 || after.status !== 'running').toBe(true);
+      else moved3 = true;
+    }
+    expect(moved3).toBe(true);
+  });
+
+  it('1か月ずつでも四半期ずつでも、同じ会社・同じ判断なら同じ結果になる', () => {
+    const candidate = generateCompany({ seed: 77, industryId: 'trading', autoPlay: null });
+    const play = (stepMonths: 1 | 3) => {
+      const store = createGameStore({ timers: false, storage: null });
+      store.setState({ candidate: structuredClone(candidate) });
+      store.getState().setStepMonths(stepMonths);
+      store.getState().startGame(defaultPolicies);
+      for (let i = 0; i < 300 && store.getState().company!.month < 36; i++) {
+        clear(store);
+        store.getState().step();
+      }
+      return store.getState().company!;
+    };
+    const a = play(1);
+    const b = play(3);
+    expect(b.month).toBe(a.month);
+    expect(b.cash).toBe(a.cash);
+    expect(b.employees.map((e) => e.id)).toEqual(a.employees.map((e) => e.id));
+  });
+
+  it('選んだ長さで始まり、四半期の設定は再開しても残る', () => {
+    const storage = memoryStorage();
+    const store = createGameStore({ timers: false, storage });
+    store.getState().setGameYears(10);
+    start(store);
+    expect(store.getState().company!.maxMonths).toBe(120);
+    store.getState().setStepMonths(3);
+    store.getState().step();
+    const again = createGameStore({ timers: false, storage });
+    again.getState().continueGame();
+    expect(again.getState().stepMonths).toBe(3);
+    expect(again.getState().company!.maxMonths).toBe(120);
   });
 });

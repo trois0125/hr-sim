@@ -451,6 +451,10 @@ export type MonthlyRecord = {
   funding?: number;
   /** その他の固定費のうち、個別制度の維持費（古い記録には無い） */
   programCost?: number;
+  /** 繁忙の月か（需要の急増・人手の急減。残業を方針の上限まで使った。§14.5。古い記録には無い） */
+  busy?: boolean;
+  /** この月の残業の上限（ふだんは方針の上限の半分。§14.5。古い記録には無い） */
+  overtimeCeiling?: number;
   /** 月末の組織の様子（§14.2 の組織タブ。古い記録には無い） */
   org?: OrgSnapshot;
   cash: number;
@@ -1030,6 +1034,8 @@ export type CompanyState = {
   unrecordedFunding?: number;
   /** 組織の形（§14.4） */
   organization: OrganizationState;
+  /** ゲームの長さ（月）。ここまで来ると終わる（§2.3。会社の生成の画面で10〜25年から選ぶ） */
+  maxMonths: number;
   /** 整えている個別制度（§14.1） */
   programs: ProgramState[];
   programLog: ProgramLogEntry[];

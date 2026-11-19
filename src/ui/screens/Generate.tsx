@@ -1,10 +1,16 @@
 import { availableIndustries, getFoundingPattern, getIndustry, getLocation } from '../../engine/data';
+import { coef } from '../../engine/coefficients';
+
+/** 選べるゲームの長さ（係数台帳の end.length.*） */
+const GAME_LENGTH_IDS = ['short', 'medium', 'long', 'full'] as const;
 import { actions, useGame } from '../useGame';
 import { generateStrings, strings, unitStrings } from '../strings';
 import { pct, yen } from '../format';
 
 export function Generate() {
   const c = useGame((s) => s.candidate);
+  const years = useGame((s) => s.gameYears);
+  const lengths = GAME_LENGTH_IDS.map((id) => coef(`end.length.${id}`));
   const industries = availableIndustries();
   if (!c) return null;
   const p = c.profile;
@@ -53,6 +59,18 @@ export function Generate() {
           <dd className="num">{pct(p.grossMargin)}</dd>
         </dl>
       </section>
+
+      <fieldset className="policy-field length-field">
+        <legend>{generateStrings.lengthTitle}</legend>
+        <p className="muted">{generateStrings.lengthLead}</p>
+        <div className="choice-row">
+          {lengths.map((y) => (
+            <button key={y} className="btn" aria-pressed={years === y} onClick={() => actions().setGameYears(y)}>
+              {generateStrings.lengthOption(y)}
+            </button>
+          ))}
+        </div>
+      </fieldset>
 
       <div className="page-actions">
         <button className="btn btn-primary" onClick={() => actions().goto('policies')}>

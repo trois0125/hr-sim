@@ -2044,3 +2044,19 @@ body::before {
   justify-content: center;
   gap: 8px;
 }
+
+/* ---------- 四半期ずつ・ゲームの長さ（ステップ18） ---------- */
+
+.step-toggle button {
+  min-width: 72px;
+  padding: 0 8px;
+}
+
+.length-field {
+  margin-top: 24px;
+}
+
+.length-field .muted {
+  margin: 0;
+  font-size: var(--step--1);
+}

@@ -234,6 +234,41 @@ export function computePerformance(
   };
 }
 
+/**
+ * その月に会社が使う残業の上限（§14.5。ステップ18）。
+ * ふだんは方針の上限の半分まで。繁忙（需要が急に増えた月・人手が急に減った月）だけ方針の上限まで使う。
+ * 特別条項（月45時間超）は、その年度で45時間を超えた月がすでに上限の月数に達していれば、45時間までにする
+ */
+export function overtimeCeiling(input: {
+  cap: number;
+  busy: boolean;
+  /** その年度で、もう月45時間を超えた月の数 */
+  over45MonthsThisYear: number;
+}): number {
+  const limit = coef('law.overtime.limit_hours');
+  let ceiling = input.busy ? input.cap : input.cap * coef('overtime.normal_share');
+  if (ceiling > limit && input.over45MonthsThisYear >= coef('law.overtime.special_max_months')) ceiling = limit;
+  return ceiling;
+}
+
+/**
+ * 繁忙の月か：今月の需要が直近の平均より一定以上多い（需要が増えた）、
+ * または今月の売れる上限（残業なし）が直近の平均より一定以上少ない（退職や休職で人手が減った）
+ */
+export function isBusyMonth(
+  recent: readonly { demand: number; capacity: number }[],
+  demand: number,
+  capacity: number,
+): boolean {
+  if (recent.length === 0) return false;
+  const avgDemand = recent.reduce((s, r) => s + r.demand, 0) / recent.length;
+  const avgCapacity = recent.reduce((s, r) => s + r.capacity, 0) / recent.length;
+  return (
+    demand > avgDemand * (1 + coef('overtime.surge_threshold')) ||
+    capacity < avgCapacity * (1 - coef('overtime.capacity_drop_threshold'))
+  );
+}
+
 /** 残業の方針ごとの月の上限（時間） */
 export function overtimeCap(policy: OvertimePolicy): number {
   return coefPath('policy', 'overtime', 'cap', policy);

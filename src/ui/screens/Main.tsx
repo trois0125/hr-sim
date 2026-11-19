@@ -64,6 +64,7 @@ function ViewTabs() {
 
 function TopBar({ company }: { company: CompanyState }) {
   const speed = useGame((s) => s.speed);
+  const stepMonths = useGame((s) => s.stepMonths);
   const cycle = useGame((s) => s.cycle);
   const speeds = [...SPEEDS, ...DEV_SPEEDS];
   return (
@@ -77,6 +78,13 @@ function TopBar({ company }: { company: CompanyState }) {
         {speeds.map((s) => (
           <button key={s} aria-pressed={speed === s} onClick={() => actions().setSpeed(s)}>
             {s}x
+          </button>
+        ))}
+      </div>
+      <div className="speed step-toggle" role="group" aria-label={t.stepLabel}>
+        {([1, 3] as const).map((m) => (
+          <button key={m} aria-pressed={stepMonths === m} onClick={() => actions().setStepMonths(m)}>
+            {t.stepOptions[m]}
           </button>
         ))}
       </div>

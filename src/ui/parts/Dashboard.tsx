@@ -649,7 +649,7 @@ export function OrgView({ company }: { company: CompanyState }) {
             </ChartCard>
             <ChartCard
               title={o.overtimeTitle}
-              note={cap > 0 ? o.overtimeCap(cap) : undefined}
+              note={cap > 0 ? o.overtimeCap(cap, Math.round(cap * coef('overtime.normal_share') * 10) / 10) : undefined}
               rows={rows}
               columns={[periodCol, col('overtime', o.overtime, (r) => t.hours(r.overtime))]}
             >
@@ -658,6 +658,7 @@ export function OrgView({ company }: { company: CompanyState }) {
                 <XAxis dataKey="label" tick={AXIS_TICK} stroke={BASELINE} minTickGap={8} />
                 <YAxis tick={AXIS_TICK} stroke={BASELINE} width={40} domain={[0, cap > 0 ? cap : 'auto']} />
                 {cap > 0 && <ReferenceLine y={cap} stroke={BASELINE} />}
+                {cap > 0 && <ReferenceLine y={cap * coef('overtime.normal_share')} stroke={GRID} strokeWidth={2} />}
                 <Tooltip formatter={(v: number) => t.hours(v)} labelFormatter={tooltipTitle} />
                 <Line dataKey="overtime" name={o.overtime} stroke={SERIES[0]} {...LINE} />
               </LineChart>
