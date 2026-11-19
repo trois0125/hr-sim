@@ -4996,5 +4996,1445 @@
         "lesson": "施策は打たなかった（次の機会にまた打てる）"
       }
     ]
+  },
+  {
+    "id": "paid_leave_5days",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 5
+    },
+    "weight": 1,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "有給休暇の年5日",
+    "body": "年度の途中で集計すると、有給休暇をほとんど取れていない社員が何人もいました。忙しくて休めないという声もあります。",
+    "choices": [
+      {
+        "label": "計画的付与（計画年休）で、全員が確実に休める日を決める",
+        "effects": {
+          "cashPerEmployee": -20000,
+          "engagementAll": 3,
+          "morale": {
+            "delta": 2,
+            "months": 12
+          }
+        },
+        "axes": {
+          "rules": 1,
+          "people": 1
+        },
+        "lesson": "年10日以上の有給休暇がある人には、会社が年5日を時季指定して取らせる義務がある（労働基準法第39条。2019年4月から全企業）。計画年休で取った日はこの5日に数えられる",
+        "diagnosis": {
+          "proactive": 1,
+          "control": 1
+        }
+      },
+      {
+        "label": "取れていない人にだけ声をかけ、休む日を指定する",
+        "effects": {
+          "engagementAll": 1
+        },
+        "axes": {
+          "rules": 1
+        },
+        "lesson": "取れていない人に個別に時季を指定すれば義務は果たせる。ただし、休みにくい職場の雰囲気は変わりにくい",
+        "diagnosis": {
+          "control": 1
+        }
+      },
+      {
+        "label": "忙しい時期なので、休むかどうかは本人に任せる",
+        "effects": {
+          "engagementAll": -2
+        },
+        "axes": {
+          "rules": -1,
+          "horizon": -1
+        },
+        "lesson": "年5日を取らせなかった場合は、対象の労働者1人につき30万円以下の罰金の対象になりうる",
+        "diagnosis": {
+          "proactive": -1
+        },
+        "hint": "年5日を取れない人がいると法令違反になる"
+      }
+    ]
+  },
+  {
+    "id": "side_job_request",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 5,
+      "target": {
+        "where": [
+          {
+            "field": "roleKind",
+            "op": "==",
+            "value": "revenue"
+          },
+          {
+            "field": "employmentType",
+            "op": "==",
+            "value": "full"
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          },
+          {
+            "field": "tenureMonths",
+            "op": ">=",
+            "value": 12
+          }
+        ]
+      }
+    },
+    "weight": 1,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "副業の申し出",
+    "body": "{name}さん（{age}歳・{role}）から「週末に別の仕事（副業）をしたい。認めてもらえないか」と申し出がありました。",
+    "choices": [
+      {
+        "label": "届出制で認め、副業先の労働時間も申告してもらう",
+        "effects": {
+          "target": {
+            "engagement": 10
+          },
+          "engagementOthers": 1
+        },
+        "axes": {
+          "people": 1,
+          "rules": 1
+        },
+        "lesson": "厚生労働省のモデル就業規則は、副業・兼業を届出制で認める形になっている。雇われて働く副業なら、本業と副業の労働時間を通算して管理する（労働基準法第38条）",
+        "diagnosis": {
+          "control": -1
+        }
+      },
+      {
+        "label": "本業に支障がない範囲で、会社の許可を得てから認める",
+        "effects": {
+          "target": {
+            "engagement": 5
+          }
+        },
+        "axes": {
+          "rules": 1
+        },
+        "lesson": "許可制は会社が状況をつかみやすいが、許可の基準があいまいだと不満になる",
+        "diagnosis": {
+          "control": 1
+        }
+      },
+      {
+        "label": "副業は禁止のままにする",
+        "effects": {
+          "target": {
+            "engagement": -12
+          }
+        },
+        "axes": {
+          "people": -1,
+          "horizon": -1
+        },
+        "lesson": "副業を認めない理由（情報漏えい・競業・長時間労働など）を説明できないと、優秀な人ほど外に出ていく",
+        "diagnosis": {
+          "control": 1
+        },
+        "hint": "本人の納得感が大きく下がる"
+      }
+    ]
+  },
+  {
+    "id": "part_pay_gap_explanation",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 10,
+      "target": {
+        "where": [
+          {
+            "field": "employmentType",
+            "op": "==",
+            "value": "part"
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          }
+        ]
+      },
+      "conditions": [
+        {
+          "metric": "partCount",
+          "op": ">=",
+          "value": 3
+        }
+      ]
+    },
+    "weight": 1,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "パートからの待遇の説明の求め",
+    "body": "パートの{name}さんから「正社員と同じような仕事をしているのに、手当がないのはなぜか。説明してほしい」と求められました。",
+    "choices": [
+      {
+        "label": "待遇の差と理由を説明し、理由のない手当はパートにもそろえる",
+        "effects": {
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "employmentType",
+                  "op": "==",
+                  "value": "part"
+                }
+              ],
+              "salaryPct": 3,
+              "engagement": 8
+            }
+          ]
+        },
+        "axes": {
+          "rules": 1,
+          "people": 1,
+          "reward": -1
+        },
+        "lesson": "パート・有期雇用の人から求められたら、正社員との待遇の差の内容と理由を説明する義務がある（パートタイム・有期雇用労働法第14条第2項）。理由のない差は、そもそも禁止されている",
+        "diagnosis": {
+          "proactive": 1
+        }
+      },
+      {
+        "label": "待遇の差と理由を説明する（待遇は変えない）",
+        "effects": {
+          "target": {
+            "engagement": -2
+          }
+        },
+        "axes": {
+          "rules": 1
+        },
+        "lesson": "差に合理的な理由があるなら、具体的に説明できることが大事。説明を求めたことを理由に不利益に扱うことは禁止されている",
+        "diagnosis": {
+          "control": 1
+        }
+      },
+      {
+        "label": "「会社の決まりだから」とだけ答える",
+        "effects": {
+          "target": {
+            "engagement": -15
+          },
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "employmentType",
+                  "op": "==",
+                  "value": "part"
+                }
+              ],
+              "excludeTarget": true,
+              "engagement": -5
+            }
+          ]
+        },
+        "axes": {
+          "rules": -1,
+          "people": -1
+        },
+        "lesson": "決まりだからという答えは、説明にならない。説明義務を果たしていないとして、労働局の助言・指導の対象になりうる",
+        "diagnosis": {
+          "proactive": -1
+        },
+        "hint": "説明の義務を果たしていない"
+      }
+    ]
+  },
+  {
+    "id": "whistleblowing",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 30
+    },
+    "weight": 1,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "内部通報",
+    "body": "匿名の内部通報がありました。「ある部署で、取引先への請求を水増ししている」という内容です。",
+    "choices": [
+      {
+        "label": "外部の弁護士にも入ってもらって調べ、是正する",
+        "effects": {
+          "cash": -1000000,
+          "engagementAll": 2
+        },
+        "axes": {
+          "rules": 1,
+          "horizon": 1
+        },
+        "lesson": "通報者を守り、調べて是正する仕組みが大事。常時301人以上の会社は内部通報の体制整備が義務、300人以下は努力義務（公益通報者保護法。2022年6月から）",
+        "diagnosis": {
+          "proactive": 1
+        }
+      },
+      {
+        "label": "部署の責任者に任せて、社内で静かに済ませる",
+        "effects": {
+          "engagementAll": -1
+        },
+        "axes": {
+          "horizon": -1
+        },
+        "lesson": "当事者に近い人に調べさせると、事実がうやむやになりやすい",
+        "diagnosis": {
+          "control": 1
+        }
+      },
+      {
+        "label": "誰が通報したのかを探す",
+        "effects": {
+          "engagementAll": -5,
+          "hiringAttraction": {
+            "mult": 0.9,
+            "months": 12
+          }
+        },
+        "axes": {
+          "rules": -1,
+          "people": -1
+        },
+        "lesson": "通報したことを理由に、解雇などの不利益な扱いをすることは法律で禁止されている。通報者探しは、二度と声が上がらない職場をつくる",
+        "diagnosis": {
+          "proactive": -1,
+          "control": 1
+        },
+        "hint": "通報者への不利益な扱いは禁止されている"
+      }
+    ],
+    "cooldownMonths": 60,
+    "textByIndustry": {
+      "restaurant": {
+        "body": "匿名の内部通報がありました。「ある店舗で、食材の消費期限のラベルを貼り替えている」という内容です。"
+      },
+      "saas": {
+        "body": "匿名の内部通報がありました。「ある部署で、顧客との契約にない費用を請求している」という内容です。"
+      },
+      "manufacturing": {
+        "body": "匿名の内部通報がありました。「ある工場で、出荷前の検査を省いて記録だけ付けている」という内容です。"
+      }
+    }
+  },
+  {
+    "id": "resignation_agency",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 10,
+      "target": {
+        "where": [
+          {
+            "field": "employmentType",
+            "op": "==",
+            "value": "full"
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          },
+          {
+            "field": "engagement",
+            "op": "<",
+            "value": 45
+          }
+        ],
+        "sortBy": "engagement",
+        "order": "asc"
+      }
+    },
+    "weight": 1,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "退職代行からの連絡",
+    "body": "{name}さん（{role}）の代理という退職代行の業者から「本日で退職したい。今後は本人に直接連絡しないでほしい」と連絡がありました。",
+    "choices": [
+      {
+        "label": "退職を受け入れ、手続きと引き継ぎの資料を整える",
+        "effects": {
+          "target": {
+            "resign": "relationships"
+          }
+        },
+        "axes": {
+          "rules": 1
+        },
+        "lesson": "期間の定めのない雇用は、退職を申し入れてから2週間で終わる（民法第627条）。会社が同意しなくても退職はできる"
+      },
+      {
+        "label": "受け入れたうえで、言い出しにくかった理由を職場に聞いて直す",
+        "effects": {
+          "target": {
+            "resign": "relationships"
+          },
+          "cash": -100000,
+          "engagementOthers": 2
+        },
+        "axes": {
+          "rules": 1,
+          "horizon": 1,
+          "people": 1
+        },
+        "lesson": "退職代行は「直接言い出しにくい職場」のサインでもある。辞めた理由を職場の改善につなげる",
+        "diagnosis": {
+          "proactive": 1
+        }
+      },
+      {
+        "label": "本人と直接話すまで、退職は認めない",
+        "effects": {
+          "target": {
+            "resign": "relationships"
+          },
+          "engagementOthers": -3
+        },
+        "axes": {
+          "rules": -1,
+          "people": -1
+        },
+        "lesson": "会社が認めなくても、申し入れから2週間で退職は成立する。引き止めにこだわると、周りの社員の目にも残る",
+        "diagnosis": {
+          "control": 1
+        },
+        "hint": "会社が認めなくても退職は成立する"
+      }
+    ]
+  },
+  {
+    "id": "young_promotion",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 20,
+      "target": {
+        "where": [
+          {
+            "field": "roleKind",
+            "op": "==",
+            "value": "revenue"
+          },
+          {
+            "field": "employmentType",
+            "op": "==",
+            "value": "full"
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          },
+          {
+            "field": "age",
+            "op": "<=",
+            "value": 34
+          },
+          {
+            "field": "ability",
+            "op": ">=",
+            "value": 65
+          }
+        ],
+        "sortBy": "ability",
+        "order": "desc"
+      }
+    },
+    "weight": 1,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "若手の抜擢",
+    "body": "成果を上げている若手の{name}さん（{age}歳）を管理職に抜擢したいと考えていますが、年上の社員から「順番が違う」と反発の声が出ています。",
+    "choices": [
+      {
+        "label": "抜擢する",
+        "effects": {
+          "target": {
+            "roleKind": "management",
+            "salaryPct": 10,
+            "engagement": 15
+          },
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "roleKind",
+                  "op": "==",
+                  "value": "revenue"
+                },
+                {
+                  "field": "age",
+                  "op": ">=",
+                  "value": 40
+                }
+              ],
+              "engagement": -6
+            }
+          ]
+        },
+        "axes": {
+          "reward": 1,
+          "horizon": 1,
+          "rules": -1
+        },
+        "lesson": "抜擢は本人と若手全体の意欲を高めるが、年上の部下へのフォローがないと、職場がぎくしゃくする",
+        "diagnosis": {
+          "outcome": 1,
+          "develop": 1
+        }
+      },
+      {
+        "label": "リーダーの補佐として、段階的に任せる",
+        "effects": {
+          "target": {
+            "engagement": 6,
+            "ability": 3
+          }
+        },
+        "axes": {
+          "horizon": 1,
+          "people": 1
+        },
+        "lesson": "段階的に任せると摩擦は小さい。ただし、待たされた本人が外に機会を探すこともある",
+        "diagnosis": {
+          "develop": 1
+        }
+      },
+      {
+        "label": "年次の順番どおりにする",
+        "effects": {
+          "target": {
+            "engagement": -12
+          },
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "roleKind",
+                  "op": "==",
+                  "value": "revenue"
+                },
+                {
+                  "field": "age",
+                  "op": ">=",
+                  "value": 40
+                }
+              ],
+              "engagement": 2
+            }
+          ]
+        },
+        "axes": {
+          "reward": -1,
+          "rules": 1
+        },
+        "lesson": "年次どおりは波風が立たないが、成果を出す若手ほど「ここでは上がれない」と感じる",
+        "diagnosis": {
+          "outcome": -1
+        }
+      }
+    ]
+  },
+  {
+    "id": "expense_fraud",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 15,
+      "target": {
+        "where": [
+          {
+            "field": "employmentType",
+            "op": "==",
+            "value": "full"
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          },
+          {
+            "field": "tenureMonths",
+            "op": ">=",
+            "value": 24
+          }
+        ]
+      }
+    },
+    "weight": 1,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "経費の不正",
+    "body": "経理から、{name}さんの交通費と経費の精算に、何か月も続く不自然な点があると報告がありました。",
+    "choices": [
+      {
+        "label": "事実を調べ、就業規則に沿って処分する",
+        "effects": {
+          "cash": -300000,
+          "target": {
+            "engagement": -20
+          },
+          "engagementOthers": 2
+        },
+        "axes": {
+          "rules": 1
+        },
+        "lesson": "処分するには、就業規則に根拠（懲戒の種類と理由）が必要。調べる前に決めつけず、本人の言い分も聞く",
+        "diagnosis": {
+          "control": 1
+        }
+      },
+      {
+        "label": "返金させ、厳重に注意する",
+        "effects": {
+          "target": {
+            "engagement": -8
+          }
+        },
+        "axes": {
+          "people": 1
+        },
+        "lesson": "穏便に済ませると本人は立ち直りやすいが、ルールを守っている人には不公平に見えることもある",
+        "diagnosis": {
+          "control": -1
+        }
+      },
+      {
+        "label": "金額が小さいので見逃す",
+        "effects": {
+          "engagementOthers": -3
+        },
+        "axes": {
+          "rules": -1,
+          "horizon": -1
+        },
+        "lesson": "小さな不正を見逃すと「このくらいは許される」と広がる",
+        "diagnosis": {
+          "proactive": -1
+        },
+        "hint": "ほかの人にも広がるかもしれない"
+      }
+    ]
+  },
+  {
+    "id": "union_formation",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 50,
+      "conditions": [
+        {
+          "metric": "avgEngagement",
+          "op": "<",
+          "value": 50
+        }
+      ]
+    },
+    "weight": 1,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "労働組合の結成",
+    "body": "社員の一部が労働組合を結成し、賃上げと残業の削減を求めて団体交渉を申し入れてきました。",
+    "choices": [
+      {
+        "label": "誠実に団体交渉に応じ、できることを話し合う",
+        "effects": {
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "employmentType",
+                  "op": "==",
+                  "value": "full"
+                }
+              ],
+              "salaryPct": 2
+            }
+          ],
+          "engagementAll": 3,
+          "morale": {
+            "delta": 2,
+            "months": 12
+          }
+        },
+        "axes": {
+          "rules": 1,
+          "people": 1
+        },
+        "lesson": "正当な理由なく団体交渉を拒むことや、組合の運営に口を出すことは不当労働行為として禁止されている（労働組合法第7条）",
+        "diagnosis": {
+          "control": -1
+        }
+      },
+      {
+        "label": "交渉には応じるが、賃上げは業績しだいと伝える",
+        "effects": {
+          "engagementAll": 1
+        },
+        "axes": {
+          "rules": 1,
+          "reward": -1
+        },
+        "lesson": "形だけ応じて中身のある話をしないと、不誠実な交渉とされることがある。業績の数字を示して話すのが大事",
+        "diagnosis": {
+          "control": 1
+        }
+      },
+      {
+        "label": "組合をやめるよう、中心の社員に働きかける",
+        "effects": {
+          "engagementAll": -6,
+          "morale": {
+            "delta": -3,
+            "months": 12
+          }
+        },
+        "axes": {
+          "rules": -1,
+          "people": -1
+        },
+        "lesson": "組合への支配介入は不当労働行為。組合は労働委員会に救済を申し立てることができる",
+        "diagnosis": {
+          "control": 1,
+          "proactive": -1
+        },
+        "hint": "不当労働行為にあたる"
+      }
+    ],
+    "cooldownMonths": 120
+  },
+  {
+    "id": "veteran_motivation",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 20,
+      "target": {
+        "where": [
+          {
+            "field": "employmentType",
+            "op": "==",
+            "value": "full"
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          },
+          {
+            "field": "age",
+            "op": ">=",
+            "value": 55
+          }
+        ],
+        "sortBy": "engagement",
+        "order": "asc"
+      }
+    },
+    "weight": 1,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "ベテランの意欲",
+    "body": "ベテランの{name}さん（{age}歳）が、役職を若手に譲ってから、仕事への意欲をなくしているように見えます。",
+    "choices": [
+      {
+        "label": "経験を生かす指導役（メンター）を任せる",
+        "effects": {
+          "target": {
+            "engagement": 12
+          },
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "tenureMonths",
+                  "op": "<",
+                  "value": 36
+                }
+              ],
+              "ability": 2
+            }
+          ]
+        },
+        "axes": {
+          "people": 1,
+          "horizon": 1
+        },
+        "lesson": "ベテランの経験は、若手の育成で生きる。役割と期待をはっきり伝えると意欲が戻ることが多い",
+        "diagnosis": {
+          "develop": 1
+        }
+      },
+      {
+        "label": "給与は変えずに、今の仕事を続けてもらう",
+        "effects": {
+          "target": {
+            "engagement": 2
+          }
+        },
+        "axes": {
+          "rules": 1
+        },
+        "lesson": "そのままでも大きな問題は起きないが、役割が見えないと意欲は戻りにくい"
+      },
+      {
+        "label": "早期退職の制度を案内する",
+        "effects": {
+          "target": {
+            "resign": "outlook"
+          },
+          "cash": -2000000,
+          "engagementOthers": -3
+        },
+        "axes": {
+          "people": -1,
+          "horizon": 1
+        },
+        "lesson": "早期退職の案内は、本人だけでなく周りのベテランにも「次は自分か」という不安を広げる",
+        "diagnosis": {
+          "develop": -1
+        }
+      }
+    ]
+  },
+  {
+    "id": "team_mass_exit",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 40,
+      "target": {
+        "where": [
+          {
+            "field": "roleKind",
+            "op": "==",
+            "value": "management"
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          },
+          {
+            "field": "engagement",
+            "op": "<",
+            "value": 45
+          }
+        ]
+      }
+    },
+    "weight": 1,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "部下を連れた転職",
+    "body": "管理職の{name}さんが転職を決め、部下を何人か連れていくつもりだという話が聞こえてきました。",
+    "choices": [
+      {
+        "label": "本人と部下それぞれと面談し、残ってほしい理由と処遇を伝える",
+        "effects": {
+          "cash": -500000,
+          "target": {
+            "resign": "outlook"
+          },
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "roleKind",
+                  "op": "==",
+                  "value": "revenue"
+                },
+                {
+                  "field": "engagement",
+                  "op": "<",
+                  "value": 50
+                }
+              ],
+              "sortBy": "engagement",
+              "order": "asc",
+              "limit": 3,
+              "engagement": 10,
+              "salaryPct": 3
+            }
+          ]
+        },
+        "axes": {
+          "people": 1,
+          "reward": 1
+        },
+        "lesson": "辞める人を止めるより、残る人に向き合うほうが効くことが多い。面談で不満を聞くと、引き抜きの話にも気づける",
+        "diagnosis": {
+          "proactive": 1
+        }
+      },
+      {
+        "label": "本人の退職は受け入れ、残る部下に新しい体制を早く示す",
+        "effects": {
+          "target": {
+            "resign": "outlook"
+          },
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "roleKind",
+                  "op": "==",
+                  "value": "revenue"
+                },
+                {
+                  "field": "engagement",
+                  "op": "<",
+                  "value": 45
+                }
+              ],
+              "sortBy": "engagement",
+              "order": "asc",
+              "limit": 2,
+              "resign": "outlook"
+            }
+          ],
+          "morale": {
+            "delta": 1,
+            "months": 6
+          }
+        },
+        "axes": {
+          "horizon": 1,
+          "rules": 1
+        },
+        "lesson": "体制をすぐに示すと、残る人の不安は小さくなる。不満の強い人は、それでも一緒に去ることがある"
+      },
+      {
+        "label": "引き抜きは許さないと、全員に警告を出す",
+        "effects": {
+          "target": {
+            "resign": "outlook"
+          },
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "roleKind",
+                  "op": "==",
+                  "value": "revenue"
+                },
+                {
+                  "field": "engagement",
+                  "op": "<",
+                  "value": 50
+                }
+              ],
+              "sortBy": "engagement",
+              "order": "asc",
+              "limit": 4,
+              "resign": "outlook"
+            }
+          ],
+          "engagementAll": -2
+        },
+        "axes": {
+          "rules": 1,
+          "people": -1
+        },
+        "lesson": "警告は職場の空気を悪くし、迷っていた人の背中を押してしまう",
+        "diagnosis": {
+          "control": 1
+        },
+        "hint": "迷っていた人まで辞めるかもしれない"
+      }
+    ],
+    "cooldownMonths": 60
+  },
+  {
+    "id": "employee_award",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 8,
+      "target": {
+        "where": [
+          {
+            "field": "roleKind",
+            "op": "==",
+            "value": "revenue"
+          },
+          {
+            "field": "employmentType",
+            "op": "==",
+            "value": "full"
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          }
+        ],
+        "sortBy": "ability",
+        "order": "desc"
+      },
+      "conditions": [
+        {
+          "metric": "profit12",
+          "op": ">",
+          "value": 0
+        }
+      ]
+    },
+    "weight": 1,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "大きな成果",
+    "body": "{name}さん（{role}）が大きな成果を上げ、取引先からも感謝の言葉が届きました。",
+    "choices": [
+      {
+        "label": "全社で表彰し、報奨金を出す",
+        "effects": {
+          "cash": -300000,
+          "target": {
+            "engagement": 10
+          },
+          "engagementOthers": 2
+        },
+        "axes": {
+          "reward": 1,
+          "people": 1
+        },
+        "lesson": "成果を全社で認めると、本人だけでなく周りの「自分も」という気持ちにつながる",
+        "diagnosis": {
+          "outcome": 1
+        }
+      },
+      {
+        "label": "本人に直接感謝を伝え、次の挑戦を任せる",
+        "effects": {
+          "target": {
+            "engagement": 8,
+            "ability": 3
+          }
+        },
+        "axes": {
+          "horizon": 1,
+          "people": 1
+        },
+        "lesson": "お金より「任される」ことのほうが響く人も多い。次の挑戦は成長の機会になる",
+        "diagnosis": {
+          "develop": 1
+        }
+      },
+      {
+        "label": "仕事の一部なので、特別なことはしない",
+        "effects": {
+          "target": {
+            "engagement": -3
+          }
+        },
+        "axes": {
+          "reward": -1
+        },
+        "lesson": "成果が認められないと、次も頑張ろうという気持ちは少しずつしぼむ",
+        "diagnosis": {
+          "outcome": -1
+        }
+      }
+    ],
+    "cooldownMonths": 12,
+    "textByIndustry": {
+      "restaurant": {
+        "body": "{name}さん（{role}）の接客がお客さまの評判になり、お店に感謝の手紙が届きました。"
+      },
+      "saas": {
+        "body": "{name}さん（{role}）が大きな成果を上げ、顧客からも感謝の言葉が届きました。"
+      },
+      "manufacturing": {
+        "body": "{name}さん（{role}）の工夫で不良品が大きく減り、取引先からも感謝の言葉が届きました。"
+      }
+    }
+  },
+  {
+    "id": "kaizen_proposal",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 10,
+      "target": {
+        "where": [
+          {
+            "field": "employmentType",
+            "op": "==",
+            "value": "full"
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          },
+          {
+            "field": "tenureMonths",
+            "op": ">=",
+            "value": 12
+          }
+        ]
+      }
+    },
+    "weight": 1,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "改善の提案",
+    "body": "{name}さんから、仕事の進め方を変えて手間を減らす改善の提案がありました。",
+    "choices": [
+      {
+        "label": "採用して全社に広げ、提案した人を評価する",
+        "effects": {
+          "cash": -200000,
+          "target": {
+            "engagement": 10
+          },
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "roleKind",
+                  "op": "==",
+                  "value": "revenue"
+                }
+              ],
+              "ability": 2
+            }
+          ],
+          "engagementAll": 1
+        },
+        "axes": {
+          "horizon": 1,
+          "reward": 1
+        },
+        "lesson": "現場からの提案を取り入れて評価すると、次の提案が出てくる。改善が文化になる",
+        "diagnosis": {
+          "control": -1,
+          "develop": 1
+        }
+      },
+      {
+        "label": "提案した人の職場だけで試してみる",
+        "effects": {
+          "target": {
+            "engagement": 5,
+            "ability": 2
+          }
+        },
+        "axes": {
+          "rules": 1,
+          "horizon": 1
+        },
+        "lesson": "小さく試すと失敗のリスクは小さい。うまくいったら広げる段取りまで決めておく"
+      },
+      {
+        "label": "今のやり方で回っているので見送る",
+        "effects": {
+          "target": {
+            "engagement": -8
+          }
+        },
+        "axes": {
+          "horizon": -1
+        },
+        "lesson": "提案が通らない経験が続くと、誰も提案しなくなる",
+        "diagnosis": {
+          "control": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "media_interview",
+    "category": "market",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 15,
+      "conditions": [
+        {
+          "metric": "avgEngagement",
+          "op": ">=",
+          "value": 58
+        }
+      ]
+    },
+    "weight": 1,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "取材の申し込み",
+    "body": "地元の新聞から「社員が生き生きと働く会社」として取材したいと申し込みがありました。",
+    "choices": [
+      {
+        "label": "社員にも話してもらい、ありのままを伝える",
+        "effects": {
+          "hiringAttraction": {
+            "mult": 1.15,
+            "months": 12
+          },
+          "engagementAll": 2
+        },
+        "axes": {
+          "people": 1,
+          "horizon": 1
+        },
+        "lesson": "社員の言葉で語られた会社の姿は、求人広告より信頼される",
+        "diagnosis": {
+          "control": -1
+        }
+      },
+      {
+        "label": "社長が会社の考えを話す",
+        "effects": {
+          "hiringAttraction": {
+            "mult": 1.08,
+            "months": 12
+          }
+        },
+        "axes": {
+          "horizon": 1
+        },
+        "lesson": "社長の言葉で考えを伝えられるが、働く人の姿は伝わりにくい",
+        "diagnosis": {
+          "control": 1
+        }
+      },
+      {
+        "label": "忙しいので断る",
+        "effects": {},
+        "axes": {
+          "horizon": -1
+        },
+        "lesson": "会社を知ってもらう機会は、採用に効く。忙しいときほど逃しやすい",
+        "diagnosis": {
+          "proactive": -1
+        }
+      }
+    ],
+    "cooldownMonths": 36,
+    "textByIndustry": {
+      "manufacturing": {
+        "body": "地元の新聞から「若手が育つものづくりの会社」として取材したいと申し込みがありました。"
+      },
+      "saas": {
+        "body": "IT系のニュースサイトから「エンジニアが働きやすい会社」として取材したいと申し込みがありました。"
+      }
+    }
+  },
+  {
+    "id": "record_profit",
+    "category": "market",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 5,
+      "conditions": [
+        {
+          "metric": "profit12",
+          "op": ">",
+          "value": 0
+        }
+      ]
+    },
+    "weight": 1,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "大きく伸びた利益",
+    "body": "この1年は利益が大きく伸びました。社員からも「頑張りに報いてほしい」という声が出ています。",
+    "choices": [
+      {
+        "label": "決算賞与を全員に出す",
+        "effects": {
+          "cashPerEmployee": -100000,
+          "engagementAll": 6
+        },
+        "axes": {
+          "people": 1,
+          "horizon": -1
+        },
+        "lesson": "利益を社員に分けると、会社の業績を自分ごとと感じやすくなる。毎年の当たり前にならないよう、理由を伝える",
+        "diagnosis": {
+          "outcome": 1
+        }
+      },
+      {
+        "label": "一部を賞与に、一部を研修と設備に回す",
+        "effects": {
+          "cashPerEmployee": -50000,
+          "engagementAll": 3,
+          "groups": [
+            {
+              "where": [],
+              "ability": 1
+            }
+          ]
+        },
+        "axes": {
+          "horizon": 1,
+          "people": 1
+        },
+        "lesson": "今の報酬と将来への投資のバランスをとる。何に使ったかを社員に示すことが大事",
+        "diagnosis": {
+          "develop": 1
+        }
+      },
+      {
+        "label": "将来に備えて、会社に残しておく",
+        "effects": {
+          "engagementAll": -2
+        },
+        "axes": {
+          "horizon": 1,
+          "people": -1
+        },
+        "lesson": "内部留保は不況への備えになるが、社員には「報われない」と映ることもある",
+        "diagnosis": {
+          "proactive": 1
+        }
+      }
+    ],
+    "cooldownMonths": 36
+  },
+  {
+    "id": "certification_support",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 5,
+      "target": {
+        "where": [
+          {
+            "field": "employmentType",
+            "op": "==",
+            "value": "full"
+          },
+          {
+            "field": "onLeave",
+            "op": "==",
+            "value": 0
+          },
+          {
+            "field": "tenureMonths",
+            "op": ">=",
+            "value": 6
+          }
+        ]
+      }
+    },
+    "weight": 1,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "資格取得の支援",
+    "body": "{name}さん（{role}）から「仕事に関わる資格を取りたいので、支援してほしい」と相談がありました。",
+    "choices": [
+      {
+        "label": "受験料と講座の費用を会社が出す",
+        "effects": {
+          "cash": -150000,
+          "target": {
+            "ability": 6,
+            "engagement": 8
+          }
+        },
+        "axes": {
+          "horizon": 1,
+          "people": 1
+        },
+        "lesson": "学びたい人を支えると、実力と意欲が一緒に伸びる",
+        "diagnosis": {
+          "develop": 1
+        }
+      },
+      {
+        "label": "合格したら費用を出す（合格祝い金）",
+        "effects": {
+          "cash": -50000,
+          "target": {
+            "ability": 4,
+            "engagement": 4
+          }
+        },
+        "axes": {
+          "horizon": 1,
+          "reward": 1
+        },
+        "lesson": "成果に報いる形は費用が少ないが、挑戦をためらう人もいる",
+        "diagnosis": {
+          "outcome": 1
+        }
+      },
+      {
+        "label": "自分で学んでもらう",
+        "effects": {
+          "target": {
+            "engagement": -4
+          }
+        },
+        "axes": {
+          "horizon": -1
+        },
+        "lesson": "学びを本人任せにすると、成長の機会が少ないと感じる",
+        "diagnosis": {
+          "develop": -1
+        }
+      }
+    ]
   }
 ]
