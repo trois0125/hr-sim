@@ -6,6 +6,7 @@
  * - 開発中に足した項目（休職・判断の記録・声など）は、無くても読めるように既定値で埋める
  * - 新しい版のセーブ（このゲームより新しい）と、壊れたセーブは読まない
  */
+import { autoForm } from './organization';
 import type { CompanyState, SaveData } from './types';
 import { SAVE_VERSION } from './types';
 
@@ -36,6 +37,8 @@ export function normalizeCompany(c: CompanyState): CompanyState {
   c.policyChanges ??= [];
   c.pendingDecisions ??= [];
   c.unrecordedFunding ??= 0;
+  // 組織の形のない古いセーブは、人数に合った形（自動で進めるときの規則）で始める
+  c.organization ??= { form: autoForm(c.employees.length), since: c.month, transition: null, log: [] };
   c.programs ??= [];
   c.programLog ??= [];
   c.mitigations ??= [];

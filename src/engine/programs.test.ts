@@ -3,7 +3,7 @@ import { getIndustry, getLocation } from './data';
 import { computeFactorScores } from './engagement';
 import { eventDefs } from './eventData';
 import { eligibleRandomEvents, fireEvent, runEvents, cooledDown } from './eventTriggers';
-import { getEvent, modifierValue, resolveEvent, resolveMilestone, resolveReview } from './events';
+import { getEvent, modifierValue, resolveEvent, resolveMilestone, resolveReorg, resolveReview } from './events';
 import { generateCompany } from './generate';
 import { choiceAvailable, initiativeAvailability, initiativesFor, startInitiative } from './initiatives';
 import { getProgram, hasProgram, installProgram, programDefs, programMonthlyCost, stopProgram } from './programs';
@@ -50,10 +50,11 @@ describe('個別制度と施策のデータ（§14.1）', () => {
     for (const p of programDefs) expect(lightened.has(p.id), p.id).toBe(true);
   });
 
-  it('施策は4つ。どれも「やめる」がちょうど1つあり、次に打てるまでの月数が書いてある', () => {
+  it('施策は5つ。どれも「やめる」がちょうど1つあり、次に打てるまでの月数が書いてある', () => {
     expect(initiatives.map((e) => e.id).sort()).toEqual([
       'initiative_programs',
       'initiative_recruiting',
+      'initiative_reorg',
       'initiative_survey',
       'initiative_training',
     ]);
@@ -100,11 +101,12 @@ describe('個別制度（§14.1）', () => {
     const rb = tick(b).history.at(-1)!;
     // 維持費はその月の採用のあとの人数で計算する（記録の人数は月末なので、退職のぶんだけずれることがある）
     const perHead = getProgram('one_on_one').costPerEmployeeMonthly.value;
-    expect((rb.programCost ?? 0) % perHead).toBe(0);
-    expect(rb.programCost! / perHead).toBeGreaterThanOrEqual(rb.headcount);
-    expect(ra.programCost).toBe(0);
+    // 自動で進めた会社は、イベントの選択肢で別の個別制度を整えていることがある。増えたぶんで比べる
+    const added = (rb.programCost ?? 0) - (ra.programCost ?? 0);
+    expect(added % perHead).toBe(0);
+    expect(added / perHead).toBeGreaterThanOrEqual(rb.headcount);
     expect(rb.operatingProfit).toBeLessThan(ra.operatingProfit);
-    expect(programMonthlyCost(b, 10)).toBe(getProgram('one_on_one').costPerEmployeeMonthly.value * 10);
+    expect(programMonthlyCost({ programs: [{ id: 'one_on_one', since: 0 }] }, 10)).toBe(perHead * 10);
   });
 
   it('常時の効果：専門職コースは、実力のある営業の「成長の機会」だけを上げる', () => {
@@ -179,6 +181,7 @@ describe('施策（§14.1）', () => {
       for (const p of [...next.pendingDecisions]) {
         if (p.kind === 'milestone') resolveMilestone(next, p.id, 'immediate');
         else if (p.kind === 'review') resolveReview(next, p.id);
+        else if (p.kind === 'reorg') resolveReorg(next, p.id, null);
         else resolveEvent(next, p.id, 0);
       }
       next = tick(next);
@@ -215,6 +218,6 @@ describe('施策（§14.1）', () => {
     expect(eligibleRandomEvents(c).some((e) => e.trigger.type === 'initiative')).toBe(false);
     for (let i = 0; i < 24; i++) runEvents(c, createRng(i));
     expect(c.pendingDecisions.some((d) => initiatives.some((e) => e.id === d.eventId))).toBe(false);
-    expect(initiativesFor(c)).toHaveLength(4);
+    expect(initiativesFor(c)).toHaveLength(5);
   });
 });

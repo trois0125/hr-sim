@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { coef } from './coefficients';
 import { eventDefs } from './eventData';
-import { addReflection, resolveEvent, resolveMilestone, resolveReview } from './events';
+import { addReflection, resolveEvent, resolveMilestone, resolveReorg, resolveReview } from './events';
 import { forecastChange } from './forecast';
 import { generateCompany } from './generate';
 import { choiceImpacts } from './preview';
@@ -21,6 +21,7 @@ function playUntil(month: number, seed = 3): CompanyState {
     if (d) {
       c = structuredClone(c);
       if (d.kind === 'review') resolveReview(c, d.id);
+      else if (d.kind === 'reorg') resolveReorg(c, d.id, null);
       else if (d.kind === 'milestone') resolveMilestone(c, d.id, 'immediate');
       else resolveEvent(c, d.id, 0);
       continue;

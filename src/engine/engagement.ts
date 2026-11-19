@@ -255,6 +255,8 @@ export type EngagementContext = {
   violations?: number;
   /** 整えている個別制度（§14.1。条件に合う人の要因が上がる） */
   programs?: readonly ProgramState[];
+  /** 組織の形による、全員の要因への上乗せ（§14.4） */
+  orgBonus?: Partial<Record<EngagementFactor, number>>;
 };
 
 /** 会社の状況から決まる要因（全員共通） */
@@ -288,7 +290,12 @@ export function computeFactorScores(employees: readonly Employee[], ctx: Engagem
   const programs = ctx.programs ?? [];
   for (const e of employees) {
     const market = marketSalaryFor(ctx.industry, ctx.location, e.role, e.age, e.employmentType);
-    const p = programs.length > 0 ? programBonusFor(e, programs, ctx.industry) : {};
+    const p: Partial<Record<EngagementFactor, number>> = { ...(ctx.orgBonus ?? {}) };
+    if (programs.length > 0) {
+      for (const [f, v] of Object.entries(programBonusFor(e, programs, ctx.industry))) {
+        p[f as EngagementFactor] = (p[f as EngagementFactor] ?? 0) + (v ?? 0);
+      }
+    }
     out.set(e.id, {
       externalPay: score(
         externalPayScore(monthlyCompensation(e, ctx.policies), marketCompensation(market, e.employmentType, ctx.industry)) +

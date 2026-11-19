@@ -47,6 +47,8 @@ export type HiringInput = {
   projectedDemand?: number;
   /** 評判による求人の埋まりやすさの倍率（イベントの一時的な効果）。省略すると1 */
   reputation?: number;
+  /** 組織の形による、管理職1人が見る人数の倍率（§14.4）。省略すると1 */
+  spanMult?: number;
 };
 
 /**
@@ -85,7 +87,7 @@ export type HiringResult = {
 
 /** 職種ごとに「あと何人ほしいか」 */
 export function desiredOpenings(
-  input: Pick<HiringInput, 'employees' | 'industry' | 'variant' | 'demand' | 'capacity'>,
+  input: Pick<HiringInput, 'employees' | 'industry' | 'variant' | 'demand' | 'capacity' | 'spanMult'>,
 ): Record<RoleId, number> {
   const { employees, industry, variant, demand, capacity } = input;
   const out: Record<RoleId, number> = {};
@@ -115,7 +117,7 @@ export function desiredOpenings(
   // 事務・管理：採用後の人数に対して必要な人数に足りないぶん
   const headcountAfter = employees.length + Object.values(out).reduce((s, n) => s + n, 0);
   // 店舗のある業種は、いまの社員数で店舗の数（＝要る店長の数）を数える（採りたい人数で数えると、店ができる前に店長を採ってしまう）
-  const required = supportRequirement(industry, revenueFteAfter, industry.store ? employees.length : headcountAfter);
+  const required = supportRequirement(industry, revenueFteAfter, industry.store ? employees.length : headcountAfter, input.spanMult ?? 1);
   for (const kind of ['admin', 'management'] as const) {
     const roles = industry.roles.filter((r) => r.kind === kind);
     if (roles.length === 0) continue;

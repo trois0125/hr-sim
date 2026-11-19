@@ -42,6 +42,9 @@ export type GuideData = {
   laws: Record<string, LawGuide>;
   programs: Record<string, ItemGuide>;
   initiatives: Record<string, ItemGuide>;
+  /** 組織の形（§14.4） */
+  orgCategory: CategoryGuide;
+  orgForms: Record<string, ItemGuide>;
 };
 
 export const guide = guideJson as unknown as GuideData;
@@ -52,6 +55,8 @@ export type GuideRef =
   | { kind: 'option'; id: string }
   | { kind: 'law'; id: string }
   | { kind: 'program'; id: string }
-  | { kind: 'initiative'; id: string };
+  | { kind: 'initiative'; id: string }
+  | { kind: 'orgCategory'; id: 'org' }
+  | { kind: 'orgForm'; id: string };
 
 export const optionKey = (category: string, option: string) => `${category}.${option}`;

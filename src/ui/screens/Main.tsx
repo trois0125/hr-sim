@@ -15,9 +15,20 @@ import { EmployeeDetail } from '../parts/EmployeeDetail';
 import { Lesson } from '../parts/Lesson';
 import { InitiativeMenu, ProgramsPanel } from '../parts/Initiatives';
 import { BusinessView, OrgView } from '../parts/Dashboard';
+import { HelpButton } from '../parts/Guide';
 import { PolicyEditor } from '../parts/PolicyEditor';
 import { actions, useGame } from '../useGame';
-import { dashboardStrings, eventStrings, evidenceStrings, guideStrings, mainStrings as t, policyStrings, strings } from '../strings';
+import {
+  dashboardStrings,
+  decisionStrings,
+  eventStrings,
+  evidenceStrings,
+  guideStrings,
+  mainStrings as t,
+  orgStrings,
+  policyStrings,
+  strings,
+} from '../strings';
 import { dateLabel, pct, yen } from '../format';
 
 /** 1か月の進み具合。いまの月が始まるたびに、その月の長さで左から右へ伸びる。止まっている間は空 */
@@ -319,6 +330,16 @@ function Policies({ company }: { company: CompanyState }) {
             <dd>{optionName(k, company.policies[k])}</dd>
           </div>
         ))}
+        <div>
+          <dt>{orgStrings.row}</dt>
+          <dd>
+            {orgStrings.forms[company.organization.form]}
+            <HelpButton target={{ kind: 'orgForm', id: company.organization.form }} />
+            {company.organization.transition && company.organization.transition.until > company.month && (
+              <span className="tag warn-tag">{orgStrings.inTransition(company.organization.transition.until - company.month)}</span>
+            )}
+          </dd>
+        </div>
       </dl>
       <button className="btn" onClick={() => actions().openEditor()}>
         {t.reviewPolicies}
@@ -341,12 +362,21 @@ export function Main() {
   const selected = useGame((s) => s.selectedEmployeeId);
   const saveFailed = useGame((s) => s.saveFailed);
   const view = useGame((s) => s.view);
+  const decisionHidden = useGame((s) => s.decisionHidden);
   if (!company) return null;
   const waiting = company.pendingDecisions.length > 0;
   return (
     <>
       <TopBar company={company} />
       <ViewTabs />
+      {waiting && decisionHidden && !editorOpen && (
+        <div className="decision-bar" role="status">
+          <span>{decisionStrings.waitingBar(company.pendingDecisions.length)}</span>
+          <button className="btn btn-primary" onClick={() => actions().showDecision()}>
+            {decisionStrings.reopen}
+          </button>
+        </div>
+      )}
       {view === 'business' && (
         <main className="dashboard-page">
           <BusinessView company={company} />
@@ -378,9 +408,9 @@ export function Main() {
         </div>
         </main>
       )}
-      {editorOpen ? <PolicyEditor company={company} /> : <DecisionModal company={company} />}
+      {editorOpen ? <PolicyEditor company={company} /> : !decisionHidden && <DecisionModal company={company} />}
       {!waiting && !editorOpen && <InitiativeMenu company={company} />}
-      {selected && !editorOpen && !waiting && <EmployeeDetail company={company} id={selected} />}
+      {selected && !editorOpen && (!waiting || decisionHidden) && <EmployeeDetail company={company} id={selected} />}
       <Lesson />
     </>
   );

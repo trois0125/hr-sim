@@ -7,7 +7,9 @@
  * - 割合（稼働率など）は、期間の合計どうしで割る（月の割合の平均にはしない）
  * 古い記録（組織の様子が無いもの）は、その項目を null にする（グラフはそこを空ける）
  */
+import { coef } from './coefficients';
 import { getIndustry } from './data';
+import { orgSize, unitCount } from './organization';
 import type {
   AttritionReason,
   CompanyState,
@@ -17,6 +19,7 @@ import type {
   FactorScores,
   LaborCost,
   MonthlyRecord,
+  OrgForm,
   OrgSnapshot,
   RoleId,
   RoleKind,
@@ -233,34 +236,74 @@ export function gradeCounts(state: CompanyState): { grade: number; count: number
   return [...map.entries()].sort((a, b) => a[0] - b[0]).map(([grade, count]) => ({ grade, count }));
 }
 
-// ---------------------------------------------------------------------------
-// 組織図（ステップ15は仮の形：社長の下に、職種の種類ごとの箱を並べる。ステップ17で部署と組織の形にする）
-// ---------------------------------------------------------------------------
-
-export type OrgChartRole = { id: RoleId; name: string; full: number; part: number; onLeave: number };
-export type OrgChartGroup = { kind: RoleKind; roles: OrgChartRole[]; total: number };
-
-export function orgChart(state: CompanyState): OrgChartGroup[] {
-  const industry = getIndustry(state.profile.industryId);
-  const kinds: RoleKind[] = ['management', 'revenue', 'admin'];
-  return kinds
-    .map((kind) => {
-      const roles = industry.roles
-        .filter((r) => r.kind === kind)
-        .map((r) => {
-          const es = state.employees.filter((e) => e.role === r.id);
-          return {
-            id: r.id,
-            name: r.name,
-            full: es.filter((e) => e.employmentType !== 'part').length,
-            part: es.filter((e) => e.employmentType === 'part').length,
-            onLeave: es.filter((e) => e.leave).length,
-          };
-        });
-      return { kind, roles, total: roles.reduce((s, r) => s + r.full + r.part, 0) };
-    })
-    .filter((g) => g.total > 0 || g.kind !== 'admin');
-}
-
 /** 要因の並び（グラフの色の順番を固定するため） */
 export const FACTOR_ORDER: readonly EngagementFactor[] = ENGAGEMENT_FACTORS;
+
+// ---------------------------------------------------------------------------
+// 組織図（ステップ17）：形と人数から、部署・事業部・チームを決める。社員は部署に割り当てず、人数を均等に分ける
+// ---------------------------------------------------------------------------
+
+export type OrgUnit = {
+  /** all：社長直下の全員、function：機能別の部署、division：事業部、team：チーム */
+  kind: 'all' | 'function' | 'division' | 'team';
+  /** 1から数える番号（事業部・チーム） */
+  index: number;
+  /** 機能別の部署のとき、その職種の種類 */
+  roleKind?: RoleKind;
+  /** 職種ごとの人数 */
+  roles: { id: RoleId; name: string; count: number }[];
+  /** 責任者（管理職）の人数 */
+  heads: number;
+  headcount: number;
+};
+
+export type OrgStructure = { form: OrgForm; units: OrgUnit[] };
+
+/** n を k 個にできるだけ均等に分ける */
+function split(n: number, k: number): number[] {
+  const base = Math.floor(n / k);
+  return Array.from({ length: k }, (_, i) => base + (i < n % k ? 1 : 0));
+}
+
+export function orgStructure(state: CompanyState): OrgStructure {
+  const industry = getIndustry(state.profile.industryId);
+  const form = state.organization.form;
+  const count = (id: RoleId) => state.employees.filter((e) => e.role === id).length;
+  const roles = industry.roles.map((r) => ({ id: r.id, name: r.name, kind: r.kind, count: count(r.id) }));
+  const workers = roles.filter((r) => r.kind !== 'management' && r.count > 0);
+  const heads = roles.filter((r) => r.kind === 'management').reduce((s, r) => s + r.count, 0);
+  const size = orgSize(state.employees, industry);
+  const make = (kind: OrgUnit['kind'], index: number, rs: { id: RoleId; name: string; count: number }[], h: number, roleKind?: RoleKind): OrgUnit => ({
+    kind,
+    index,
+    roleKind,
+    roles: rs.filter((r) => r.count > 0),
+    heads: h,
+    headcount: rs.reduce((s, r) => s + r.count, 0) + h,
+  });
+  if (form === 'direct') return { form, units: [make('all', 1, workers, heads)] };
+  if (form === 'functional') {
+    const kinds = [...new Set(workers.map((r) => r.kind))];
+    const h = split(heads, Math.max(1, kinds.length));
+    return {
+      form,
+      units: kinds.map((k, i) => make('function', i + 1, workers.filter((r) => r.kind === k).map(({ id, name, count }) => ({ id, name, count })), h[i] ?? 0, k)),
+    };
+  }
+  // 事業部制・フラット・マトリクス：単位の数で、職種ごとの人数と責任者を均等に分ける
+  const k = form === 'flat' ? unitCount('flat', size) : Math.max(1, Math.ceil(size.revenueFte / coef('org.unit_size.divisional')));
+  const perRole = workers.map((r) => ({ r, parts: split(r.count, k) }));
+  const h = split(heads, k);
+  const kind: OrgUnit['kind'] = form === 'flat' ? 'team' : 'division';
+  return {
+    form,
+    units: Array.from({ length: k }, (_, i) =>
+      make(
+        kind,
+        i + 1,
+        perRole.map(({ r, parts }) => ({ id: r.id, name: r.name, count: parts[i] ?? 0 })),
+        h[i] ?? 0,
+      ),
+    ),
+  };
+}

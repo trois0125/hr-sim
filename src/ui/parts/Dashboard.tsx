@@ -20,7 +20,8 @@ import {
   businessSeries,
   gradeCounts,
   LABOR_PARTS,
-  orgChart,
+  orgStructure,
+  type OrgUnit,
   orgSeries,
   PERIODS,
   type Bucket,
@@ -31,7 +32,8 @@ import { overtimeCap } from '../../engine/performance';
 import type { CompanyState } from '../../engine/types';
 import { ATTRITION_REASONS, ENGAGEMENT_FACTORS, MONTHS_PER_YEAR } from '../../engine/types';
 import { actions, useGame } from '../useGame';
-import { dashboardStrings as t, factorNames, reasonNames } from '../strings';
+import { dashboardStrings as t, factorNames, orgStrings, reasonNames } from '../strings';
+import { HelpButton } from './Guide';
 import { dateLabel, pct, yen } from '../format';
 import { AXIS_TICK, BASELINE, GRID, SERIES } from '../chartTheme';
 
@@ -301,37 +303,78 @@ export function BusinessView({ company }: { company: CompanyState }) {
   );
 }
 
-/** 仮の組織図：社長の下に、管理職・売上を生む職種・事務の箱 */
+/** 組織図：社長の下に、形に応じて部署・事業部・チームの箱を並べる（人数は均等に分けた目安） */
+const MAX_UNITS = 12;
 function OrgChartView({ company }: { company: CompanyState }) {
-  const groups = orgChart(company);
-  const b = t.business;
+  const structure = orgStructure(company);
+  const o = orgStrings;
+  const formName = o.forms[structure.form];
+  const unitName = (u: OrgUnit): string => {
+    if (u.kind === 'all') return o.ceo;
+    if (u.kind === 'function') {
+      if (u.roleKind === 'admin') return o.departmentOf.admin;
+      return o.departmentOf.revenue(u.roles.map((r) => r.name).join('・'));
+    }
+    if (u.kind === 'team') return o.teamName(u.index);
+    return o.unitNames[company.profile.industryId](u.index);
+  };
+  const shown = structure.units.slice(0, MAX_UNITS);
+  const hidden = structure.units.length - shown.length;
   return (
     <section className="sheet org-chart" aria-labelledby="orgchart-title">
       <h3 id="orgchart-title" className="sheet-title">
-        {b.orgChartTitle}
+        {o.chartTitle(formName)}
+        <HelpButton target={{ kind: 'orgForm', id: structure.form }} label={formName} />
       </h3>
-      <p className="chart-note muted">{b.orgChartNote}</p>
+      <p className="chart-note muted">{o.formNotes[structure.form]}</p>
       <div className="org-tree">
-        <div className="org-node org-ceo">{b.ceo}</div>
-        <ul className="org-groups">
-          {groups.map((g) => (
-            <li key={g.kind} className="org-group">
-              <div className="org-node org-kind">
-                {b.kinds[g.kind]}
-                <span className="num">{t.people(g.total)}</span>
-              </div>
-              <ul className="org-roles">
-                {g.roles.map((r) => (
-                  <li key={r.id} className="org-node org-role">
-                    <strong>{r.name}</strong>
-                    <span className="num">{b.roleCount(r.full, r.part)}</span>
-                    {r.onLeave > 0 && <span className="muted num">{b.onLeave(r.onLeave)}</span>}
-                  </li>
-                ))}
-              </ul>
-            </li>
-          ))}
-        </ul>
+        <div className="org-node org-ceo">{o.ceo}</div>
+        {structure.form === 'direct' ? (
+          <ul className="org-roles org-direct">
+            {shown[0]?.roles.map((r) => (
+              <li key={r.id} className="org-node org-role">
+                <strong>{r.name}</strong>
+                <span className="num">{o.people(r.count)}</span>
+              </li>
+            ))}
+            {(shown[0]?.heads ?? 0) > 0 && (
+              <li className="org-node org-role">
+                <strong>{o.headOf}</strong>
+                <span className="num">{o.people(shown[0]!.heads)}</span>
+              </li>
+            )}
+          </ul>
+        ) : (
+          <ul className="org-groups">
+            {shown.map((u) => (
+              <li key={`${u.kind}${u.index}`} className="org-group">
+                <div className="org-node org-kind">
+                  {unitName(u)}
+                  <span className="num">{o.people(u.headcount)}</span>
+                </div>
+                <ul className="org-roles">
+                  {u.heads > 0 && (
+                    <li className="org-node org-role">
+                      <strong>{o.headOf}</strong>
+                      <span className="num">{o.people(u.heads)}</span>
+                    </li>
+                  )}
+                  {u.roles.map((r) => (
+                    <li key={r.id} className="org-node org-role">
+                      <strong>{r.name}</strong>
+                      <span className="num">{o.people(r.count)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+            {hidden > 0 && (
+              <li className="org-group">
+                <div className="org-node org-kind">{o.more(hidden)}</div>
+              </li>
+            )}
+          </ul>
+        )}
       </div>
     </section>
   );

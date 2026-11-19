@@ -616,6 +616,7 @@ export const COMPANY_METRICS = [
   'disputeRisk',
   'recessionAge',
   'runway',
+  'spanLoad',
 ] as const;
 export type CompanyMetric = (typeof COMPANY_METRICS)[number];
 
@@ -623,7 +624,9 @@ export type CompanyMetric = (typeof COMPANY_METRICS)[number];
 export type CompanyCondition =
   | { metric: CompanyMetric; op: Comparison; value: number }
   /** 制度がこのどれかになっている */
-  | { policy: keyof PolicySet; in: string[] };
+  | { policy: keyof PolicySet; in: string[] }
+  /** 組織の形がこのどれかになっている */
+  | { orgForm: OrgForm[] };
 
 /**
  * 社員の項目（イベントの対象者の条件に使う）。
@@ -775,6 +778,8 @@ export type EventEffects = {
   setPolicies?: Partial<PolicySet>;
   /** 個別制度を整える（§14.1。すでにあれば何もしない） */
   installProgram?: ProgramId;
+  /** 組織の形を選ぶ判断待ち（reorg）を積む（§14.4） */
+  openReorg?: boolean;
 };
 
 export type EventChoice = {
@@ -845,12 +850,35 @@ export type EventDef = {
   menuSummary?: string;
 };
 
+// ---------------------------------------------------------------------------
+// 組織の形（§14.4。ステップ17）
+// ---------------------------------------------------------------------------
+
+/** 社長直下／機能別／事業部制／フラット（チーム制）／マトリクス */
+export const ORG_FORMS = ['direct', 'functional', 'divisional', 'flat', 'matrix'] as const;
+export type OrgForm = (typeof ORG_FORMS)[number];
+/** 改編の進め方：丁寧に進める（説明会・面談・引き継ぎ）／一気に切り替える */
+export const REORG_METHODS = ['careful', 'abrupt'] as const;
+export type ReorgMethod = (typeof REORG_METHODS)[number];
+
+export type OrganizationState = {
+  form: OrgForm;
+  /** いまの形にした月 */
+  since: number;
+  /** 改編の混乱（この月まで、売れる上限が下がる） */
+  transition: { until: number; productivityLoss: number } | null;
+  log: { month: number; from: OrgForm; to: OrgForm; method: ReorgMethod }[];
+};
+
 /** 判断待ち（節目・イベント）。画面はここで時間を止める */
 export type PendingDecision = {
   id: string;
   month: number;
-  /** milestone：法令の節目、event：イベント、review：毎年の決算月の制度の見直し（画面で遊ぶときだけ） */
-  kind: 'milestone' | 'event' | 'review';
+  /**
+   * milestone：法令の節目、event：イベント、review：毎年の決算月の制度の見直し（画面で遊ぶときだけ）、
+   * reorg：組織の形を選ぶ（改編のイベントや施策から）
+   */
+  kind: 'milestone' | 'event' | 'review' | 'reorg';
   /** milestone：対象の義務、event：イベントのID */
   ruleIds: string[];
   eventId: string | null;
@@ -1000,6 +1028,8 @@ export type CompanyState = {
   unrecordedExtraordinaryCost: number;
   /** その月の記録ができる前に入った資金調達（次にできる記録に載せる。古い状態には無い） */
   unrecordedFunding?: number;
+  /** 組織の形（§14.4） */
+  organization: OrganizationState;
   /** 整えている個別制度（§14.1） */
   programs: ProgramState[];
   programLog: ProgramLogEntry[];

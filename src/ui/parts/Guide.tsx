@@ -4,7 +4,8 @@ import { laws } from '../../engine/lawData';
 import { getProgram } from '../../engine/programs';
 import { guide, optionKey, type GuideRef, type GuideSource, type ItemGuide } from '../guide';
 import { actions, useGame } from '../useGame';
-import { guideStrings as t, policyStrings } from '../strings';
+import { guideStrings as t, orgStrings, policyStrings } from '../strings';
+import { ORG_FORMS, type OrgForm } from '../../engine/types';
 
 const h = t.headings;
 type PolicyCategory = keyof typeof policyStrings.options;
@@ -29,21 +30,24 @@ export function guideTitle(ref: GuideRef): string {
       return getProgram(ref.id).name;
     case 'initiative':
       return eventDefs.find((e) => e.id === ref.id)?.title ?? ref.id;
+    case 'orgCategory':
+      return guide.orgCategory.title;
+    case 'orgForm':
+      return orgStrings.forms[ref.id as OrgForm] ?? ref.id;
   }
 }
 
 /** 本文（検索に使う） */
 function guideText(ref: GuideRef): string {
-  const g =
-    ref.kind === 'category'
-      ? guide.policyCategories[ref.id]
-      : ref.kind === 'option'
-        ? guide.policyOptions[ref.id]
-        : ref.kind === 'law'
-          ? guide.laws[ref.id]
-          : ref.kind === 'program'
-            ? guide.programs[ref.id]
-            : guide.initiatives[ref.id];
+  const g = {
+    category: () => guide.policyCategories[ref.id],
+    option: () => guide.policyOptions[ref.id],
+    law: () => guide.laws[ref.id],
+    program: () => guide.programs[ref.id],
+    initiative: () => guide.initiatives[ref.id],
+    orgCategory: () => guide.orgCategory,
+    orgForm: () => guide.orgForms[ref.id],
+  }[ref.kind]();
   return `${guideTitle(ref)} ${JSON.stringify(g ?? '')}`;
 }
 
@@ -160,6 +164,27 @@ function Detail({ target, onOpen }: { target: GuideRef; onOpen: (r: GuideRef) =>
       </>
     );
   }
+  if (target.kind === 'orgCategory') {
+    const g = guide.orgCategory;
+    return (
+      <>
+        <p className="guide-summary">{g.summary}</p>
+        <List title={h.considerations} items={g.considerations} />
+        <section className="guide-block">
+          <h4>{h.options}</h4>
+          <ul className="guide-index">
+            {ORG_FORMS.map((f) => (
+              <li key={f}>
+                <button type="button" className="btn btn-quiet" onClick={() => onOpen({ kind: 'orgForm', id: f })}>
+                  {orgStrings.forms[f]}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </>
+    );
+  }
   if (target.kind === 'law') {
     const g = guide.laws[target.id];
     const rule = laws.find((r) => r.id === target.id);
@@ -187,7 +212,13 @@ function Detail({ target, onOpen }: { target: GuideRef; onOpen: (r: GuideRef) =>
     );
   }
   const g =
-    target.kind === 'option' ? guide.policyOptions[target.id] : target.kind === 'program' ? guide.programs[target.id] : guide.initiatives[target.id];
+    target.kind === 'option'
+      ? guide.policyOptions[target.id]
+      : target.kind === 'program'
+        ? guide.programs[target.id]
+        : target.kind === 'orgForm'
+          ? guide.orgForms[target.id]
+          : guide.initiatives[target.id];
   if (!g) return null;
   return (
     <>
@@ -217,6 +248,10 @@ function allRefs(): { section: keyof typeof t.sections; refs: GuideRef[] }[] {
         { kind: 'category' as const, id: c },
         ...Object.keys(policyStrings.options[c as PolicyCategory] ?? {}).map((o) => ({ kind: 'option' as const, id: optionKey(c, o) })),
       ]),
+    },
+    {
+      section: 'org',
+      refs: [{ kind: 'orgCategory' as const, id: 'org' as const }, ...ORG_FORMS.map((f) => ({ kind: 'orgForm' as const, id: f }))],
     },
     { section: 'laws', refs: laws.map((r) => ({ kind: 'law' as const, id: r.id })) },
     { section: 'programs', refs: Object.keys(guide.programs).map((id) => ({ kind: 'program' as const, id })) },
@@ -268,7 +303,7 @@ export function Guide() {
                   <h3 className="evidence-group">{t.sections[s.section]}</h3>
                   <ul className="guide-index">
                     {s.refs.map((r) => (
-                      <li key={`${r.kind}:${r.id}`} className={r.kind === 'option' ? 'guide-index-option' : ''}>
+                      <li key={`${r.kind}:${r.id}`} className={r.kind === 'option' || r.kind === 'orgForm' ? 'guide-index-option' : ''}>
                         <button type="button" className="btn btn-quiet" onClick={() => open(r)}>
                           {guideTitle(r)}
                         </button>

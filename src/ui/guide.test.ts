@@ -4,6 +4,7 @@ import { laws } from '../engine/lawData';
 import { programDefs } from '../engine/programs';
 import { guide, optionKey } from './guide';
 import { policyStrings } from './strings';
+import { ORG_FORMS } from '../engine/types';
 
 describe('初級者向けの解説（§14.3）', () => {
   it('制度のカテゴリと選択肢には、すべて解説がある', () => {
@@ -40,6 +41,11 @@ describe('初級者向けの解説（§14.3）', () => {
   it('個別制度と施策には、すべて解説がある', () => {
     for (const p of programDefs) expect(guide.programs[p.id], p.id).toBeDefined();
     for (const e of eventDefs.filter((x) => x.trigger.type === 'initiative')) expect(guide.initiatives[e.id], e.id).toBeDefined();
+  });
+
+  it('組織の形には、すべて解説がある', () => {
+    for (const f of ORG_FORMS) expect(guide.orgForms[f], f).toBeDefined();
+    expect(guide.orgCategory.considerations.length).toBeGreaterThan(0);
   });
 
   it('法令のポイントを書いた解説には、必ず出典がある', () => {

@@ -8,6 +8,8 @@
  * - 選んだ選択肢は state.decisions に記録する（社史レポートと人事スタイル診断に使う）
  */
 import { coef } from './coefficients';
+import { addExtraordinaryCost, addFunding } from './cash';
+export { addExtraordinaryCost, addFunding } from './cash';
 import { toDeparture } from './attrition';
 import { getIndustry } from './data';
 import { getLaw } from './lawData';
@@ -16,6 +18,7 @@ import { matchesEmployee } from './eventConditions';
 import { SCORE_MAX, SCORE_MIN, clamp } from './employees';
 import { startLeave } from './leave';
 import { hasProgram, installProgram } from './programs';
+import { autoForm, reorganize } from './organization';
 import { getStreamsState, restoreStreams, type Rng } from './rng';
 import type {
   AttritionReason,
@@ -26,7 +29,9 @@ import type {
   GroupEffect,
   JudgmentStyle,
   LegalResponse,
+  OrgForm,
   PendingDecision,
+  ReorgMethod,
   TargetEffect,
   TemporaryModifier,
 } from './types';
@@ -47,30 +52,6 @@ export function renderText(template: string, vars: Record<string, string | numbe
 }
 
 /**
- * 臨時の支出を払う。その月の記録がもうあればそこに載せ、まだなければ（月のはじめや、
- * 画面で判断した場合）ためておいて、次にできる記録に載せる
- */
-export function addExtraordinaryCost(state: CompanyState, amount: number): void {
-  state.cash -= amount;
-  const last = state.history[state.history.length - 1];
-  if (last && last.month === state.month) last.extraordinaryCost += amount;
-  else state.unrecordedExtraordinaryCost += amount;
-}
-
-/**
- * 資金調達のお金を入れる（利益ではないので臨時の支出には入れず、記録の funding に載せる）。
- * その月の記録がもうあればそこに、まだなければ次にできる記録に載せる
- */
-export function addFunding(state: CompanyState, amount: number): void {
-  state.cash += amount;
-  const last = state.history[state.history.length - 1];
-  if (last && last.month === state.month) {
-    last.funding = (last.funding ?? 0) + amount;
-    last.cash = state.cash;
-  } else state.unrecordedFunding = (state.unrecordedFunding ?? 0) + amount;
-}
-
-/**
  * 判断待ちを積む。自動の方針があれば、その場で選ぶ。
  * ティック処理の途中から呼ぶときは、そのティックの乱数（法令は laws 系列、イベントは events 系列）を rng に渡す
  */
@@ -82,6 +63,11 @@ export function pushDecision(
   const decision: PendingDecision = { ...d, id: `d${state.nextDecisionId++}`, month: state.month };
   state.pendingDecisions.push(decision);
   if (!state.autoPlay || decision.kind === 'review') return;
+  if (decision.kind === 'reorg') {
+    // 自動で進めるときは、人数で決めた形に丁寧に改編する（同じ形ならそのまま）
+    resolveReorg(state, decision.id, { form: autoForm(state.employees.length), method: 'careful' });
+    return;
+  }
   if (decision.kind === 'milestone') {
     resolveMilestone(state, decision.id, state.autoPlay.legal, rng);
     return;
@@ -177,6 +163,16 @@ export function resolveMilestone(
     });
   }
   if (streams) state.rng = getStreamsState(streams);
+}
+
+/**
+ * 組織の形を選ぶ判断待ちを終える（§14.4）。choice が null なら今の形のまま。
+ * 同じ形を選んだときも、何も起きない
+ */
+export function resolveReorg(state: CompanyState, decisionId: string, choice: { form: OrgForm; method: ReorgMethod } | null): void {
+  const d = takeDecision(state, decisionId);
+  if (d.kind !== 'reorg') throw new Error(`組織の形を選ぶ判断待ちではありません: ${decisionId}`);
+  if (choice) reorganize(state, choice.form, choice.method);
 }
 
 /** 毎年の制度の見直しを終える（制度を変えるときは、先に policyChange.ts の changePolicies を呼ぶ） */
@@ -361,6 +357,7 @@ export function applyEffects(state: CompanyState, effects: EventEffects, d: Pend
     state.legal.fixedOvertimeMisoperation = false;
   }
   if (effects.installProgram) installProgram(state, effects.installProgram);
+  if (effects.openReorg) pushDecision(state, { kind: 'reorg', ruleIds: [], eventId: null, vars: {} });
   if (effects.setPolicies) {
     // その業種で選べない働き方にはしない（念のため。そうなるイベントは excludeIndustries で起きないようにしている）
     const next = { ...state.policies, ...effects.setPolicies };

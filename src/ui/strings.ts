@@ -216,6 +216,7 @@ export const feedStrings = {
   decision: (title: string, label: string) => `${title}：「${label}」を選んだ`,
   policyChange: (names: string) => `制度を変えた：${names}`,
   programInstalled: (name: string) => `個別制度「${name}」を整えた`,
+  reorg: (from: string, to: string, method: string) => `組織を改編した：${from}→${to}（${method}）`,
   programStopped: (name: string) => `個別制度「${name}」を止めた`,
   mitigated: (name: string, text: string) => `【${name}】${text}`,
   yearEnd: (year: number, revenue: string, profit: string, resignations: number) =>
@@ -228,6 +229,9 @@ export const decisionStrings = {
   noImpact: '大きな変化はなさそう',
   happened: '起きたこと',
   lessonTitle: '学び',
+  peek: 'いったん閉じて画面を見る（時間は止まったまま）',
+  waitingBar: (n: number) => `判断待ちが${n}件あります。時間は止まっています。`,
+  reopen: '稟議書を開く',
   continue: '続ける',
   reflectionTitle: '問いかけ（任意）',
   reflectionPrompt: '人事として、今いちばん大事にしたいことは何ですか？',
@@ -250,6 +254,9 @@ export const decisionStrings = {
 
 /** 毎年の制度の見直し */
 export const reviewStrings = {
+  /** 組織の形の効き目の一行（改編の画面） */
+  orgEffects: (spanMult: number, speed: number, coordination: number) =>
+    `管理職1人が見る人数 ×${spanMult.toFixed(2)}・判断の速さ ×${speed.toFixed(2)}・調整の手間 −${Math.round(coordination * 1000) / 10}%（いまの人数で）`,
   title: (year: number) => `${year}年目の決算`,
   lead: 'この1年をふり返って、制度を変えるか決めます。',
   keep: 'このまま続ける',
@@ -646,8 +653,16 @@ export const guideStrings = {
   close: '閉じる',
   search: '探す',
   searchPlaceholder: '言葉で絞り込む（例：残業、賞与、育休）',
-  sections: { policies: '制度', laws: '法令', programs: '個別制度', initiatives: '施策' },
-  kinds: { category: '制度のカテゴリ', option: '制度', law: '法令', program: '個別制度', initiative: '施策' },
+  sections: { policies: '制度', org: '組織の形', laws: '法令', programs: '個別制度', initiatives: '施策' },
+  kinds: {
+    category: '制度のカテゴリ',
+    option: '制度',
+    law: '法令',
+    program: '個別制度',
+    initiative: '施策',
+    orgCategory: '組織の形',
+    orgForm: '組織の形',
+  },
   headings: {
     considerations: '選ぶときに考えること',
     options: '選択肢',
@@ -670,4 +685,54 @@ export const guideStrings = {
   checkedAt: (date: string) => `法令の内容は${date}時点で確かめたものです。最新の情報は出典のページで確かめてください。`,
   related: '関係する解説',
   noResult: '見つかりませんでした。',
+} as const;
+
+/** 組織の形と組織改編（§14.4。ステップ17） */
+export const orgStrings = {
+  forms: {
+    direct: '社長直下',
+    functional: '機能別',
+    divisional: '事業部制',
+    flat: 'フラット（チーム制）',
+    matrix: 'マトリクス',
+  },
+  formNotes: {
+    direct: '全員が社長に直接相談する。小さいうちは速いが、30人前後から判断が社長に集まって遅れ、評価が行き届かなくなる',
+    functional: '仕事の種類で部署を分ける。専門性が伸び、評価が正確になるが、部署の壁ができやすい',
+    divisional: '店舗群・工場・プロダクトなどの単位で事業部を作る。判断が速く、任される機会が増えるが、管理職が増える',
+    flat: '階層を減らし、少人数のチームで動く。管理職が少なく速いが、人が増えると評価が行き届かなくなる',
+    matrix: '仕事の種類と事業の2つの軸で組む。柔軟だが、上司が2人になり、管理職と調整の手間が最も多い',
+  },
+  methods: { careful: '丁寧に進める', abrupt: '一気に切り替える' },
+  methodNotes: {
+    careful: (months: number, loss: string, cost: string) => `説明会・面談・引き継ぎをして進める。混乱は${months}か月、売れる上限は${loss}下がる。費用${cost}`,
+    abrupt: (months: number, loss: string) => `すぐに新しい形に切り替える。混乱は${months}か月と短いが、売れる上限は${loss}下がり、納得感も大きく下がる`,
+  },
+  slipKind: '組織改編',
+  slipTitle: '組織の形を選ぶ',
+  lead: '組織の形と、改編の進め方を選びます。形を変えると、管理職の数・判断の速さ・評価や成長の機会・部署どうしの調整の手間が変わります。',
+  formTitle: '組織の形',
+  methodTitle: '改編の進め方',
+  current: '今の形',
+  apply: 'この形に改編する',
+  keep: '今の形のままにする',
+  same: '今の形と同じです',
+  // 右の欄・フィード
+  row: '組織の形',
+  inTransition: (months: number) => `改編の混乱 あと${months}か月`,
+  feed: (from: string, to: string, method: string) => `組織を改編した：${from}→${to}（${method}）`,
+  // 組織図
+  chartTitle: (form: string) => `組織図（${form}）`,
+  ceo: '社長',
+  unitNames: {
+    trading: (n: number) => `第${n}事業部`,
+    restaurant: (n: number) => `第${n}エリア`,
+    saas: (n: number) => `プロダクト${n}`,
+    manufacturing: (n: number) => `第${n}工場`,
+  },
+  teamName: (n: number) => `チーム${n}`,
+  departmentOf: { revenue: (roles: string) => `${roles}部門`, admin: '管理部', management: '管理職' },
+  headOf: '責任者',
+  more: (n: number) => `ほか${n}`,
+  people: (n: number) => `${n}人`,
 } as const;

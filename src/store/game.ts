@@ -11,7 +11,7 @@
 import { createStore } from 'zustand/vanilla';
 import { coef } from '../engine/coefficients';
 import { localizeEvent } from '../engine/eventData';
-import { getEvent, addReflection, renderText, resolveEvent, resolveMilestone, resolveReview } from '../engine/events';
+import { getEvent, addReflection, renderText, resolveEvent, resolveMilestone, resolveReorg, resolveReview } from '../engine/events';
 import type { Period } from '../engine/dashboard';
 import type { GuideRef } from '../ui/guide';
 import { initiativeAvailability, startInitiative as startInitiativeInEngine } from '../engine/initiatives';
@@ -19,11 +19,11 @@ import { getProgram, stopProgram as stopProgramInEngine } from '../engine/progra
 import { generateCompany, setFoundingPolicies } from '../engine/generate';
 import { changePolicies, type ChangeOptions } from '../engine/policyChange';
 import { isWaitingForDecision, tick } from '../engine/tick';
-import type { CompanyState, IndustryId, LegalResponse, PolicySet, VoiceTone } from '../engine/types';
+import type { CompanyState, IndustryId, LegalResponse, OrgForm, PolicySet, ReorgMethod, VoiceTone } from '../engine/types';
 import { MONTHS_PER_YEAR } from '../engine/types';
 import { yen } from '../ui/format';
 import { browserStorage, readSave, writeSave, type SaveStorage } from './persist';
-import { feedStrings, policyStrings } from '../ui/strings';
+import { feedStrings, orgStrings, policyStrings } from '../ui/strings';
 
 export type Screen = 'title' | 'howto' | 'generate' | 'policies' | 'main' | 'end';
 
@@ -69,6 +69,8 @@ export type GameState = {
   initiativesOpen: boolean;
   /** メイン画面のタブ（現場／事業／組織。§14.2） */
   view: MainView;
+  /** 判断待ちの稟議書をいったん閉じて、画面（事業・組織のタブや辞典）を見ているか。時間は止まったまま */
+  decisionHidden: boolean;
   /** 人事の辞典を開いているか。開いている項目（null なら一覧）。§14.3 */
   guide: { ref: GuideRef | null } | null;
   /** 事業・組織のグラフの期間 */
@@ -88,8 +90,10 @@ export type GameActions = {
   setSpeed(speed: number): void;
   answerMilestone(decisionId: string, response: LegalResponse, reflection?: string): void;
   answerEvent(decisionId: string, choiceIndex: number): void;
-  /** 毎年の見直しを終える（制度を変えるなら先に changePolicy） */
+  /** 毎年の見直しを終える（制度を変えるなら先に changePolicy）。組織の形を選ぶ判断待ちなら、今の形のままで終える */
   finishReview(decisionId: string): void;
+  /** 組織の形を選ぶ（null なら今の形のまま）。§14.4 */
+  answerReorg(decisionId: string, choice: { form: OrgForm; method: ReorgMethod } | null): void;
   changePolicy(next: PolicySet, options?: ChangeOptions): void;
   openEditor(): void;
   closeEditor(): void;
@@ -109,6 +113,9 @@ export type GameActions = {
   setView(view: MainView): void;
   /** 人事の辞典を開く（ref を渡すとその項目から。開いている間は時間を止める） */
   openGuide(ref?: GuideRef | null): void;
+  /** 判断待ちの稟議書をいったん閉じる・開き直す（判断待ちのあいだ時間は止まったまま） */
+  hideDecision(): void;
+  showDecision(): void;
   closeGuide(): void;
   setChartPeriod(period: Period): void;
 };
@@ -134,6 +141,7 @@ const initial: GameState = {
   view: 'floor',
   chartPeriod: 'year1',
   guide: null,
+  decisionHidden: false,
 };
 
 let seedCounter = 0;
@@ -181,6 +189,14 @@ export function collectFeed(prev: CompanyState | null, next: CompanyState): Feed
   for (const c of from(next.policyChanges, prev?.policyChanges)) {
     const names = c.categories.map((k) => `${policyStrings.categories[k]}→${optionName(k, next.policies[k])}`).join('、');
     item({ month: c.month, kind: 'policy', tone: 'neutral', text: feedStrings.policyChange(names) });
+  }
+  for (const o of from(next.organization?.log ?? [], prev?.organization?.log)) {
+    item({
+      month: o.month,
+      kind: 'policy',
+      tone: 'neutral',
+      text: feedStrings.reorg(orgStrings.forms[o.from], orgStrings.forms[o.to], orgStrings.methods[o.method]),
+    });
   }
   for (const p of from(next.programLog ?? [], prev?.programLog)) {
     const name = getProgram(p.id).name;
@@ -256,6 +272,8 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
       set({
         selectedEmployeeId: keepSelected ? selected : null,
         company: next,
+        // 判断待ちがなくなったら、次の稟議書はまた最初から開いて出す
+        ...(next.pendingDecisions.length === 0 ? { decisionHidden: false } : {}),
         feed: [...items, ...get().feed].slice(0, coef('ui.feed_max')),
         ...extra,
         ...(ended ? { screen: 'end' as const, speed: 0 } : {}),
@@ -327,6 +345,12 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
         feedId = Math.max(feedId, ...feed.map((f) => f.id), 0);
         // 再開は一時停止で始める（どこまで進んでいたかを見てから再開できるように）
         set({ ...initial, savedGame: get().savedGame, canSave: get().canSave, company, feed, screen: company.status === 'running' ? 'main' : 'end', speed: 0 });
+      },
+      hideDecision() {
+        set({ decisionHidden: true });
+      },
+      showDecision() {
+        set({ decisionHidden: false });
       },
       openGuide(ref = null) {
         set({ guide: { ref } });
@@ -411,7 +435,17 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
         schedule();
       },
       finishReview(decisionId) {
+        // 組織の形を選ぶ判断待ちなら「今の形のまま」で終える
+        const d = get().company?.pendingDecisions.find((x) => x.id === decisionId);
+        if (d?.kind === 'reorg') {
+          get().answerReorg(decisionId, null);
+          return;
+        }
         mutate((c) => resolveReview(c, decisionId), { editorOpen: false });
+        schedule();
+      },
+      answerReorg(decisionId, choice) {
+        mutate((c) => resolveReorg(c, decisionId, choice));
         schedule();
       },
       changePolicy(next, opts) {

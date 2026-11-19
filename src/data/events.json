@@ -4485,5 +4485,516 @@
         "lesson": "施策は打たなかった（次の機会にまた打てる）"
       }
     ]
+  },
+  {
+    "id": "org_wall_30",
+    "category": "people",
+    "trigger": {
+      "type": "condition",
+      "minHeadcount": 30,
+      "probability": 1,
+      "conditions": [
+        {
+          "orgForm": [
+            "direct"
+          ]
+        }
+      ]
+    },
+    "weight": 1,
+    "cooldownMonths": 1200,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "30人の壁",
+    "body": "社員が{headcount}人になりました。全員が社長に直接相談する今のやり方では、判断が社長に集まって遅れ、社長の目も一人ひとりの仕事に届かなくなってきました。",
+    "choices": [
+      {
+        "label": "組織の形を見直す（形と進め方を選ぶ）",
+        "effects": {
+          "openReorg": true
+        },
+        "axes": {
+          "horizon": 1,
+          "rules": 1
+        },
+        "lesson": "30人前後で、社長がすべてを見る体制は限界を迎えやすい。部署と責任者を決めて、任せる仕組みを作る時期",
+        "diagnosis": {
+          "proactive": 1,
+          "control": 1
+        },
+        "hint": "次に、組織の形と改編の進め方を選ぶ画面が出る"
+      },
+      {
+        "label": "社長直下のまま、社長が今まで以上に時間を使って見る",
+        "effects": {
+          "morale": {
+            "delta": -1,
+            "months": 12
+          }
+        },
+        "axes": {
+          "horizon": -1,
+          "people": 1
+        },
+        "diagnosis": {
+          "proactive": -1
+        },
+        "lesson": "社長の頑張りで回せる人数には限りがある。判断待ちと、評価が行き届かない不満がたまっていく",
+        "hint": "人が増えるほど、判断が遅れ、評価が行き届かなくなる"
+      },
+      {
+        "label": "古参の社員を「リーダー」にして、相談の窓口にする",
+        "effects": {
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "roleKind",
+                  "op": "==",
+                  "value": "revenue"
+                },
+                {
+                  "field": "employmentType",
+                  "op": "==",
+                  "value": "full"
+                },
+                {
+                  "field": "tenureMonths",
+                  "op": ">=",
+                  "value": 24
+                }
+              ],
+              "sortBy": "tenureMonths",
+              "order": "desc",
+              "limit": 2,
+              "engagement": 8,
+              "salaryPct": 5
+            }
+          ]
+        },
+        "axes": {
+          "reward": 1,
+          "people": 1
+        },
+        "diagnosis": {
+          "control": -1
+        },
+        "lesson": "肩書きだけのリーダーは、任せる範囲と評価の役割がはっきりしないと機能しにくい。組織の形は社長直下のまま"
+      }
+    ]
+  },
+  {
+    "id": "org_wall_100",
+    "category": "people",
+    "trigger": {
+      "type": "condition",
+      "minHeadcount": 100,
+      "probability": 1
+    },
+    "weight": 1,
+    "cooldownMonths": 1200,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "100人の壁",
+    "body": "社員が{headcount}人を超えました。部署やチームが増え、現場の情報が社長まで届かず、部署の間の連携にも時間がかかるようになりました。",
+    "choices": [
+      {
+        "label": "組織の形を見直す（形と進め方を選ぶ）",
+        "effects": {
+          "openReorg": true
+        },
+        "axes": {
+          "horizon": 1,
+          "rules": 1
+        },
+        "lesson": "100人前後で、社長と現場の間に何段かの責任者が要るようになる。形を選び直すと、混乱の期間のあとに効き目が出る",
+        "diagnosis": {
+          "proactive": 1
+        },
+        "hint": "次に、組織の形と改編の進め方を選ぶ画面が出る"
+      },
+      {
+        "label": "今の形のまま、部署をまたぐ定例会議と部長会を作る",
+        "effects": {
+          "cashPerEmployee": -5000,
+          "morale": {
+            "delta": 2,
+            "months": 6
+          }
+        },
+        "axes": {
+          "rules": 1,
+          "horizon": -1
+        },
+        "diagnosis": {
+          "control": 1
+        },
+        "lesson": "会議で情報はそろうが、会議が増えるほど現場の時間は減る。形の問題は会議では解けないこともある"
+      },
+      {
+        "label": "今の形のまま様子を見る",
+        "effects": {
+          "engagementAll": -1
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "diagnosis": {
+          "proactive": -1
+        },
+        "lesson": "規模に合わない組織のままだと、判断の遅れと不満が少しずつ積み上がる"
+      }
+    ]
+  },
+  {
+    "id": "org_wall_300",
+    "category": "people",
+    "trigger": {
+      "type": "condition",
+      "minHeadcount": 300,
+      "probability": 1
+    },
+    "weight": 1,
+    "cooldownMonths": 1200,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "300人の壁",
+    "body": "社員が{headcount}人を超えました。社長が名前を知らない社員が増え、経営の考えが現場まで伝わりにくくなっています。",
+    "choices": [
+      {
+        "label": "組織の形を見直す（形と進め方を選ぶ）",
+        "effects": {
+          "openReorg": true
+        },
+        "axes": {
+          "horizon": 1,
+          "rules": 1
+        },
+        "lesson": "数百人の規模では、事業ごとに判断を任せる形（事業部制など）が選ばれやすい。任せるほど、責任者の育成が大事になる",
+        "diagnosis": {
+          "proactive": 1
+        },
+        "hint": "次に、組織の形と改編の進め方を選ぶ画面が出る"
+      },
+      {
+        "label": "経営の考え（理念とビジョン）を全社で語り直す",
+        "effects": {
+          "cashPerEmployee": -10000,
+          "morale": {
+            "delta": 3,
+            "months": 12
+          }
+        },
+        "axes": {
+          "people": 1,
+          "horizon": 1
+        },
+        "diagnosis": {
+          "develop": 1
+        },
+        "lesson": "考えをそろえると判断の軸がそろう。ただし、判断の場所（組織の形）が合っていないと、速さは変わらない"
+      },
+      {
+        "label": "今の形のまま様子を見る",
+        "effects": {
+          "engagementAll": -2
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "diagnosis": {
+          "proactive": -1
+        },
+        "lesson": "経営と現場の距離が開くと、「上が何を考えているかわからない」という不満が増える"
+      }
+    ]
+  },
+  {
+    "id": "org_environment",
+    "category": "market",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 20,
+      "conditions": [
+        {
+          "metric": "recessionAge",
+          "op": "<=",
+          "value": 12
+        }
+      ]
+    },
+    "weight": 1.5,
+    "cooldownMonths": 36,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "事業環境の変化と組織",
+    "body": "景気が後退し、売れる商品や取引先が変わり始めました。今の組織の形が新しい事業環境に合っているか、見直すべきだという声が出ています。",
+    "choices": [
+      {
+        "label": "組織の形を見直す（形と進め方を選ぶ）",
+        "effects": {
+          "openReorg": true
+        },
+        "axes": {
+          "horizon": 1,
+          "rules": -1
+        },
+        "lesson": "事業環境が変わったときは、組織を見直す好機でもある。ただし改編の混乱は、苦しい時期に重なる",
+        "diagnosis": {
+          "proactive": 1
+        },
+        "hint": "次に、組織の形と改編の進め方を選ぶ画面が出る"
+      },
+      {
+        "label": "今の形のまま、部署ごとに目標を立て直す",
+        "effects": {
+          "morale": {
+            "delta": 1,
+            "months": 6
+          }
+        },
+        "axes": {
+          "rules": 1,
+          "people": 1
+        },
+        "diagnosis": {
+          "control": 1
+        },
+        "lesson": "形を変えずに目標を変えるのは、混乱が少ない。環境の変化が一時的なら、これで足りることも多い"
+      },
+      {
+        "label": "様子を見る",
+        "effects": {
+          "engagementAll": -1
+        },
+        "axes": {
+          "horizon": -1
+        },
+        "diagnosis": {
+          "proactive": -1
+        },
+        "lesson": "変化の中で何も示さないと、社員は会社の先行きに不安を感じる"
+      }
+    ]
+  },
+  {
+    "id": "org_manager_overload",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 15,
+      "conditions": [
+        {
+          "metric": "spanLoad",
+          "op": ">=",
+          "value": 1.3
+        }
+      ]
+    },
+    "weight": 1,
+    "cooldownMonths": 24,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "管理職の悲鳴",
+    "body": "管理職1人が見る部下の人数が多すぎて、面談や評価が回っていないと、管理職から悲鳴が上がっています。",
+    "choices": [
+      {
+        "label": "組織の形を見直す（形と進め方を選ぶ）",
+        "effects": {
+          "openReorg": true
+        },
+        "axes": {
+          "horizon": 1,
+          "rules": 1
+        },
+        "lesson": "管理職1人が見られる人数には限りがある。組織の形で、管理職の数と役割の分け方が変わる",
+        "diagnosis": {
+          "proactive": 1
+        },
+        "hint": "次に、組織の形と改編の進め方を選ぶ画面が出る"
+      },
+      {
+        "label": "管理職を外から採る（半年、採用を強める）",
+        "effects": {
+          "cash": -500000,
+          "hiringIntensity": {
+            "mult": 1.3,
+            "months": 6
+          }
+        },
+        "axes": {
+          "horizon": -1,
+          "reward": 1
+        },
+        "diagnosis": {
+          "develop": -1
+        },
+        "lesson": "外から管理職を採ると早いが、会社のやり方になじむまで時間がかかる"
+      },
+      {
+        "label": "今のまま頑張ってもらう",
+        "effects": {
+          "groups": [
+            {
+              "where": [
+                {
+                  "field": "roleKind",
+                  "op": "==",
+                  "value": "management"
+                }
+              ],
+              "engagement": -8
+            }
+          ]
+        },
+        "axes": {
+          "people": -1,
+          "horizon": -1
+        },
+        "diagnosis": {
+          "proactive": -1
+        },
+        "lesson": "管理職が疲れ切ると、部下の不満にも気づけなくなる"
+      }
+    ]
+  },
+  {
+    "id": "org_silo",
+    "category": "people",
+    "trigger": {
+      "type": "random",
+      "minHeadcount": 60,
+      "conditions": [
+        {
+          "orgForm": [
+            "functional",
+            "matrix"
+          ]
+        },
+        {
+          "metric": "demandCoverage3",
+          "op": "<",
+          "value": 0.8
+        }
+      ]
+    },
+    "weight": 1,
+    "cooldownMonths": 24,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "部署の壁",
+    "body": "売る側の部署と支える側の部署の連携が悪く、受けられたはずの注文を取りこぼしています。部署の壁が原因だという声があります。",
+    "choices": [
+      {
+        "label": "組織の形を見直す（形と進め方を選ぶ）",
+        "effects": {
+          "openReorg": true
+        },
+        "axes": {
+          "horizon": 1,
+          "rules": 1
+        },
+        "lesson": "機能別の組織は専門性が高まる一方で、部署の間に壁ができやすい。事業ごとにまとめる形もある",
+        "diagnosis": {
+          "proactive": 1
+        },
+        "hint": "次に、組織の形と改編の進め方を選ぶ画面が出る"
+      },
+      {
+        "label": "部署をまたぐプロジェクトチームを作る",
+        "effects": {
+          "cash": -300000,
+          "hiringIntensity": {
+            "mult": 1.1,
+            "months": 6
+          },
+          "morale": {
+            "delta": 1,
+            "months": 6
+          }
+        },
+        "axes": {
+          "people": 1,
+          "rules": -1
+        },
+        "diagnosis": {
+          "control": -1
+        },
+        "lesson": "形を変えずに横のつながりを作る方法。うまくいけば、改編の混乱なしに連携がよくなる"
+      },
+      {
+        "label": "様子を見る",
+        "effects": {
+          "engagementAll": -1
+        },
+        "axes": {
+          "horizon": -1
+        },
+        "diagnosis": {
+          "proactive": -1
+        },
+        "lesson": "部署の壁は放っておくと、部署どうしの責任の押し付け合いになりやすい"
+      }
+    ]
+  },
+  {
+    "id": "initiative_reorg",
+    "category": "people",
+    "trigger": {
+      "type": "initiative",
+      "minHeadcount": 10
+    },
+    "weight": 1,
+    "cooldownMonths": 12,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "組織の形を見直す",
+    "menuSummary": "社長直下・機能別・事業部制・フラット・マトリクスから組織の形を選び直す。改編には混乱の期間がある。年1回まで",
+    "body": "組織の形（部署の分け方と、誰が何を決めるか）を見直します。形を変えると、管理職の数、判断の速さ、評価や成長の機会が変わります。変えたあとしばらくは混乱があります。",
+    "choices": [
+      {
+        "label": "組織の形と進め方を選ぶ",
+        "effects": {
+          "openReorg": true
+        },
+        "axes": {
+          "horizon": 1
+        },
+        "diagnosis": {
+          "proactive": 1
+        },
+        "lesson": "組織の形に正解はない。会社の大きさと事業に合った形は、成長とともに変わる",
+        "hint": "次に、組織の形と改編の進め方を選ぶ画面が出る"
+      },
+      {
+        "label": "今回はやめておく",
+        "effects": {},
+        "cancel": true,
+        "lesson": "施策は打たなかった（次の機会にまた打てる）"
+      }
+    ]
   }
 ]

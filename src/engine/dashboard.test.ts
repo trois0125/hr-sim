@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ageBands, bucketize, businessSeries, orgChart, orgSeries } from './dashboard';
+import { ageBands, bucketize, businessSeries, orgSeries, orgStructure } from './dashboard';
 import { generateCompany } from './generate';
 import { runToEnd } from './tick';
 import { makeEmployee } from './testHelpers';
@@ -67,8 +67,12 @@ describe('事業タブ・組織タブの数字（§14.2）', () => {
     ]);
   });
 
-  it('仮の組織図：職種ごとの人数の合計は社員数', () => {
-    const groups = orgChart(played);
-    expect(groups.reduce((s, g) => s + g.total, 0)).toBe(played.employees.length);
+  it('組織図：どの形でも、部署・事業部・チームの人数の合計は社員数', () => {
+    for (const form of ['direct', 'functional', 'divisional', 'flat', 'matrix'] as const) {
+      const c = { ...played, organization: { ...played.organization, form } };
+      const s = orgStructure(c);
+      expect(s.units.reduce((sum, u) => sum + u.headcount, 0), form).toBe(played.employees.length);
+      if (form === 'flat') expect(s.units.length).toBeGreaterThan(1);
+    }
   });
 });

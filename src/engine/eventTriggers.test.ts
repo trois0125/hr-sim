@@ -99,6 +99,7 @@ function metricsMatching(event: EventDef, state: CompanyState): CompanyMetrics {
   m.headcount = Math.max(m.headcount, t.minHeadcount ?? 0);
   for (const c of t.conditions ?? []) {
     if ('metric' in c) m[c.metric] = satisfying(c.op, c.value) as number;
+    else if ('orgForm' in c) state.organization = { ...state.organization, form: c.orgForm[0]! };
     else state.policies = { ...state.policies, [c.policy]: c.in[0] };
   }
   return m;
@@ -262,6 +263,14 @@ describe('どのイベントも条件どおりに起きる（データから自�
       for (const cond of t.conditions ?? []) {
         if ('metric' in cond) {
           expect(meetsConditions(event, c, { ...m, [cond.metric]: violating(cond.op, cond.value) }), cond.metric).toBe(false);
+        } else if ('orgForm' in cond) {
+          const saved = c.organization;
+          const other = (['direct', 'functional', 'divisional', 'flat', 'matrix'] as const).find((f) => !cond.orgForm.includes(f));
+          if (other) {
+            c.organization = { ...saved, form: other };
+            expect(meetsConditions(event, c, m), 'orgForm').toBe(false);
+          }
+          c.organization = saved;
         } else {
           const other = (c.policies[cond.policy] === 'office' ? 'remote' : 'office') as never;
           const saved = c.policies;

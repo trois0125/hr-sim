@@ -98,7 +98,7 @@ describe('ゲームの進行（画面と同じ操作）', () => {
         s.answerEvent(d.id, 0);
         if (store.getState().lesson) break;
       } else if (d?.kind === 'milestone') s.answerMilestone(d.id, 'immediate');
-      else if (d?.kind === 'review') s.finishReview(d.id);
+      else if (d) s.finishReview(d.id);
       else s.step();
     }
     expect(store.getState().lesson?.lesson.length ?? 0).toBeGreaterThan(5);
@@ -202,7 +202,7 @@ describe('自動セーブと再開（ステップ13）', () => {
       const d = s.company?.pendingDecisions[0];
       if (d?.kind === 'milestone') s.answerMilestone(d.id, 'immediate');
       else if (d?.kind === 'event') s.answerEvent(d.id, 0);
-      else if (d?.kind === 'review') s.finishReview(d.id);
+      else if (d) s.finishReview(d.id);
       else s.step();
     }
   }
@@ -301,7 +301,7 @@ describe('施策と個別制度（ステップ14）', () => {
       const d = s.company?.pendingDecisions[0];
       if (d?.kind === 'milestone') s.answerMilestone(d.id, 'immediate');
       else if (d?.kind === 'event') s.answerEvent(d.id, 0);
-      else if (d?.kind === 'review') s.finishReview(d.id);
+      else if (d) s.finishReview(d.id);
       else s.step();
     }
     const s = store.getState();
@@ -323,5 +323,30 @@ describe('施策と個別制度（ステップ14）', () => {
     store.getState().stopProgram('work_life_support');
     expect(store.getState().company!.programs).toEqual([]);
     expect(store.getState().feed[0]?.text).toContain('止めた');
+  });
+});
+
+describe('判断待ちの稟議書をいったん閉じる', () => {
+  it('閉じても時間は止まったままで、答えて判断待ちがなくなると、次はまた開いて出る', () => {
+    const store = createGameStore({ timers: false, storage: null });
+    store.getState().newCandidate('trading');
+    store.getState().startGame(defaultPolicies);
+    for (let i = 0; i < 60 && !store.getState().company?.pendingDecisions.length; i++) store.getState().step();
+    const d = store.getState().company!.pendingDecisions[0]!;
+    store.getState().setSpeed(1);
+    store.getState().hideDecision();
+    expect(store.getState().decisionHidden).toBe(true);
+    expect(store.getState().cycle).toBeNull();
+    const month = store.getState().company!.month;
+    store.getState().step();
+    expect(store.getState().company!.month).toBe(month); // 判断待ちの間は進まない
+    store.getState().setView('business');
+    for (const x of [...store.getState().company!.pendingDecisions]) {
+      if (x.kind === 'milestone') store.getState().answerMilestone(x.id, 'immediate');
+      else if (x.kind === 'event') store.getState().answerEvent(x.id, 0);
+      else store.getState().finishReview(x.id);
+    }
+    expect(d.id).toBeTruthy();
+    expect(store.getState().decisionHidden).toBe(false);
   });
 });

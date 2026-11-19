@@ -148,8 +148,10 @@ export function supportRequirement(
   industry: IndustryData,
   revenueStaffFte: number,
   headcount: number,
+  /** 組織の形による、管理職1人が見る人数の倍率（§14.4） */
+  spanMult = 1,
 ): { admin: number; management: number } {
-  const span = industry.managementSpan.value;
+  const span = industry.managementSpan.value * spanMult;
   return {
     admin: Math.max(
       0,
@@ -174,6 +176,8 @@ export function computePerformance(
   industry: IndustryData,
   variant: IndustryVariant,
   policies: PolicySet = defaultPolicies,
+  /** 組織の形の効き目（§14.4）：管理職1人が見る人数の倍率と、調整の手間・改編の混乱で残る割合 */
+  org: { spanMult: number; capacityMult: number } = { spanMult: 1, capacityMult: 1 },
 ): PerformanceResult {
   const incentive = incentiveStrength(policies, employees.length, industry);
   const newcomerMonths = coef('policy.workStyle.newcomer_months');
@@ -213,11 +217,11 @@ export function computePerformance(
   const managementFactor = industry.store
     ? coverageFactor(FOUNDER_STORES + managementWork, stores, coef('performance.management_gap_penalty'))
     : coverageFactor(
-        industry.managementSpan.value * (1 + managementWork),
+        industry.managementSpan.value * org.spanMult * (1 + managementWork),
         employees.length,
         coef('performance.management_gap_penalty'),
       );
-  const support = adminFactor * managementFactor;
+  const support = adminFactor * managementFactor * org.capacityMult;
 
   return {
     capacity: (revenueOutput + founderOutput(industry, variant)) * support,

@@ -43,7 +43,7 @@ export function initiativeAvailability(state: CompanyState, event: EventDef): In
     return { available: false, reason: 'headcount', months: t.minHeadcount };
   }
   const metrics = companyMetrics(state);
-  if (!(t.conditions ?? []).every((c) => checkCompanyCondition(c, metrics, state.policies))) {
+  if (!(t.conditions ?? []).every((c) => checkCompanyCondition(c, metrics, state))) {
     return { available: false, reason: 'conditions' };
   }
   if (!cooledDown(event, state)) return { available: false, reason: 'cooldown', months: monthsUntilCooled(event, state) };

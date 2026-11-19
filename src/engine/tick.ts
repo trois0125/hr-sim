@@ -22,6 +22,7 @@ import { generateVoices } from './voices';
 import { runEvents } from './eventTriggers';
 import { processLeaves } from './leave';
 import { programMonthlyCost } from './programs';
+import { companyOrgEffects, transitionLoss } from './organization';
 import { orgSnapshot } from './dashboard';
 import { checkObligations, checkViolations, legalMonthlyCost } from './laws';
 import { currentResistance } from './policyChange';
@@ -100,8 +101,16 @@ export function tickInPlace(state: CompanyState): CompanyState {
   const demandMult = modifierValue(state, 'demand');
   const demand = demandAt(state.market, state.profile, industry, state.month) * demandMult;
 
+  // 組織の形の効き目（管理職の数・判断の速さ・調整の手間・改編の混乱。§14.4）
+  if (state.organization.transition && state.month >= state.organization.transition.until) state.organization.transition = null;
+  const orgNow = companyOrgEffects(state);
+  const orgPerf = () => {
+    const e = companyOrgEffects(state);
+    return { spanMult: e.spanMult, capacityMult: 1 - e.coordinationLoss - transitionLoss(state.organization, state.month) };
+  };
+
   // 2. 採用
-  const before = computePerformance(state.employees, industry, variant, state.policies);
+  const before = computePerformance(state.employees, industry, variant, state.policies, orgPerf());
   // 積み上がる売上の業種（SaaS）は、需要いっぱいではなく「今の売上＋先行投資の分」までの体制を目指して採る
   const rr = industry.recurringRevenue;
   // 小さい会社でも1人は先に採れるよう、売上を生む職種1人ぶんの売上を足す
@@ -120,7 +129,8 @@ export function tickInPlace(state: CompanyState): CompanyState {
     demand: Math.min(demand, hiringCeiling),
     capacity: before.capacity,
     cash: state.cash,
-    intensity: state.hiring.intensity * modifierValue(state, 'hiringIntensity'),
+    intensity: state.hiring.intensity * modifierValue(state, 'hiringIntensity') * orgNow.speed,
+    spanMult: orgNow.spanMult,
     nextEmployeeId: state.nextEmployeeId,
     policies: state.policies,
     month: state.month,
@@ -135,7 +145,7 @@ export function tickInPlace(state: CompanyState): CompanyState {
   state.nextEmployeeId += hiring.hires.length;
 
   // 3. 社員ごとの稼働と成果（足りないぶんは、売上を生むフルタイム社員の残業で埋める）
-  const perf = computePerformance(state.employees, industry, variant, state.policies);
+  const perf = computePerformance(state.employees, industry, variant, state.policies, orgPerf());
   const cap = overtimeCap(state.policies.overtime);
   // 積み上がる売上の業種（SaaS）は、採用と同じく「今の売上＋先行投資の分」までを残業で埋める
   const overtime = computeOvertime(Math.min(demand, hiringCeiling), perf, cap);
@@ -220,6 +230,7 @@ export function tickInPlace(state: CompanyState): CompanyState {
     resistance: currentResistance(state) - modifierValue(state, 'morale'),
     violations: state.history[state.history.length - 2]?.violations ?? 0,
     programs: state.programs,
+    orgBonus: companyOrgEffects(state).factorBonus,
   });
 
   // 6. 退職（と出向者の帰任）

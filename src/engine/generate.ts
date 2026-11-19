@@ -1,6 +1,7 @@
 /**
  * 会社の生成（§3、§3.4）。乱数は generation 系列だけを使う。
  */
+import { initialOrganization } from './organization';
 import { coef } from './coefficients';
 import {
   availableIndustries,
@@ -196,6 +197,7 @@ export function generateCompany(options: GenerateOptions): CompanyState {
     scheduledEvents: [],
     reflections: [],
     voices: [],
+    organization: initialOrganization(),
     programs: [],
     programLog: [],
     mitigations: [],

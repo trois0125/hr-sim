@@ -1891,5 +1891,285 @@
     "unit": "歳",
     "basis": "assumption",
     "source": "高年齢者雇用安定法：60歳未満の定年は禁止（8条）、65歳までの雇用確保措置が義務（9条。70歳までは努力義務）。ゲームでは「60歳定年＋65歳まで継続雇用」とし、65歳になった年度末に退職する（賃金は60歳から下がる：generation.salary.post60_ratio）"
+  },
+  {
+    "id": "org.span_mult.direct",
+    "value": 1.0,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。社長直下：管理職1人が見る人数（業種の managementSpan）に掛ける倍率。リーダーは置くが、判断は社長に集まる"
+  },
+  {
+    "id": "org.span_mult.functional",
+    "value": 1.0,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。機能別：業種の標準どおり"
+  },
+  {
+    "id": "org.span_mult.divisional",
+    "value": 0.8,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。事業部制：事業部ごとに部長と管理の担当を置くので、管理職1人あたりの人数が少なくなる（管理職が増える）"
+  },
+  {
+    "id": "org.span_mult.flat",
+    "value": 1.5,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。フラット：階層を減らし、1人のリーダーが多くの人を見る（管理職が減る）"
+  },
+  {
+    "id": "org.span_mult.matrix",
+    "value": 0.75,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。マトリクス：機能と事業の2つの軸に責任者を置くので、管理職が最も多い"
+  },
+  {
+    "id": "org.speed.direct",
+    "value": 1.0,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。判断の速さ（採用の強さに掛ける倍率）。社長直下は小さいうちは速いが、壁を超えると遅くなる（org.direct.*）"
+  },
+  {
+    "id": "org.speed.functional",
+    "value": 1.0,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。機能別：部署の間の調整がいるぶん、速くはない"
+  },
+  {
+    "id": "org.speed.divisional",
+    "value": 1.15,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。事業部制：事業部の中で判断が完結するので、需要の変化に速く合わせられる"
+  },
+  {
+    "id": "org.speed.flat",
+    "value": 1.1,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。フラット：決める人が近く、速い"
+  },
+  {
+    "id": "org.speed.matrix",
+    "value": 1.05,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。マトリクス：柔軟だが、2人の上司の調整がいる"
+  },
+  {
+    "id": "org.direct.wall",
+    "value": 30,
+    "unit": "人",
+    "basis": "assumption",
+    "source": "仮置き。社長直下で、社長が全員を直接見られる人数の目安（「30人の壁」とよく言われる）"
+  },
+  {
+    "id": "org.direct.speed_slope",
+    "value": 0.15,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。社長直下で、壁を超えた人数（壁に対する割合）あたりの判断の遅れ（ステップ17のバランス確認で弱めた）"
+  },
+  {
+    "id": "org.direct.speed_min",
+    "value": 0.8,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。社長直下の判断の速さの下限（ステップ17のバランス確認で弱めた）"
+  },
+  {
+    "id": "org.direct.evaluation_penalty",
+    "value": 5,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。社長直下で、壁を超えた人数（壁に対する割合）あたりの「評価の正確さ」の下がり方。社長が全員の仕事を見られなくなる（ステップ17のバランス確認で弱めた）"
+  },
+  {
+    "id": "org.direct.evaluation_penalty_max",
+    "value": 8,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。上の下がり方の上限（ステップ17のバランス確認で弱めた）"
+  },
+  {
+    "id": "org.flat.limit",
+    "value": 50,
+    "unit": "人",
+    "basis": "assumption",
+    "source": "仮置き。フラットな組織が回る人数の目安"
+  },
+  {
+    "id": "org.flat.evaluation_penalty",
+    "value": 6,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。フラットで、目安を超えた人数（目安に対する割合）あたりの「評価の正確さ」の下がり方"
+  },
+  {
+    "id": "org.flat.evaluation_penalty_max",
+    "value": 10,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。上の下がり方の上限"
+  },
+  {
+    "id": "org.factor.functional.evaluation",
+    "value": 2,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。機能別：同じ仕事をわかる上司が評価するので、評価が正確になる"
+  },
+  {
+    "id": "org.factor.divisional.growthOpportunity",
+    "value": 4,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。事業部制：事業部長などのポストが増え、任される機会が増える"
+  },
+  {
+    "id": "org.factor.flat.growthOpportunity",
+    "value": 2,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。フラット：役職は少ないが、任される範囲が広い"
+  },
+  {
+    "id": "org.factor.matrix.growthOpportunity",
+    "value": 3,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。マトリクス：いろいろな仕事に関われる"
+  },
+  {
+    "id": "org.factor.matrix.evaluation",
+    "value": -3,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。マトリクス：上司が2人いて、評価がぶれやすい"
+  },
+  {
+    "id": "org.unit_size.divisional",
+    "value": 30,
+    "unit": "人",
+    "basis": "assumption",
+    "source": "仮置き。事業部制で、売上を生む社員何人ごとに1つの事業部（店舗群・工場・プロダクト）にするか"
+  },
+  {
+    "id": "org.unit_size.flat",
+    "value": 8,
+    "unit": "人",
+    "basis": "assumption",
+    "source": "仮置き。フラットで、1チームの人数"
+  },
+  {
+    "id": "org.coordination.functional",
+    "value": 0.01,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。部署どうしの調整の手間：部署が1つ増えるごとに、売れる上限が下がる割合（機能別）"
+  },
+  {
+    "id": "org.coordination.divisional",
+    "value": 0.012,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。同（事業部制）。事業部の間の重複と調整"
+  },
+  {
+    "id": "org.coordination.flat",
+    "value": 0.004,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。同（フラット）。チームの数が増えると、チームどうしの連携が要る"
+  },
+  {
+    "id": "org.coordination.matrix",
+    "value": 0.015,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。同（マトリクス）。2つの軸の調整がいちばん重い"
+  },
+  {
+    "id": "org.coordination.max",
+    "value": 0.12,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。部署どうしの調整の手間で下がる割合の上限"
+  },
+  {
+    "id": "org.reorg.careful.months",
+    "value": 6,
+    "unit": "か月",
+    "basis": "assumption",
+    "source": "仮置き。改編を丁寧に進める（説明会・面談・引き継ぎ）ときの混乱の期間"
+  },
+  {
+    "id": "org.reorg.careful.productivity_loss",
+    "value": 0.03,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。丁寧に進めるときの、混乱の期間中に売れる上限が下がる割合"
+  },
+  {
+    "id": "org.reorg.careful.morale",
+    "value": 2,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。丁寧に進めるときの、混乱の期間中の納得感の目標値の下がり方"
+  },
+  {
+    "id": "org.reorg.careful.cost_per_employee",
+    "value": 30000,
+    "unit": "円/人",
+    "basis": "assumption",
+    "source": "仮置き。丁寧に進めるときの、説明会・面談・引き継ぎの費用（社員1人あたり）"
+  },
+  {
+    "id": "org.reorg.abrupt.months",
+    "value": 3,
+    "unit": "か月",
+    "basis": "assumption",
+    "source": "仮置き。改編を一気に切り替えるときの混乱の期間"
+  },
+  {
+    "id": "org.reorg.abrupt.productivity_loss",
+    "value": 0.08,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。一気に切り替えるときの、混乱の期間中に売れる上限が下がる割合"
+  },
+  {
+    "id": "org.reorg.abrupt.morale",
+    "value": 6,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。一気に切り替えるときの、混乱の期間中の納得感の目標値の下がり方"
+  },
+  {
+    "id": "org.reorg.abrupt.cost_per_employee",
+    "value": 0,
+    "unit": "円/人",
+    "basis": "assumption",
+    "source": "仮置き。一気に切り替えるときの費用"
+  },
+  {
+    "id": "org.auto.functional_at",
+    "value": 30,
+    "unit": "人",
+    "basis": "assumption",
+    "source": "仮置き。自動で進めるとき（simulate と同期創業の他社）に、社長直下から機能別にする人数"
+  },
+  {
+    "id": "org.auto.divisional_at",
+    "value": 300,
+    "unit": "人",
+    "basis": "assumption",
+    "source": "仮置き。自動で進めるときに、事業部制にする人数"
   }
 ]

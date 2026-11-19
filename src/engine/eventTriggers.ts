@@ -16,6 +16,7 @@ import { eventDefs } from './eventData';
 import { compare, matchesEmployee } from './eventConditions';
 import { applyEffects, getEvent, pushDecision } from './events';
 import { hasProgram } from './programs';
+import { spanLoad } from './organization';
 import type { Rng } from './rng';
 import type {
   CompanyCondition,
@@ -79,6 +80,7 @@ export function companyMetrics(state: CompanyState): CompanyMetrics {
       scored.length > 0 ? scored.reduce((s, e) => s + (e.factorScores?.evaluation ?? 0), 0) / scored.length : 50,
     disputeRisk,
     recessionAge: lastRecession === undefined ? NEVER : state.month - lastRecession,
+    spanLoad: spanLoad(state),
     runway: runwayMonths(state.cash, recent.reduce((s, r) => s + r.operatingProfit, 0) / Math.max(1, recent.length)),
   };
 }
@@ -96,13 +98,14 @@ export function runwayMonths(cash: number, monthlyProfit: number): number {
 export function checkCompanyCondition(
   c: CompanyCondition,
   metrics: CompanyMetrics,
-  policies: CompanyState['policies'],
+  state: Pick<CompanyState, 'policies' | 'organization'>,
 ): boolean {
   if ('metric' in c) {
     if (!COMPANY_METRICS.includes(c.metric)) throw new Error(`会社の指標がありません: ${c.metric}`);
     return compare(metrics[c.metric], c.op, c.value);
   }
-  return c.in.includes(policies[c.policy]);
+  if ('orgForm' in c) return c.orgForm.includes(state.organization.form);
+  return c.in.includes(state.policies[c.policy]);
 }
 
 /**
@@ -128,7 +131,7 @@ export function meetsConditions(event: EventDef, state: CompanyState, metrics: C
   const t = event.trigger;
   if (t.type === 'law') return false;
   if (t.minHeadcount !== undefined && metrics.headcount < t.minHeadcount) return false;
-  return (t.conditions ?? []).every((c) => checkCompanyCondition(c, metrics, state.policies));
+  return (t.conditions ?? []).every((c) => checkCompanyCondition(c, metrics, state));
 }
 
 /** 業種ごとのイベントは、その業種の specialEvents にあるときだけ起きる */

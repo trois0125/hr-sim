@@ -6,10 +6,13 @@ import { localizeEvent } from '../../engine/eventData';
 import { choiceAvailable } from '../../engine/initiatives';
 import type { CompanyState, EngagementFactor, EventDef, EventEffects, LegalResponse, PendingDecision } from '../../engine/types';
 import type { GuideRef } from '../guide';
-import { GuideLinks } from './Guide';
+import { GuideLinks, HelpButton } from './Guide';
+import { getIndustry } from '../../engine/data';
+import { orgEffects, orgSize, reorgCost } from '../../engine/organization';
+import { ORG_FORMS, REORG_METHODS, type OrgForm, type ReorgMethod } from '../../engine/types';
 import { LEGAL_RESPONSES, MONTHS_PER_YEAR } from '../../engine/types';
 import { actions } from '../useGame';
-import { decisionStrings, eventStrings, factorNames, initiativeStrings, lawStrings, reviewStrings } from '../strings';
+import { decisionStrings, eventStrings, factorNames, initiativeStrings, lawStrings, orgStrings, reviewStrings } from '../strings';
 import { yen } from '../format';
 
 /** 印を押してから次に進むまでの間（ミリ秒）。動きを減らす設定なら待たない */
@@ -83,6 +86,11 @@ function Slip({ kind, title, children }: { kind: string; title: string; children
         <div className="slip-head">
           <h2 id="slip-title">{title}</h2>
           <span className="slip-kind">{kind}</span>
+        </div>
+        <div className="slip-peek">
+          <button type="button" className="btn btn-quiet" onClick={() => actions().hideDecision()}>
+            {decisionStrings.peek}
+          </button>
         </div>
         <div className="slip-body">{children}</div>
       </div>
@@ -241,11 +249,72 @@ function ReviewSlip({ d, company }: { d: PendingDecision; company: CompanyState 
   );
 }
 
-/** 判断待ちの先頭を出す（節目・イベント・毎年の見直し） */
+/** 組織の形と改編の進め方を選ぶ（§14.4） */
+function ReorgSlip({ d, company }: { d: PendingDecision; company: CompanyState }) {
+  const currentForm = company.organization.form;
+  const [form, setForm] = useState<OrgForm>(currentForm);
+  const [method, setMethod] = useState<ReorgMethod>('careful');
+  const t = orgStrings;
+  const n = company.employees.length;
+  const size = orgSize(company.employees, getIndustry(company.profile.industryId));
+  return (
+    <Slip kind={t.slipKind} title={t.slipTitle}>
+      <p>{t.lead}</p>
+      <GuideLinks refs={[{ kind: 'orgCategory', id: 'org' }]} />
+      <fieldset className="policy-field">
+        <legend>{t.formTitle}</legend>
+        <div className="policy-options">
+          {ORG_FORMS.map((f) => {
+            const e = orgEffects(f, size);
+            return (
+              <label key={f} className="policy-option">
+                <input type="radio" name="org-form" checked={form === f} onChange={() => setForm(f)} />
+                <span>
+                  {t.forms[f]}
+                  {f === currentForm && <span className="tag">{t.current}</span>}
+                  <HelpButton target={{ kind: 'orgForm', id: f }} label={t.forms[f]} />
+                </span>
+                <span className="desc">{t.formNotes[f]}</span>
+                <span className="desc num org-effects">{reviewStrings.orgEffects(e.spanMult, e.speed, e.coordinationLoss)}</span>
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
+      <fieldset className="policy-field">
+        <legend>{t.methodTitle}</legend>
+        <div className="policy-options">
+          {REORG_METHODS.map((m) => {
+            const c = reorgCost(m, n);
+            const loss = `${Math.round(c.productivityLoss * 100)}%`;
+            return (
+              <label key={m} className="policy-option">
+                <input type="radio" name="org-method" checked={method === m} onChange={() => setMethod(m)} />
+                <span>{t.methods[m]}</span>
+                <span className="desc">{m === 'careful' ? t.methodNotes.careful(c.months, loss, yen(c.cash)) : t.methodNotes.abrupt(c.months, loss)}</span>
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
+      <div className="slip-actions">
+        <button className="btn" onClick={() => actions().answerReorg(d.id, null)}>
+          {t.keep}
+        </button>
+        <button className="btn btn-primary" disabled={form === currentForm} onClick={() => actions().answerReorg(d.id, { form, method })}>
+          {form === currentForm ? t.same : t.apply}
+        </button>
+      </div>
+    </Slip>
+  );
+}
+
+/** 判断待ちの先頭を出す（節目・イベント・毎年の見直し・組織の形） */
 export function DecisionModal({ company }: { company: CompanyState }) {
   const d = company.pendingDecisions[0];
   if (!d) return null;
   if (d.kind === 'milestone') return <MilestoneSlip key={d.id} d={d} />;
   if (d.kind === 'event') return <EventSlip key={d.id} d={d} company={company} />;
+  if (d.kind === 'reorg') return <ReorgSlip key={d.id} d={d} company={company} />;
   return <ReviewSlip key={d.id} d={d} company={company} />;
 }
