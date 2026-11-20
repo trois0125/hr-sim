@@ -50,8 +50,10 @@ export function sampleName(rng: Rng, gender: Gender): string {
   return `${rng.pick(names.surnames)} ${rng.pick(names.givenNames[gender])}`;
 }
 
-export function sampleAge(rng: Rng, ageShift: number): number {
-  const age = Math.round(rng.normal(coef('generation.age.mean') + ageShift, coef('generation.age.sd')));
+/** 年齢を抽選する。平均は業種の ageMean（なければ係数台帳）＋創業パターンの上乗せ */
+export function sampleAge(rng: Rng, ageShift: number, industry?: Pick<IndustryData, 'ageMean'>): number {
+  const mean = industry?.ageMean?.value ?? coef('generation.age.mean');
+  const age = Math.round(rng.normal(mean + ageShift, coef('generation.age.sd')));
   return clamp(age, coef('generation.age.min'), coef('generation.age.max'));
 }
 
@@ -82,13 +84,20 @@ export type SalaryInput = {
   affiliation: Affiliation;
 };
 
-/** 年齢による賃金カーブ（年齢の下限で1.0。賃金構造基本統計調査の卸売業に合わせた形） */
-export function ageSalaryFactor(age: number): number {
+/**
+ * 年齢による賃金カーブ（年齢の下限で1.0）。業種に salaryCurve があればその形（傾き・頭打ちの年齢・60歳以降の比）、
+ * なければ係数台帳の共通の形（賃金構造基本統計調査の卸売業に合わせたもの）
+ */
+export function ageSalaryFactor(age: number, industry?: Pick<IndustryData, 'salaryCurve'>): number {
   const k = SALARY();
-  // 57歳前後で頭打ちになり、60歳以降（定年後の継続雇用）は下がる
-  const a = clamp(age, k.ageMin, k.agePeak);
-  const curve = 1 + k.ageSlope * (a - k.ageMin);
-  return age >= k.post60Age ? curve * k.post60Ratio : curve;
+  const c = industry?.salaryCurve;
+  const slope = c ? c.ageSlope.value : k.ageSlope;
+  const peak = c ? c.agePeak.value : k.agePeak;
+  const post60 = c ? c.post60Ratio.value : k.post60Ratio;
+  // 頭打ちの年齢より上は伸びず、60歳以降（定年後の継続雇用）は下がる
+  const a = clamp(age, k.ageMin, peak);
+  const curve = 1 + slope * (a - k.ageMin);
+  return age >= k.post60Age ? curve * post60 : curve;
 }
 
 /** 相場の月給（職種×地域差×年齢）。パートは最低賃金の少し上の時給×時間。最低賃金を下回らない */
@@ -106,7 +115,7 @@ export function marketSalaryFor(
   const roleData = industry.roles.find((r) => r.id === role);
   if (!roleData) throw new Error(`職種がありません: ${industry.id}/${role}`);
   return Math.max(
-    roleData.marketSalaryMonthly.value * location.wageIndex.value * ageSalaryFactor(age),
+    roleData.marketSalaryMonthly.value * location.wageIndex.value * ageSalaryFactor(age, industry),
     minimumMonthlyWage(location),
   );
 }
@@ -154,7 +163,7 @@ export function createEmployee(input: CreateEmployeeInput): Employee {
   const name = sampleName(rng, gender);
   const age = input.age
     ? clamp(Math.round(rng.normal(input.age.mean, input.age.sd)), coef('generation.age.min'), coef('generation.age.max'))
-    : sampleAge(rng, input.ageShift ?? 0);
+    : sampleAge(rng, input.ageShift ?? 0, input.industry);
   const ability = clamp(
     rng.normal(coef('generation.ability.mean') + (input.abilityOffset ?? 0), coef('generation.ability.sd')),
     SCORE_MIN,
@@ -200,5 +209,6 @@ export function createEmployee(input: CreateEmployeeInput): Employee {
     isKeyPerson: input.isKeyPerson ?? false,
     factorScores: null,
     secondmentEndsAt: null,
+    leave: null,
   };
 }

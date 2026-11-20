@@ -99,7 +99,8 @@ export function resignationProbability(
     e.hireChannel !== 'founding' && e.tenureMonths < earlyMonths
       ? policyEffect('hiring', e.hireChannel, 'early_attrition_mult')
       : 1;
-  const part = e.employmentType === 'part' ? partMult : 1;
+  // パートの辞めやすさ（業種の値があればそれ）
+  const part = e.employmentType === 'part' ? (ctx.industry.partTimeAttritionMult?.value ?? partMult) : 1;
   // 制度と関係ない退職のうち「人間関係」は、在宅が多い職場の新人ほど増える
   const family = coef('attrition.unrelated.family_share');
   const unrelatedMult = family + (1 - family) * newcomerRelationshipMult(e, ctx.policies);
@@ -121,11 +122,12 @@ function newcomerRelationshipMult(e: Employee, policies: PolicySet): number {
   return policyEffect('workStyle', policies.workStyle, 'newcomer_relationship_mult');
 }
 
-function toDeparture(e: Employee, month: number, kind: Departure['kind'], reason: AttritionReason | null): Departure {
+export function toDeparture(e: Employee, month: number, kind: Departure['kind'], reason: AttritionReason | null): Departure {
   return {
     employeeId: e.id,
     name: e.name,
     role: e.role,
+    employmentType: e.employmentType,
     month,
     kind,
     reason,
@@ -151,6 +153,12 @@ export function runAttrition(
   for (const e of employees) {
     const roll = ctx.rng.next();
     const reasonRoll = ctx.rng.next();
+
+    // 休職中の人は、期間が終わるときに復帰か退職かが決まる（leave.ts）
+    if (e.leave) {
+      stay.push(e);
+      continue;
+    }
 
     if (e.affiliation === 'secondee') {
       const due = e.secondmentEndsAt !== null && ctx.month >= e.secondmentEndsAt;
@@ -178,4 +186,19 @@ export function runAttrition(
     }
   }
   return { stay, departures };
+}
+
+/**
+ * 定年（ステップ12）。決算月に年齢を上げたあとに呼ぶ。定年の年齢に達したプロパー社員は退職する
+ * （出向者は親会社に戻るので除く）。離職率には数えない。去った人の記録を返す
+ */
+export function retireEmployees(employees: readonly Employee[], month: number): { stay: Employee[]; retired: Departure[] } {
+  const age = coef('retirement.age');
+  const stay: Employee[] = [];
+  const retired: Departure[] = [];
+  for (const e of employees) {
+    if (e.affiliation === 'proper' && e.age >= age) retired.push(toDeparture(e, month, 'retirement', null));
+    else stay.push(e);
+  }
+  return { stay, retired };
 }

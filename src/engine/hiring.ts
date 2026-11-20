@@ -8,7 +8,7 @@
  * - 採用しても人件費の数か月分の資金が残るときだけ採用する
  *
  * 採用方針（新卒／中途／パート中心）と働き方で、埋まりやすさ・採用費・年齢・パートの割合が変わる。
- * 採用を強化しないといけないイベントはステップ8で足す。そのために「採用の強さ」を持つ。
+ * 採用の強さは、イベント（ステップ8）の一時的な効果で上げ下げする。強めると求人の数・埋まりやすさ・採用費がともに増える。
  */
 import { coef } from './coefficients';
 import { createEmployee } from './employees';
@@ -47,6 +47,8 @@ export type HiringInput = {
   projectedDemand?: number;
   /** 評判による求人の埋まりやすさの倍率（イベントの一時的な効果）。省略すると1 */
   reputation?: number;
+  /** 組織の形による、管理職1人が見る人数の倍率（§14.4）。省略すると1 */
+  spanMult?: number;
 };
 
 /**
@@ -85,27 +87,37 @@ export type HiringResult = {
 
 /** 職種ごとに「あと何人ほしいか」 */
 export function desiredOpenings(
-  input: Pick<HiringInput, 'employees' | 'industry' | 'variant' | 'demand' | 'capacity'>,
+  input: Pick<HiringInput, 'employees' | 'industry' | 'variant' | 'demand' | 'capacity' | 'spanMult'>,
 ): Record<RoleId, number> {
   const { employees, industry, variant, demand, capacity } = input;
   const out: Record<RoleId, number> = {};
   const fteByRole = new Map<RoleId, number>();
   for (const e of employees) fteByRole.set(e.role, (fteByRole.get(e.role) ?? 0) + fte(e));
 
-  // 売上を生む職種：需要に足りないぶんを、その職種1人あたりの売上で割る
+  // 売上を生む職種：需要に足りないぶんを1人あたりの売上で割った人数を、いま人数の少ない職種から順に割り振る
+  // （職種ごとに割ってから切り捨てると、売上を生む職種が2つある業種（SaaS）で小さい不足がいつも0人になる）
   const revenueRoles = industry.roles.filter((r) => r.kind === 'revenue');
   const shortage = Math.max(0, demand - capacity);
-  let revenueFteAfter = 0;
-  for (const role of revenueRoles) {
-    const share = 1 / revenueRoles.length;
-    const need = Math.floor((shortage * share) / nominalOutputPerRevenueStaff(industry, variant, role.id));
-    out[role.id] = need;
-    revenueFteAfter += (fteByRole.get(role.id) ?? 0) + need;
+  const meanOutput =
+    revenueRoles.reduce((s, r) => s + nominalOutputPerRevenueStaff(industry, variant, r.id), 0) / Math.max(1, revenueRoles.length);
+  const totalNeed = meanOutput > 0 ? Math.floor(shortage / meanOutput) : 0;
+  for (const role of revenueRoles) out[role.id] = 0;
+  for (let k = 0; k < totalNeed; k++) {
+    let pick = revenueRoles[0];
+    for (const role of revenueRoles) {
+      const cur = (fteByRole.get(role.id) ?? 0) + (out[role.id] ?? 0);
+      const best = pick ? (fteByRole.get(pick.id) ?? 0) + (out[pick.id] ?? 0) : Infinity;
+      if (cur < best) pick = role;
+    }
+    if (pick) out[pick.id] = (out[pick.id] ?? 0) + 1;
   }
+  let revenueFteAfter = 0;
+  for (const role of revenueRoles) revenueFteAfter += (fteByRole.get(role.id) ?? 0) + (out[role.id] ?? 0);
 
   // 事務・管理：採用後の人数に対して必要な人数に足りないぶん
   const headcountAfter = employees.length + Object.values(out).reduce((s, n) => s + n, 0);
-  const required = supportRequirement(industry, revenueFteAfter, headcountAfter);
+  // 店舗のある業種は、いまの社員数で店舗の数（＝要る店長の数）を数える（採りたい人数で数えると、店ができる前に店長を採ってしまう）
+  const required = supportRequirement(industry, revenueFteAfter, industry.store ? employees.length : headcountAfter, input.spanMult ?? 1);
   for (const kind of ['admin', 'management'] as const) {
     const roles = industry.roles.filter((r) => r.kind === kind);
     if (roles.length === 0) continue;
@@ -146,15 +158,23 @@ export function runHiring(input: HiringInput): HiringResult {
   const attraction =
     payAttraction(payCompetitiveness(employees, industry, location, policies)) * (input.reputation ?? 1);
 
-  // 不足の大きい職種から順に、上限まで求人を割り当てる
+  // 不足の大きい職種から順に、上限まで求人を割り当てる。
+  // 店舗のある業種（飲食）だけは店長を先に埋める。店舗スタッフの不足はいつも大きいので、
+  // そちらを先にすると店長がいつまでも採れず、店が回らない（ステップ12）
   const openings: Record<RoleId, number> = {};
   const remaining = { ...desired };
+  const isSupport = new Map(industry.roles.map((r) => [r.id, !!industry.store && r.kind === 'management']));
   for (let i = 0; i < maxOpenings; i++) {
     let best: RoleId | undefined;
     for (const role of industry.roles) {
-      if ((remaining[role.id] ?? 0) > 0 && (best === undefined || (remaining[role.id] ?? 0) > (remaining[best] ?? 0))) {
-        best = role.id;
-      }
+      const need = remaining[role.id] ?? 0;
+      if (need <= 0) continue;
+      const b = best === undefined ? undefined : best;
+      const better =
+        b === undefined ||
+        (isSupport.get(role.id) && !isSupport.get(b)) ||
+        (isSupport.get(role.id) === isSupport.get(b) && need > (remaining[b] ?? 0));
+      if (better) best = role.id;
     }
     if (best === undefined) break;
     remaining[best] = (remaining[best] ?? 0) - 1;
@@ -205,7 +225,11 @@ export function runHiring(input: HiringInput): HiringResult {
         lastYearProfit: 0,
         totalSalaries: 0,
       });
-      const fee = candidate.salaryMonthly * policyEffect('hiring', channel, 'fee_salary_months');
+      // 採用を強めると、1人あたりの採用費も上がる（求人広告・紹介手数料の上乗せ）
+      const fee =
+        candidate.salaryMonthly *
+        policyEffect('hiring', channel, 'fee_salary_months') *
+        Math.pow(intensity, coef('hiring.intensity_fee_elasticity'));
       const payrollAfter = payroll + candidate.salaryMonthly * welfare;
       if (cash - fee < payrollAfter * coef('hiring.cash_runway_months')) continue; // 資金が足りないので見送る
 

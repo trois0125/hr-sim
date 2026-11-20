@@ -1,6 +1,7 @@
 /**
  * 1社の結果をまとめる（scripts/simulate.ts の集計と、社史レポート（ステップ11）で使う）。
  */
+import { eventDefs } from './eventData';
 import type { AttritionReason, CompanyState, MonthlyRecord } from './types';
 import { ATTRITION_REASONS, MONTHS_PER_YEAR } from './types';
 
@@ -46,6 +47,15 @@ export type RunSummary = {
   reasons: Record<AttritionReason, number>;
   /** 違反が見つかった回数 */
   detections: number;
+  /** 法令以外のイベントの回数 */
+  events: number;
+  /** イベントごとの回数（法令のイベントを含む） */
+  eventCounts: Record<string, number>;
+  /** 休職した人数（イベント・健康被害） */
+  leaves: number;
+  /** 途中の制度変更：回数、そのうち就業規則の変更で不利益変更を進めた回数（紛争の種を残した回数） */
+  policyChanges: number;
+  disputeSeeds: number;
 };
 
 /** 創業期・成熟期の区切り（年） */
@@ -94,11 +104,23 @@ export function periodMetrics(records: readonly MonthlyRecord[]): PeriodMetrics 
   };
 }
 
+const lawEventIds = new Set(eventDefs.filter((e) => e.category === 'law').map((e) => e.id));
+/** 対象者が休職に入る選択肢（イベントID#選択肢の番号） */
+const leaveChoices = new Set(
+  eventDefs.flatMap((e) => e.choices.flatMap((c, i) => (c.effects.target?.leave ? [`${e.id}#${i}`] : []))),
+);
+
 export function summarizeRun(state: CompanyState): RunSummary {
   const h = state.history;
   const reasons = Object.fromEntries(ATTRITION_REASONS.map((r) => [r, 0])) as Record<AttritionReason, number>;
   const resignations = state.departures.filter((d) => d.kind === 'resignation');
   for (const d of resignations) if (d.reason) reasons[d.reason] += 1 / resignations.length;
+  const eventCounts: Record<string, number> = {};
+  for (const d of state.decisions) eventCounts[d.eventId] = (eventCounts[d.eventId] ?? 0) + 1;
+  // 休職に入った人数：休職に入る選択肢を選んだ回数と、長時間労働による健康被害の回数
+  const leaves =
+    state.legal.log.filter((l) => l.kind === 'health').length +
+    state.decisions.filter((d) => leaveChoices.has(`${d.eventId}#${d.choiceIndex}`)).length;
   return {
     status: state.status,
     months: state.month,
@@ -110,5 +132,10 @@ export function summarizeRun(state: CompanyState): RunSummary {
     late: periodMetrics(h.slice(LATE_FROM_YEAR * MONTHS_PER_YEAR)),
     reasons,
     detections: state.legal.log.filter((l) => l.kind === 'violation_detected').length,
+    events: state.decisions.filter((d) => !lawEventIds.has(d.eventId)).length,
+    eventCounts,
+    leaves,
+    policyChanges: state.policyChanges.length,
+    disputeSeeds: state.disputeSeeds.length,
   };
 }

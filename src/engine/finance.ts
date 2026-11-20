@@ -45,6 +45,10 @@ export type FinanceInput = {
   hiringCost: number;
   /** 法令の義務に対応したあと毎月かかる費用（その他の固定費に入れる） */
   legalCost?: number;
+  /** 個別制度の維持費（その他の固定費に入れる。§14.1） */
+  programCost?: number;
+  /** 売上を外から決める（積み上がる売上の業種）。省略すると min(需要, 売れる上限＋残業) */
+  revenue?: number;
 };
 
 export type FinanceResult = {
@@ -55,19 +59,32 @@ export type FinanceResult = {
   /** その他の固定費のうち、等級・評価の制度の運用コスト */
   hrSystemCost: number;
   legalCost: number;
+  programCost: number;
   operatingProfit: number;
 };
 
 export function computeFinance(input: FinanceInput): FinanceResult {
   const { employees, policies } = input;
-  const revenue = Math.min(input.demand, input.capacity + input.overtimeCapacity);
+  const revenue = input.revenue ?? Math.min(input.demand, input.capacity + input.overtimeCapacity);
   const grossProfit = revenue * input.grossMargin;
 
-  const salaries = employees.reduce((s, e) => s + e.salaryMonthly, 0);
-  const overtime = employees.reduce((s, e) => s + overtimePay(e, policies), 0);
-  // 賞与は年1回の評価で決めた額を、毎月に割り振って計上する
-  const bonus = employees.reduce((s, e) => s + e.bonusMonthly, 0);
-  const legalWelfare = (salaries + overtime + bonus) * coef('labor.legal_welfare_rate');
+  // 休職中の人には給与・賞与・残業代を払わない
+  let salaries = 0;
+  let overtime = 0;
+  let bonus = 0;
+  /** 休職中でも社会保険料（会社負担）を払い続ける人の給与（介護休業・私傷病休職。育児休業は免除） */
+  let insuredOnLeave = 0;
+  for (const e of employees) {
+    if (e.leave) {
+      if (e.leave.kind !== 'parental') insuredOnLeave += e.salaryMonthly;
+      continue;
+    }
+    salaries += e.salaryMonthly;
+    overtime += overtimePay(e, policies);
+    // 賞与は年1回の評価で決めた額を、毎月に割り振って計上する
+    bonus += e.bonusMonthly;
+  }
+  const legalWelfare = (salaries + overtime + bonus + insuredOnLeave) * coef('labor.legal_welfare_rate');
   // 育成費は制度の選択肢そのもの（売上比 0%／0.5%／1%）
   const training = (revenue * Number(policies.training)) / PERCENT;
   const labor: LaborCost = {
@@ -84,7 +101,8 @@ export function computeFinance(input: FinanceInput): FinanceResult {
   const officeCost =
     coef('cost.office_per_employee') * policyEffect('workStyle', policies.workStyle, 'office_cost_mult') * employees.length;
   const legalCost = input.legalCost ?? 0;
-  const otherFixedCost = coef('cost.company_base') + officeCost + hrSystemCost + legalCost;
+  const programCost = input.programCost ?? 0;
+  const otherFixedCost = coef('cost.company_base') + officeCost + hrSystemCost + legalCost + programCost;
   return {
     revenue,
     grossProfit,
@@ -92,6 +110,7 @@ export function computeFinance(input: FinanceInput): FinanceResult {
     otherFixedCost,
     hrSystemCost,
     legalCost,
+    programCost,
     operatingProfit: grossProfit - labor.total - otherFixedCost,
   };
 }

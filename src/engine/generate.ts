@@ -1,6 +1,8 @@
 /**
  * 会社の生成（§3、§3.4）。乱数は generation 系列だけを使う。
  */
+import { initialOrganization } from './organization';
+import { MONTHS_PER_YEAR } from './types';
 import { coef } from './coefficients';
 import {
   availableIndustries,
@@ -42,6 +44,8 @@ export type GenerateOptions = {
   industryId?: IndustryId;
   foundingPatternId?: FoundingPatternId;
   locationId?: string;
+  /** ゲームの長さ（年）。省略すると係数台帳の end.max_months */
+  lengthYears?: number;
 };
 
 const sampleRange = (rng: Rng, r: Range) => rng.range(r.min, r.max);
@@ -192,6 +196,15 @@ export function generateCompany(options: GenerateOptions): CompanyState {
     },
     pendingDecisions: [],
     modifiers: [],
+    decisions: [],
+    scheduledEvents: [],
+    reflections: [],
+    voices: [],
+    organization: initialOrganization(),
+    maxMonths: options.lengthYears ? options.lengthYears * MONTHS_PER_YEAR : coef('end.max_months'),
+    programs: [],
+    programLog: [],
+    mitigations: [],
     autoPlay: options.autoPlay === undefined ? { legal: 'immediate' } : options.autoPlay,
     nextDecisionId: 1,
     unrecordedExtraordinaryCost: 0,

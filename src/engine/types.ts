@@ -111,6 +111,22 @@ export type IndustryData = {
   /** 業種ごとのイベントID（イベントの型はステップ8で定義） */
   specialEvents: string[];
   variants: IndustryVariant[];
+
+  // --- ステップ12：業種ごとの違い（省略すると係数台帳の共通の値。商社は省略） ---
+  /** 年齢による賃金カーブ（賃金構造基本統計調査の業種別の年齢階級別所定内給与額に当てはめたもの） */
+  salaryCurve?: { ageSlope: Sourced<number>; agePeak: Sourced<number>; post60Ratio: Sourced<number> };
+  /** 社員の年齢の平均（生成するとき） */
+  ageMean?: Sourced<number>;
+  /** 経験（年齢）による生産性の伸びの強さ（賃金カーブの何乗か）。製造業は熟練が強く効く */
+  experienceElasticity?: Sourced<number>;
+  /** パートの辞めやすさ（一般労働者の離職率に対する倍率） */
+  partTimeAttritionMult?: Sourced<number>;
+  /** パートの時間あたりの生産性（飲食はパートが店舗の中心で、正社員に近い仕事をする） */
+  partTimeProductivity?: Sourced<number>;
+  /** 店舗（飲食）。店舗ごとに店長（管理の職種）が1人要る。店舗の数＝管理以外の社員数÷1店舗の人数 */
+  store?: { staffPerStore: Sourced<number> };
+  /** 積み上がる売上（SaaS）。売上は毎月、出せる上限に向かってこの割合だけ近づく（契約が少しずつ増え、少しずつ減る） */
+  recurringRevenue?: { convergence: Sourced<number>; initialShare: Sourced<number>; hiringHeadroom: Sourced<number> };
 };
 
 // ---------------------------------------------------------------------------
@@ -221,6 +237,24 @@ export type SalaryTransition = {
 /** 価値観。4つの合計が 1.0 */
 export type Values = { growth: number; stability: number; money: number; balance: number };
 
+/** 休職の種類：育児休業／介護休業／私傷病（メンタル不調・長時間労働による健康被害など） */
+export const LEAVE_KINDS = ['parental', 'care', 'sick'] as const;
+export type LeaveKind = (typeof LEAVE_KINDS)[number];
+
+/**
+ * 休職中の状態（ステップ8）。休職中は働かず、給与も払わない（育児休業給付・介護休業給付・傷病手当金は
+ * 雇用保険・健康保険から出る）。社会保険料の会社負担は、育児休業中だけ免除される
+ */
+export type Leave = {
+  kind: LeaveKind;
+  /** 休職に入った月 */
+  startMonth: number;
+  /** 休職が終わる月（この月のはじめに、復帰するか退職するかが決まる） */
+  endsAt: number;
+  /** 復帰する確率（会社の支え方で変わる） */
+  returnRate: number;
+};
+
 export type Employee = {
   id: string;
   name: string;
@@ -253,6 +287,8 @@ export type Employee = {
   factorScores: FactorScores | null;
   /** 出向者が親会社に戻る予定の月（創業からの経過月）。出向者でなければ null */
   secondmentEndsAt: number | null;
+  /** 休職中ならその状態。働いていれば null（古い状態には無いので省略可） */
+  leave?: Leave | null;
 };
 
 /** 納得感の6要因（§4.3） */
@@ -284,10 +320,12 @@ export type Departure = {
   employeeId: string;
   name: string;
   role: RoleId;
+  /** 雇用形態（層ごとの離職を数えるため。古い記録には無い） */
+  employmentType?: EmploymentType;
   /** 去った月（創業からの経過月） */
   month: number;
-  /** resignation＝退職、return＝出向者の帰任（離職率には数えない） */
-  kind: 'resignation' | 'return';
+  /** resignation＝退職、return＝出向者の帰任、retirement＝定年（帰任と定年は離職率に数えない） */
+  kind: 'resignation' | 'return' | 'retirement';
   /** 退職理由。帰任のときは null */
   reason: AttritionReason | null;
   age: number;
@@ -342,6 +380,8 @@ export type MarketState = {
   shareFactor: number;
   /** 景気後退が始まった月（記録用） */
   recessionMonths: number[];
+  /** 積み上がる売上の業種（SaaS）で、いまの月の売上（契約の合計）。それ以外の業種では使わない */
+  recurringRevenue?: number;
 };
 
 /** 採用の状態（§2.1 の2） */
@@ -359,6 +399,18 @@ export type LaborCost = {
   hiring: number;
   training: number;
   total: number;
+};
+
+/** 月末の組織の様子（組織タブのグラフに使う。ステップ15） */
+export type OrgSnapshot = {
+  /** 納得感の6要因の平均（働いている人。点数のない人は除く）。いなければ null */
+  factors: FactorScores | null;
+  /** 職種ごとの人数（休職中を含む） */
+  roles: Record<RoleId, number>;
+  /** パートの人数 */
+  part: number;
+  /** 休職中の人数 */
+  onLeave: number;
 };
 
 /** 月ごとの記録（§2.1 の10） */
@@ -393,7 +445,21 @@ export type MonthlyRecord = {
   extraordinaryCost: number;
   /** 違反の状態にある義務の数（月末） */
   violations: number;
+  /** 定年で退職した人数（離職率には数えない。古い記録には無い） */
+  retirements?: number;
+  /** 資金調達で入ったお金（円。利益ではない。古い記録には無い） */
+  funding?: number;
+  /** その他の固定費のうち、個別制度の維持費（古い記録には無い） */
+  programCost?: number;
+  /** 繁忙の月か（需要の急増・人手の急減。残業を方針の上限まで使った。§14.5。古い記録には無い） */
+  busy?: boolean;
+  /** この月の残業の上限（ふだんは方針の上限の半分。§14.5。古い記録には無い） */
+  overtimeCeiling?: number;
+  /** 月末の組織の様子（§14.2 の組織タブ。古い記録には無い） */
+  org?: OrgSnapshot;
   cash: number;
+  /** その月の制度（人事スタイル診断で「選んでいた期間の長さ」を数えるため。古い記録には無い） */
+  policies?: PolicySet;
 };
 
 /** 制度の変更（§5.1）。変更後しばらく納得感が揺れる */
@@ -421,6 +487,8 @@ export type DisputeSeed = {
   /** 変更の合理性（0〜1。低いほど紛争になりやすい） */
   reasonableness: number;
   averageCutPct: number;
+  /** 訴えのイベントで決着がついたか */
+  resolved?: boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -520,16 +588,188 @@ export type LegalState = {
 // イベント（§8 `src/data/events.json`）
 // ---------------------------------------------------------------------------
 
+/** 比較の種類 */
+export type Comparison = '<' | '<=' | '>' | '>=' | '==' | '!=';
+
+/**
+ * 会社の指標（イベントの発生条件に使う）。
+ * - headcount：在籍者（休職中を含む）、month：創業からの月数、economy：景気（0が平常）
+ * - cash：手元資金（円）、profit12：直近12か月の営業利益（円）
+ * - avgEngagement：在籍者の納得感の平均、overtime：直近の月の残業時間（売上を生むフルタイム社員）
+ * - overtime3：直近3か月の残業時間の平均、demandCoverage3：直近3か月の需要のうち売上にできた割合
+ * - partCount：パートの人数、keyPersons：主要人物の人数、onLeave：休職中の人数
+ * - avgEvaluationScore：納得感の要因「評価の正確さ」の平均
+ * - disputeRisk：決着していない「紛争の種」のうち、いちばん合理性の低いものの（1−合理性）。無ければ0
+ * - recessionAge：直近の景気後退が始まってからの月数（無ければ大きな値）
+ * - runway：直近3か月の赤字が続いたら手元資金が何か月もつか（黒字なら大きな値）
+ */
+export const COMPANY_METRICS = [
+  'headcount',
+  'month',
+  'economy',
+  'cash',
+  'profit12',
+  'avgEngagement',
+  'overtime',
+  'overtime3',
+  'demandCoverage3',
+  'partCount',
+  'keyPersons',
+  'onLeave',
+  'avgEvaluationScore',
+  'disputeRisk',
+  'recessionAge',
+  'runway',
+  'spanLoad',
+] as const;
+export type CompanyMetric = (typeof COMPANY_METRICS)[number];
+
+/** 会社についての条件 */
+export type CompanyCondition =
+  | { metric: CompanyMetric; op: Comparison; value: number }
+  /** 制度がこのどれかになっている */
+  | { policy: keyof PolicySet; in: string[] }
+  /** 組織の形がこのどれかになっている */
+  | { orgForm: OrgForm[] };
+
+/**
+ * 社員の項目（イベントの対象者の条件に使う）。
+ * roleKind は職種の種類（revenue／admin／management）、values.* は価値観、onLeave は休職中なら1
+ */
+export const EMPLOYEE_FIELDS = [
+  'engagement',
+  'ability',
+  'age',
+  'tenureMonths',
+  'overtimeHours',
+  'isKeyPerson',
+  'gender',
+  'employmentType',
+  'affiliation',
+  'hireChannel',
+  'roleKind',
+  'onLeave',
+  'values.growth',
+  'values.stability',
+  'values.money',
+  'values.balance',
+] as const;
+export type EmployeeField = (typeof EMPLOYEE_FIELDS)[number];
+export type EmployeeCondition = { field: EmployeeField; op: Comparison; value: number | string | boolean };
+
+/** 数値で並べられる社員の項目 */
+export type EmployeeSortKey = 'engagement' | 'ability' | 'age' | 'tenureMonths' | 'overtimeHours' | 'salaryMonthly';
+
+/** イベントの対象者（エース、創業メンバーなど）の選び方。条件に合う人がいなければ起きない */
+export type TargetSpec = {
+  where: EmployeeCondition[];
+  /** 条件に合う人の中で、この項目がいちばん高い（desc）／低い（asc）人。省略すると無作為 */
+  sortBy?: EmployeeSortKey;
+  order?: 'asc' | 'desc';
+};
+
+/** 社員の集団への効果（「新しい社員」「狙われた営業」など） */
+export type GroupEffect = {
+  where: EmployeeCondition[];
+  /** 対象者を除くか */
+  excludeTarget?: boolean;
+  /** 人数を絞るときの並べ方と人数（limitShare は在籍者に対する割合） */
+  sortBy?: EmployeeSortKey;
+  order?: 'asc' | 'desc';
+  limit?: number;
+  limitShare?: number;
+  /** 納得感の増減（点） */
+  engagement?: number;
+  /** 月給の増減（%） */
+  salaryPct?: number;
+  /** 賞与の月割りの増減（%。次の評価で決め直すまで） */
+  bonusPct?: number;
+  /** 実力の増減（点） */
+  ability?: number;
+  /** 退職させる（理由） */
+  resign?: AttritionReason;
+  /** 退職させるときの上乗せの退職金（月給の何か月分） */
+  severanceMonths?: number;
+  /** 対象になった1人あたりの費用（円。研修費など） */
+  costPerMember?: number;
+};
+
+/** 対象者への効果 */
+export type TargetEffect = {
+  engagement?: number;
+  salaryPct?: number;
+  ability?: number;
+  /** 職種の種類を変える（その種類の最初の職種になる。管理職への登用など） */
+  roleKind?: RoleKind;
+  isKeyPerson?: boolean;
+  /** 休職に入る。monthsMult を省くと種類ごとの標準の期間 */
+  leave?: { kind: LeaveKind; monthsMult?: number; returnRateBonus?: number };
+  /** すでに休職中なら、復帰する確率を上げ下げする（復職支援の有無など） */
+  returnRateDelta?: number;
+  /** 退職する（理由） */
+  resign?: AttritionReason;
+};
+
+/** 判断の傾向の4軸（自動で進めるときの選び方。人事スタイル診断には DIAGNOSIS_AXES を使う）。プラス側／マイナス側 */
+export const JUDGMENT_AXES = [
+  'reward', // 個人に報いる ↔ 公平を守る
+  'horizon', // 将来への投資 ↔ 今の利益
+  'rules', // 法令・ルール重視 ↔ 柔軟さ重視
+  'people', // 人を守る ↔ 入れ替える
+] as const;
+export type JudgmentAxis = (typeof JUDGMENT_AXES)[number];
+/** 選択肢の軸の印（+1／−1。関係ない軸は書かない） */
+export type AxisMarks = Partial<Record<JudgmentAxis, number>>;
+/** 会社（プレイヤー）の判断の傾向。各軸 −1〜+1 */
+export type JudgmentStyle = Record<JudgmentAxis, number>;
+
+/**
+ * 人事スタイル診断の4軸（§9）。プラス側／マイナス側。
+ * 診断は制度の選び方と、イベントでの判断の両方から決める（組み合わせ方はステップ11）
+ */
+export const DIAGNOSIS_AXES = [
+  'outcome', // 成果 ↔ 安定
+  'control', // 統制 ↔ 自律
+  'develop', // 育成 ↔ 獲得
+  'proactive', // 先手 ↔ 後手
+] as const;
+export type DiagnosisAxis = (typeof DIAGNOSIS_AXES)[number];
+export type DiagnosisMarks = Partial<Record<DiagnosisAxis, number>>;
+
 /** 選択肢の効果。数値はすべてデータ側に書く */
 export type EventEffects = {
   /** 手元資金の増減（円） */
   cash?: number;
   /** 社員1人あたりの手元資金の増減（円） */
   cashPerEmployee?: number;
+  /** 直近の月の売上の何か月分を、手元資金から増減するか（取引先の倒産の貸し倒れなど） */
+  cashRevenueMonths?: number;
+  /** 資金調達：月の給与の合計の何か月分を手元資金に入れる（利益ではないので臨時の支出には入れない） */
+  fundingPayrollMonths?: number;
   /** 全員の納得感の増減（点） */
   engagementAll?: number;
+  /** 対象者以外の全員の納得感の増減（点） */
+  engagementOthers?: number;
+  /** 一定期間、納得感の目標値を上げ下げする（点。リストラの不安など、すぐには消えない影響） */
+  morale?: { delta: number; months: number };
   /** 一定期間、求人の埋まりやすさに掛ける倍率（評判） */
   hiringAttraction?: { mult: number; months: number };
+  /** 一定期間、採用の強さに掛ける倍率（求人の数・埋まりやすさ・採用費がともに増える） */
+  hiringIntensity?: { mult: number; months: number };
+  /** 一定期間、需要に掛ける倍率 */
+  demand?: { mult: number; months: number };
+  /** 一定期間、積み上がる売上の業種（SaaS）で「今の売上より何割多い体制まで採るか」を足す（資金調達して先行投資する） */
+  hiringHeadroom?: { delta: number; months: number };
+  /** 成熟時の需要に掛ける倍率（新規事業など、ずっと続く変化） */
+  matureDemandMult?: number;
+  /** 対象者への効果 */
+  target?: TargetEffect;
+  /** 社員の集団への効果 */
+  groups?: GroupEffect[];
+  /** 決着していない紛争の種を、決着したことにする */
+  resolveDisputes?: boolean;
+  /** 前の判断を条件にした続きのイベントを予約する（月数がたったら確率で起きる） */
+  followUp?: { eventId: string; afterMonths: number; probability: number; sameTarget?: boolean };
   /** 発覚した違反（または指定した義務）を是正する（対応済みにし、是正の費用を払う） */
   correct?: 'detected' | string[];
   /** 是正の費用の倍率（是正勧告を受けてから直すと割高） */
@@ -540,6 +780,10 @@ export type EventEffects = {
   unpaidOvertimeMult?: number;
   /** 制度を変える（反応は起きない。是正のための変更） */
   setPolicies?: Partial<PolicySet>;
+  /** 個別制度を整える（§14.1。すでにあれば何もしない） */
+  installProgram?: ProgramId;
+  /** 組織の形を選ぶ判断待ち（reorg）を積む（§14.4） */
+  openReorg?: boolean;
 };
 
 export type EventChoice = {
@@ -547,40 +791,203 @@ export type EventChoice = {
   effects: EventEffects;
   /** 学びの一言（社史レポートの解説に使う） */
   lesson?: string;
-  /** 自動で進めるとき、この方針ならこの選択肢を選ぶ */
+  /** 判断の傾向の軸の印（自動で選ぶときに使う） */
+  axes?: AxisMarks;
+  /** 人事スタイル診断（§9）の軸の印。どの軸にも当てはまらない選択肢は省く */
+  diagnosis?: DiagnosisMarks;
+  /** 予想される影響の補足（効果のデータから自動では出せないこと：あとで起きうること、法令上の問題など）。初級の画面に出す */
+  hint?: string;
+  /** 法令のイベントを自動で進めるとき、この方針ならこの選択肢を選ぶ */
   auto?: LegalResponse[];
+  /** 施策の「やめる」：選んでも次に打てるまでの期間をあけない */
+  cancel?: boolean;
 };
+
+/**
+ * 起き方。
+ * - law：エンジンの法令チェックから呼ばれる（抽選しない）
+ * - random：毎月の抽選で起きる（条件を満たしているものの中から重みで選ぶ）
+ * - followUp：前の判断で予約されたときだけ起きる（連鎖イベント）
+ * - condition：条件を満たした月に、毎月の抽選とは別に起きる（景気後退など。probability は月あたりの確率）
+ * - initiative：プレイヤーが「施策を打つ」から起こす（§14.1。抽選しない。自動で進めるときは起きない）
+ */
+export type EventTrigger =
+  | { type: 'law' }
+  | {
+      type: 'random' | 'followUp' | 'condition' | 'initiative';
+      minHeadcount?: number;
+      /** condition のときの月あたりの確率（省略すると1） */
+      probability?: number;
+      conditions?: CompanyCondition[];
+      /** 対象者。指定すると、条件に合う人がいるときだけ起きる */
+      target?: TargetSpec;
+    };
 
 export type EventDef = {
   id: string;
-  category: 'people' | 'market' | 'law' | 'industry';
-  /** 起き方。law はエンジンの法令チェックから呼ばれる（抽選しない） */
-  trigger: { type: 'law' } | { type: 'random'; minHeadcount?: number; condition?: string };
+  category: 'people' | 'market' | 'hiring' | 'law' | 'industry';
+  trigger: EventTrigger;
   weight: number;
+  /** 同じイベントが次に起きるまで空ける月数（省略すると係数台帳の標準） */
+  cooldownMonths?: number;
+  /** この業種では起きない（在宅勤務の要望は、在宅勤務を選べない業種では起きない、など） */
+  excludeIndustries?: IndustryId[];
+  /** 業種ごとの文の差し替え（共通のイベントの、商社向けの言い回しを業種に合わせる）。choices は番号順、null は差し替えなし */
+  textByIndustry?: Partial<
+    Record<IndustryId, { title?: string; body?: string; choices?: ({ label?: string; lesson?: string; hint?: string } | null)[] }>
+  >;
   difficulty: ('beginner' | 'intermediate' | 'advanced')[];
   title: string;
-  /** {name} のような差し込みを使える */
+  /** {name} のような差し込みを使える。対象者がいれば name・age・tenure・annual（年収・万円）が入る */
   body: string;
+  /** 本文に差し込む追加の数字（対象者の年収の倍率など）。例：{ "offer": { "of": "annual", "mult": 1.2 } } */
+  extraVars?: Record<string, { of: 'annual' | 'headcount' | 'revenue'; mult: number }>;
+  /** 選ぶ前に起きる効果（需要の急拡大そのものなど） */
+  onTrigger?: EventEffects;
   choices: EventChoice[];
+  /**
+   * 個別制度が整っていると、判断待ちにならずに軽く済む（§14.1）。
+   * effects は軽く済んだときの効果、text はフィードに出す文（{name} などを差し込める）
+   */
+  mitigatedBy?: { program: ProgramId; effects: EventEffects; text: string };
+  /** 施策のメニューに出す短い説明（施策のときだけ） */
+  menuSummary?: string;
+};
+
+// ---------------------------------------------------------------------------
+// 組織の形（§14.4。ステップ17）
+// ---------------------------------------------------------------------------
+
+/** 社長直下／機能別／事業部制／フラット（チーム制）／マトリクス */
+export const ORG_FORMS = ['direct', 'functional', 'divisional', 'flat', 'matrix'] as const;
+export type OrgForm = (typeof ORG_FORMS)[number];
+/** 改編の進め方：丁寧に進める（説明会・面談・引き継ぎ）／一気に切り替える */
+export const REORG_METHODS = ['careful', 'abrupt'] as const;
+export type ReorgMethod = (typeof REORG_METHODS)[number];
+
+export type OrganizationState = {
+  form: OrgForm;
+  /** いまの形にした月 */
+  since: number;
+  /** 改編の混乱（この月まで、売れる上限が下がる） */
+  transition: { until: number; productivityLoss: number } | null;
+  log: { month: number; from: OrgForm; to: OrgForm; method: ReorgMethod }[];
 };
 
 /** 判断待ち（節目・イベント）。画面はここで時間を止める */
 export type PendingDecision = {
   id: string;
   month: number;
-  kind: 'milestone' | 'event';
+  /**
+   * milestone：法令の節目、event：イベント、review：毎年の決算月の制度の見直し（画面で遊ぶときだけ）、
+   * reorg：組織の形を選ぶ（改編のイベントや施策から）
+   */
+  kind: 'milestone' | 'event' | 'review' | 'reorg';
   /** milestone：対象の義務、event：イベントのID */
   ruleIds: string[];
   eventId: string | null;
   /** 本文への差し込み */
   vars: Record<string, string | number>;
+  /** イベントの対象者（いれば） */
+  targetId?: string | null;
+};
+
+/** 判断の記録（社史レポートと人事スタイル診断に使う） */
+export type DecisionRecord = {
+  month: number;
+  eventId: string;
+  choiceIndex: number;
+  targetId: string | null;
+  axes: AxisMarks;
+  /** 人事スタイル診断の軸の印 */
+  diagnosis: DiagnosisMarks;
+  /** 自動で選んだか */
+  auto: boolean;
+};
+
+/** 節目の問いかけ（§2.2「人事として今何を大事にしたいか」）への答え */
+export type Reflection = { month: number; text: string };
+
+/** 従業員の声の種類：ふだんの声／退職のあいさつ／休職からの復帰／出向からの帰任 */
+export type VoiceKind = 'voice' | 'farewell' | 'return' | 'secondment' | 'retirement';
+export type VoiceTone = 'negative' | 'neutral' | 'positive';
+
+/** 従業員の声（メイン画面のフィードと、社史レポートの「従業員の声」に使う） */
+export type VoiceRecord = {
+  month: number;
+  employeeId: string;
+  name: string;
+  role: RoleId;
+  kind: VoiceKind;
+  tone: VoiceTone;
+  /** どの要因についての声か（ふだんの声のとき） */
+  factor: EngagementFactor | null;
+  text: string;
+};
+
+// ---------------------------------------------------------------------------
+// 個別制度（§14.1。`src/data/programs.json`）
+// ---------------------------------------------------------------------------
+
+export type ProgramId = string;
+
+/** 個別制度の常時の効果：条件に合う社員の、納得感の要因の点数を上げる */
+export type ProgramBonus = {
+  factor: EngagementFactor;
+  points: Sourced<number>;
+  /** 対象の条件（省略すると全員） */
+  where?: EmployeeCondition[];
+};
+
+export type ProgramDef = {
+  id: ProgramId;
+  name: string;
+  /** 何をする制度か（画面に出す） */
+  summary: string;
+  /** 維持費（社員1人あたり・月） */
+  costPerEmployeeMonthly: Sourced<number>;
+  bonuses: ProgramBonus[];
+  /** 止めたときの納得感の目標値の下がり方（点）と期間（月） */
+  stopMorale: Sourced<number>;
+  stopMoraleMonths: Sourced<number>;
+};
+
+/** 整えている個別制度 */
+export type ProgramState = { id: ProgramId; since: number };
+
+/** 個別制度の記録（整えた・止めた。社史と画面に使う） */
+export type ProgramLogEntry = { month: number; id: ProgramId; action: 'install' | 'stop' };
+
+/** 個別制度があったので、判断待ちにならずに軽く済んだ出来事 */
+export type MitigationRecord = {
+  month: number;
+  eventId: string;
+  programId: ProgramId;
+  targetId: string | null;
+  vars: Record<string, string | number>;
+};
+
+/** 予約された続きのイベント */
+export type ScheduledEvent = {
+  eventId: string;
+  dueMonth: number;
+  probability: number;
+  targetId: string | null;
 };
 
 /** 一時的な効果（期限つき） */
-export type TemporaryModifier = { type: 'hiringAttraction'; mult: number; untilMonth: number };
+export type TemporaryModifier = {
+  type: 'hiringAttraction' | 'hiringIntensity' | 'demand' | 'morale' | 'hiringHeadroom';
+  /** 倍率（morale のときは点数、hiringHeadroom のときは足す割合） */
+  mult: number;
+  untilMonth: number;
+};
 
-/** 自動で進めるときの判断の方針（画面のない simulate.ts と、プレイヤーが任せた場合） */
-export type AutoPlay = { legal: LegalResponse };
+/**
+ * 自動で進めるときの判断の方針（画面のない simulate.ts と、プレイヤーが任せた場合）。
+ * legal は法令の節目と法令のイベント、style はそれ以外のイベント（省略すると無作為に近い選び方）
+ */
+export type AutoPlay = { legal: LegalResponse; style?: JudgmentStyle };
 
 /** 進行中か、どの終了条件で終わったか（§2.3） */
 export type CompanyStatus = 'running' | 'matured' | 'timeout' | 'bankrupt';
@@ -609,12 +1016,31 @@ export type CompanyState = {
   legal: LegalState;
   pendingDecisions: PendingDecision[];
   modifiers: TemporaryModifier[];
+  /** イベントで選んだ選択肢の記録 */
+  decisions: DecisionRecord[];
+  /** 予約された続きのイベント */
+  scheduledEvents: ScheduledEvent[];
+  /** 節目の問いかけへの答え */
+  reflections: Reflection[];
+  /** 従業員の声 */
+  voices: VoiceRecord[];
   /** 自動で判断する方針。null なら判断待ちで止まる（画面で選ぶ） */
   autoPlay: AutoPlay | null;
   /** 次に採番する判断待ちの番号 */
   nextDecisionId: number;
   /** その月の記録ができる前に払った臨時の支出（次にできる記録に載せる） */
   unrecordedExtraordinaryCost: number;
+  /** その月の記録ができる前に入った資金調達（次にできる記録に載せる。古い状態には無い） */
+  unrecordedFunding?: number;
+  /** 組織の形（§14.4） */
+  organization: OrganizationState;
+  /** ゲームの長さ（月）。ここまで来ると終わる（§2.3。会社の生成の画面で10〜25年から選ぶ） */
+  maxMonths: number;
+  /** 整えている個別制度（§14.1） */
+  programs: ProgramState[];
+  programLog: ProgramLogEntry[];
+  /** 個別制度があったので軽く済んだ出来事 */
+  mitigations: MitigationRecord[];
   rng: RngStreamsState;
 };
 
@@ -629,4 +1055,6 @@ export type SaveData = {
   version: typeof SAVE_VERSION;
   savedAt: string;
   company: CompanyState;
+  /** 画面の側で一緒に残したいもの（フィードなど）。エンジンは中身を見ない */
+  ui?: Record<string, unknown>;
 };

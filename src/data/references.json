@@ -21,6 +21,67 @@
         "basis": "statistic",
         "source": "賃金構造基本統計調査 令和7年 産業中分類 卸売業 企業規模計 超過実労働時間数 8時間"
       }
+    },
+    "restaurant": {
+      "attritionRate": {
+        "value": 0.215,
+        "unit": "年率",
+        "basis": "statistic",
+        "source": "雇用動向調査 令和7年（厚生労働省）表4-2 宿泊業，飲食サービス業 一般労働者の離職率 21.5%",
+        "note": "パート（25.0%）を含めた全体では23.7%"
+      },
+      "laborCostRatio": {
+        "value": 0.3,
+        "unit": "比",
+        "basis": "assumption",
+        "source": "飲食の売上高人件費率は3割前後とされる。TODO: 要確認（法人企業統計）"
+      },
+      "overtimeHours": {
+        "value": 13,
+        "unit": "時間/月",
+        "basis": "statistic",
+        "source": "賃金構造基本統計調査 令和7年（厚生労働省） 産業中分類 M76 飲食店 企業規模計 超過実労働時間数 13時間"
+      }
+    },
+    "saas": {
+      "attritionRate": {
+        "value": 0.1,
+        "unit": "年率",
+        "basis": "statistic",
+        "source": "雇用動向調査 令和7年（厚生労働省）表4-2 情報通信業 一般労働者の離職率 10.0%"
+      },
+      "laborCostRatio": {
+        "value": 0.45,
+        "unit": "比",
+        "basis": "assumption",
+        "source": "SaaS・情報サービス業は人件費が最大のコスト。TODO: 要確認（法人企業統計の情報サービス業）"
+      },
+      "overtimeHours": {
+        "value": 11,
+        "unit": "時間/月",
+        "basis": "statistic",
+        "source": "賃金構造基本統計調査 令和7年（厚生労働省） 産業中分類 G39 情報サービス業 企業規模計 超過実労働時間数 11時間"
+      }
+    },
+    "manufacturing": {
+      "attritionRate": {
+        "value": 0.092,
+        "unit": "年率",
+        "basis": "statistic",
+        "source": "雇用動向調査 令和7年（厚生労働省）表4-2 製造業 一般労働者の離職率 9.2%"
+      },
+      "laborCostRatio": {
+        "value": 0.15,
+        "unit": "比",
+        "basis": "assumption",
+        "source": "製造業の売上高人件費率は1割台とされる。TODO: 要確認（法人企業統計）"
+      },
+      "overtimeHours": {
+        "value": 13,
+        "unit": "時間/月",
+        "basis": "statistic",
+        "source": "賃金構造基本統計調査 令和7年（厚生労働省） 産業大分類 E 製造業 企業規模計 超過実労働時間数 13時間"
+      }
     }
   },
   "attritionReasons": {

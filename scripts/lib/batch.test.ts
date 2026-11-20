@@ -33,6 +33,38 @@ describe('大量シミュレーションの部品', () => {
     expect(csv[1]?.split(',').length).toBe(csv[0]?.split(',').length);
   });
 
+  it('途中で制度を変える会社の割合を指定でき、会社と制度の抽選は変わらない', () => {
+    const without = makeJobs('trading', 200, 5);
+    const withChanges = makeJobs('trading', 200, 5, 0.3);
+    expect(without.every((j) => !j.change)).toBe(true);
+    const n = withChanges.filter((j) => j.change).length;
+    expect(n).toBeGreaterThan(40);
+    expect(n).toBeLessThan(80);
+    expect(withChanges.map(({ change: _, ...rest }) => rest)).toEqual(without);
+    for (const j of withChanges) {
+      if (!j.change) continue;
+      expect(j.change.option).not.toBe(j.policies[j.change.category]);
+      expect(j.change.month).toBeGreaterThanOrEqual(24);
+    }
+  });
+
+  it('就業規則の変更で給与を下げると紛争の種が残り、訴えのイベントが起きうる', () => {
+    const [base] = makeJobs('trading', 1, 3);
+    if (!base) throw new Error('job がありません');
+    // 一律の賞与から賞与なしへ：全員の賞与が下がる不利益変更
+    const job = {
+      ...base,
+      policies: { ...base.policies, bonus: 'fixed_months' as const },
+      change: { month: 24, category: 'bonus' as const, option: 'none', method: 'rules' as const, transition: false },
+    };
+    const r = runJob(job);
+    expect(r.summary.policyChanges).toBe(1);
+    expect(r.summary.disputeSeeds).toBe(1);
+    const consent = runJob({ ...job, change: { ...job.change, method: 'consent' as const } });
+    expect(consent.summary.disputeSeeds).toBe(0);
+    expect(consent.summary.eventCounts.dispute_claim ?? 0).toBe(0);
+  });
+
   it('quantile は並べた位置の値を補間する', () => {
     expect(quantile([1, 2, 3, 4, 5], 0.5)).toBe(3);
     expect(quantile([0, 10], 0.1)).toBeCloseTo(1);

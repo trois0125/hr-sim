@@ -35,7 +35,8 @@ describe('periodMetrics', () => {
 
 describe('summarizeRun', () => {
   it('1社の結果をまとめられ、退職理由の割合の合計は1', () => {
-    const end = runToEnd(generateCompany({ seed: 4, industryId: 'trading', foundingPatternId: 'carveout' }), 132);
+    // 132か月（11年）倒産せずに続く会社（シードは残業の決め方を変えたステップ18で選び直した）
+    const end = runToEnd(generateCompany({ seed: 1, industryId: 'trading', foundingPatternId: 'carveout' }), 132);
     const s = summarizeRun(end);
     expect(s.months).toBe(132);
     expect(s.early?.months).toBe(60);

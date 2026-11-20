@@ -87,6 +87,20 @@ describe('採用の結果', () => {
     expect(totalHires({ intensity: 0 })).toBe(0);
   });
 
+  it('採用の強さを上げると、1人あたりの採用費も上がる', () => {
+    const perHire = (intensity: number) => {
+      let cost = 0;
+      let hires = 0;
+      for (let s = 1; s <= 200; s++) {
+        const r = runHiring(input({ rng: createRng(s), intensity }));
+        cost += r.cost;
+        hires += r.hires.length;
+      }
+      return cost / hires;
+    };
+    expect(perHire(1.5)).toBeGreaterThan(perHire(1) * 1.3);
+  });
+
   it('採用が難しい地域では、採用できる人数が減る（報酬はどちらも地域の相場どおり）', () => {
     const kochi = getLocation('kochi');
     const kochiTeam = team.map((e) => marketPaid(e, kochi));

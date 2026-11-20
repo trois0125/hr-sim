@@ -1,0 +1,84 @@
+[
+  {
+    "id": "work_life_support",
+    "name": "両立支援（介護・育児）",
+    "summary": "介護・育児と仕事を両立するための勤務の配慮（時短・在宅・休暇の上乗せ）と相談窓口。介護や育児休業の出来事が軽く済み、長く働き続けられる安心感が出る。",
+    "costPerEmployeeMonthly": {
+      "value": 800,
+      "unit": "円/人・月",
+      "basis": "assumption",
+      "source": "仮置き。相談窓口の委託費と、時短・在宅で業務を回すための手間を社員1人あたりに均したもの。TODO: 要確認（両立支援の制度の費用の調査）"
+    },
+    "bonuses": [
+      {
+        "factor": "stability",
+        "points": { "value": 3, "unit": "点", "basis": "assumption", "source": "仮置き。両立できる見通しがあることで、長く勤められる安心感が上がる" },
+        "where": [{ "field": "employmentType", "op": "==", "value": "full" }]
+      }
+    ],
+    "stopMorale": { "value": 3, "unit": "点", "basis": "assumption", "source": "仮置き。使っていた制度がなくなる不満" },
+    "stopMoraleMonths": { "value": 6, "unit": "か月", "basis": "assumption", "source": "仮置き" }
+  },
+  {
+    "id": "specialist_track",
+    "name": "専門職コース（複線型）",
+    "summary": "管理職にならなくても、専門性で処遇が上がる道。昇格を断られる出来事が軽く済み、実力のある社員の成長の機会が増える。等級の設計と運用の手間がかかる。",
+    "costPerEmployeeMonthly": {
+      "value": 1500,
+      "unit": "円/人・月",
+      "basis": "assumption",
+      "source": "仮置き。専門職の処遇の上乗せと、等級の設計・運用の手間を社員1人あたりに均したもの。TODO: 要確認"
+    },
+    "bonuses": [
+      {
+        "factor": "growthOpportunity",
+        "points": { "value": 6, "unit": "点", "basis": "assumption", "source": "仮置き。管理職以外にも上がる道が見えることによる" },
+        "where": [
+          { "field": "roleKind", "op": "==", "value": "revenue" },
+          { "field": "employmentType", "op": "==", "value": "full" },
+          { "field": "ability", "op": ">=", "value": 60 }
+        ]
+      }
+    ],
+    "stopMorale": { "value": 4, "unit": "点", "basis": "assumption", "source": "仮置き。上がる道を閉ざされる不満" },
+    "stopMoraleMonths": { "value": 12, "unit": "か月", "basis": "assumption", "source": "仮置き" }
+  },
+  {
+    "id": "one_on_one",
+    "name": "1on1・メンター",
+    "summary": "上司との定期的な面談と、新しく入った人へのメンター。管理職の時間がかかるが、評価への納得や早めの相談が増え、新卒のミスマッチやエースの退職の出来事が軽く済む。",
+    "costPerEmployeeMonthly": {
+      "value": 2000,
+      "unit": "円/人・月",
+      "basis": "assumption",
+      "source": "仮置き。月30分の面談に使う上司と本人の時間を、時間あたりの人件費で見積もったもの。TODO: 要確認"
+    },
+    "bonuses": [
+      {
+        "factor": "evaluation",
+        "points": { "value": 3, "unit": "点", "basis": "assumption", "source": "仮置き。日ごろの対話で、評価の理由が伝わりやすくなる" }
+      }
+    ],
+    "stopMorale": { "value": 2, "unit": "点", "basis": "assumption", "source": "仮置き" },
+    "stopMoraleMonths": { "value": 6, "unit": "か月", "basis": "assumption", "source": "仮置き" }
+  },
+  {
+    "id": "consultation_desk",
+    "name": "相談窓口（メンタル・ハラスメント）",
+    "summary": "社外の相談窓口（EAP）と産業医の面談の案内。メンタル不調やハラスメントの出来事が早めに見つかって軽く済み、困ったときに相談できる安心感が出る。",
+    "costPerEmployeeMonthly": {
+      "value": 500,
+      "unit": "円/人・月",
+      "basis": "assumption",
+      "source": "仮置き。社外の相談窓口（EAP）の委託費は社員1人あたり月数百円の例が多い。TODO: 要確認"
+    },
+    "bonuses": [
+      {
+        "factor": "workload",
+        "points": { "value": 2, "unit": "点", "basis": "assumption", "source": "仮置き。負荷が高いときに相談できる先があることによる" }
+      }
+    ],
+    "stopMorale": { "value": 2, "unit": "点", "basis": "assumption", "source": "仮置き" },
+    "stopMoraleMonths": { "value": 6, "unit": "か月", "basis": "assumption", "source": "仮置き" }
+  }
+]

@@ -12,6 +12,7 @@
 ## コーディングのルール
 - `src/engine/` はReactや画面に依存させない。UIなしで `scripts/simulate.ts` から最後まで回せること。
 - 数値をコードに直接書かない。すべて `src/data/coefficients.json` か業種データに置き、`basis`（statistic / research / assumption）と `source` を付ける。
+  - 例外：イベント（`src/data/events.json`）の選択肢の効果の数値（納得感の点数、費用、確率など）はゲームの演出として扱い、events.json に直接書いて根拠は付けない。イベントの仕組みの数値（発生の頻度、休職の期間と復帰率など）は係数台帳に置く。
 - 乱数は必ず `src/engine/rng.ts` のシード付き乱数を使う。`Math.random()` は使わない。
 - エンジンの関数には Vitest のテストを書く。特に「制度を変えると結果がどちらの方向に動くか」をテストで確かめる。
 - 画面の文言は日本語。`src/ui/strings.ts` にまとめる。

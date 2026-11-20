@@ -22,8 +22,10 @@ import type {
   LocationData,
   MonthlyRecord,
   PolicySet,
+  ProgramState,
   Values,
 } from './types';
+import { programBonusFor } from './programs';
 import { ENGAGEMENT_FACTORS, MONTHS_PER_YEAR } from './types';
 
 /** 中立の点数 */
@@ -251,6 +253,10 @@ export type EngagementContext = {
   resistance?: number;
   /** 違反の状態にある義務の数（会社のルールが守られていない不安として「雇用の安定」を下げる） */
   violations?: number;
+  /** 整えている個別制度（§14.1。条件に合う人の要因が上がる） */
+  programs?: readonly ProgramState[];
+  /** 組織の形による、全員の要因への上乗せ（§14.4） */
+  orgBonus?: Partial<Record<EngagementFactor, number>>;
 };
 
 /** 会社の状況から決まる要因（全員共通） */
@@ -281,18 +287,25 @@ export function computeFactorScores(employees: readonly Employee[], ctx: Engagem
   const fairnessBonus = policyEffect('evaluation', ctx.policies.evaluation, 'fairness_bonus');
   const workBonus = workloadBonus(ctx.policies);
   const out = new Map<string, FactorScores>();
+  const programs = ctx.programs ?? [];
   for (const e of employees) {
     const market = marketSalaryFor(ctx.industry, ctx.location, e.role, e.age, e.employmentType);
+    const p: Partial<Record<EngagementFactor, number>> = { ...(ctx.orgBonus ?? {}) };
+    if (programs.length > 0) {
+      for (const [f, v] of Object.entries(programBonusFor(e, programs, ctx.industry))) {
+        p[f as EngagementFactor] = (p[f as EngagementFactor] ?? 0) + (v ?? 0);
+      }
+    }
     out.set(e.id, {
-      externalPay: externalPayScore(
-        monthlyCompensation(e, ctx.policies),
-        marketCompensation(market, e.employmentType, ctx.industry),
+      externalPay: score(
+        externalPayScore(monthlyCompensation(e, ctx.policies), marketCompensation(market, e.employmentType, ctx.industry)) +
+          (p.externalPay ?? 0),
       ),
-      internalFairness: fairness.get(e.id) ?? NEUTRAL,
-      evaluation: score(evaluationScore(e.perceivedPerformance, e.ability) + fairnessBonus),
-      workload: score(workloadScore(e.overtimeHours) + workBonus),
-      growthOpportunity: company.growthOpportunity,
-      stability: company.stability,
+      internalFairness: score((fairness.get(e.id) ?? NEUTRAL) + (p.internalFairness ?? 0)),
+      evaluation: score(evaluationScore(e.perceivedPerformance, e.ability) + fairnessBonus + (p.evaluation ?? 0)),
+      workload: score(workloadScore(e.overtimeHours) + workBonus + (p.workload ?? 0)),
+      growthOpportunity: score(company.growthOpportunity + (p.growthOpportunity ?? 0)),
+      stability: score(company.stability + (p.stability ?? 0)),
     });
   }
   return out;
@@ -305,7 +318,7 @@ export function updateEngagement(employees: Employee[], ctx: EngagementContext):
   const resistance = ctx.resistance ?? 0;
   for (const e of employees) {
     const s = scores.get(e.id);
-    if (!s) continue;
+    if (!s || e.leave) continue; // 休職中の人の納得感は動かさない
     e.factorScores = s;
     const target = targetEngagement(s, e.values) - resistance * resistanceSensitivity(e.values);
     e.engagement = score(e.engagement + rate * (target - e.engagement));

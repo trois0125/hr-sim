@@ -80,8 +80,9 @@ export function raisedSalary(
   policies: PolicySet,
   percentile: number,
   market: number,
+  industry?: Pick<IndustryData, 'salaryCurve'>,
 ): number {
-  const ageCurve = ageSalaryFactor(e.age + 1) / ageSalaryFactor(e.age);
+  const ageCurve = ageSalaryFactor(e.age + 1, industry) / ageSalaryFactor(e.age, industry);
   switch (policies.pay) {
     case 'seniority':
       return e.salaryMonthly * ageCurve * (1 + coef('policy.pay.seniority.extra_raise'));
@@ -117,9 +118,9 @@ export function applyRaises(
     }
     if (e.affiliation === 'secondee') {
       // 出向者の給与は親会社の制度で決まる（年齢カーブに沿って上がる）
-      e.salaryMonthly *= ageSalaryFactor(e.age + 1) / ageSalaryFactor(e.age);
+      e.salaryMonthly *= ageSalaryFactor(e.age + 1, ctx.industry) / ageSalaryFactor(e.age, ctx.industry);
     } else {
-      e.salaryMonthly = raisedSalary(e, ctx.policies, pct.get(e.id) ?? MIDDLE, market);
+      e.salaryMonthly = raisedSalary(e, ctx.policies, pct.get(e.id) ?? MIDDLE, market, ctx.industry);
     }
     e.salaryMonthly = Math.max(Math.round(e.salaryMonthly / unit) * unit, minimumMonthlyWage(ctx.location));
   }

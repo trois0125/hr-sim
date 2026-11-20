@@ -1,0 +1,369 @@
+{
+  "id": "manufacturing",
+  "name": "製造業",
+  "selectionWeight": {
+    "value": 1.0,
+    "unit": "重み",
+    "basis": "assumption",
+    "source": "仮置き。4業種を同じ重みで抽選する"
+  },
+  "companyNameSuffixes": [
+    "製作所",
+    "工業",
+    "精機",
+    "製造",
+    "工業所"
+  ],
+  "roles": [
+    {
+      "id": "production",
+      "name": "製造",
+      "kind": "revenue",
+      "partTimeAllowed": true,
+      "marketSalaryMonthly": {
+        "value": 225000,
+        "unit": "円/月（20歳）",
+        "basis": "statistic",
+        "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 企業規模計（10人以上）、年齢階級別所定内給与額及び年間賞与その他特別給与額（e-Stat 統計表ID 000040420843「Ｅ製造業」）。20〜59歳の年齢階級に当てはめた20歳の値（225.4千円）"
+      },
+      "productivityMonthly": {
+        "value": 3500000,
+        "unit": "円/月",
+        "basis": "assumption",
+        "source": "仮置き。製造の社員1人あたりの月の出荷額。製造業の1人あたり付加価値（年1,000万円前後）と粗利率から逆算した。TODO: 要確認（経済構造実態調査）"
+      },
+      "hiringDifficulty": {
+        "value": 1.1,
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。採用難度（1.0が標準）"
+      },
+      "mixWeightRange": {
+        "value": {
+          "min": 0.65,
+          "max": 0.75
+        },
+        "unit": "重み",
+        "basis": "assumption",
+        "source": "仮置き。職種構成の重み"
+      }
+    },
+    {
+      "id": "office",
+      "name": "事務・品質管理",
+      "kind": "admin",
+      "partTimeAllowed": true,
+      "marketSalaryMonthly": {
+        "value": 214000,
+        "unit": "円/月（20歳）",
+        "basis": "assumption",
+        "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 企業規模計（10人以上）、年齢階級別所定内給与額及び年間賞与その他特別給与額（e-Stat 統計表ID 000040420843「Ｅ製造業」）。20歳の値の0.95倍。TODO: 要確認"
+      },
+      "productivityMonthly": {
+        "value": 0,
+        "unit": "円/月",
+        "basis": "assumption",
+        "source": "売上を生まない職種"
+      },
+      "hiringDifficulty": {
+        "value": 0.9,
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。採用難度（1.0が標準）"
+      },
+      "mixWeightRange": {
+        "value": {
+          "min": 0.12,
+          "max": 0.18
+        },
+        "unit": "重み",
+        "basis": "assumption",
+        "source": "仮置き。職種構成の重み"
+      }
+    },
+    {
+      "id": "supervisor",
+      "name": "現場監督・管理職",
+      "kind": "management",
+      "partTimeAllowed": false,
+      "marketSalaryMonthly": {
+        "value": 248000,
+        "unit": "円/月（20歳）",
+        "basis": "assumption",
+        "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 企業規模計（10人以上）、年齢階級別所定内給与額及び年間賞与その他特別給与額（e-Stat 統計表ID 000040420843「Ｅ製造業」）。20歳の値の1.1倍。TODO: 要確認"
+      },
+      "productivityMonthly": {
+        "value": 0,
+        "unit": "円/月",
+        "basis": "assumption",
+        "source": "売上を生まない職種"
+      },
+      "hiringDifficulty": {
+        "value": 1.3,
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。採用難度（1.0が標準）"
+      },
+      "mixWeightRange": {
+        "value": {
+          "min": 0.07,
+          "max": 0.1
+        },
+        "unit": "重み",
+        "basis": "assumption",
+        "source": "仮置き。職種構成の重み"
+      }
+    }
+  ],
+  "partTimeRatioRange": {
+    "value": {
+      "min": 0.05,
+      "max": 0.2
+    },
+    "unit": "比",
+    "basis": "statistic",
+    "source": "雇用動向調査 令和7年（厚生労働省）付属統計表2-1 1月1日現在の常用労働者数：製造業 パートタイム労働者 1,011.4千人 ÷ 計 7,631.6千人 ＝ 13.3% を中心にした範囲"
+  },
+  "baseAttritionRate": {
+    "value": 0.092,
+    "unit": "年率",
+    "basis": "statistic",
+    "source": "雇用動向調査 令和7年（厚生労働省）表4-2 産業、就業形態別入職率・離職率 製造業 一般労働者の離職率 9.2%"
+  },
+  "partTimeAttritionMult": {
+    "value": 1.54,
+    "unit": "倍",
+    "basis": "statistic",
+    "source": "雇用動向調査 令和7年（厚生労働省）表4-2 産業、就業形態別入職率・離職率 製造業 パートタイム労働者 14.2% ÷ 一般労働者 9.2% ＝ 1.54"
+  },
+  "marketBonusMonths": {
+    "value": 3.4,
+    "unit": "か月分",
+    "basis": "statistic",
+    "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 企業規模計（10人以上）、年齢階級別所定内給与額及び年間賞与その他特別給与額（e-Stat 統計表ID 000040420843「Ｅ製造業」）。年間賞与その他特別給与額 1,137.9千円 ÷ 所定内給与額 330.0千円 ＝ 3.45か月"
+  },
+  "salaryCurve": {
+    "ageSlope": {
+      "value": 0.0224,
+      "unit": "比/歳",
+      "basis": "statistic",
+      "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 企業規模計（10人以上）、年齢階級別所定内給与額及び年間賞与その他特別給与額（e-Stat 統計表ID 000040420843「Ｅ製造業」）。20〜59歳の年齢階級（平均年齢）に「20歳の値×(1＋傾き×(年齢−20))」を最小二乗で当てはめた傾き"
+    },
+    "agePeak": {
+      "value": 57,
+      "unit": "歳",
+      "basis": "statistic",
+      "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 企業規模計（10人以上）、年齢階級別所定内給与額及び年間賞与その他特別給与額（e-Stat 統計表ID 000040420843「Ｅ製造業」）。55〜59歳（平均57.4歳）が最も高い"
+    },
+    "post60Ratio": {
+      "value": 0.74,
+      "unit": "比",
+      "basis": "statistic",
+      "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 企業規模計（10人以上）、年齢階級別所定内給与額及び年間賞与その他特別給与額（e-Stat 統計表ID 000040420843「Ｅ製造業」）。60〜64歳 304.0千円 ÷ 当てはめた曲線の57歳の値 412.2千円"
+    }
+  },
+  "ageMean": {
+    "value": 44,
+    "unit": "歳",
+    "basis": "statistic",
+    "source": "賃金構造基本統計調査 令和7年（厚生労働省）一般労働者 企業規模計（10人以上）、年齢階級別所定内給与額及び年間賞与その他特別給与額（e-Stat 統計表ID 000040420843「Ｅ製造業」）。男女計学歴計の平均年齢 44.1歳"
+  },
+  "experienceElasticity": {
+    "value": 1.3,
+    "unit": "乗",
+    "basis": "assumption",
+    "source": "仮置き。製造業は熟練が生産性に強く効く（共通の値 0.7 より大きい。賃金カーブ以上に伸びる）"
+  },
+  "grossMarginRange": {
+    "value": {
+      "min": 0.22,
+      "max": 0.36
+    },
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。売上から材料費などを引いた割合（付加価値率に近い）。TODO: 要確認（法人企業統計・経済構造実態調査）"
+  },
+  "revenuePerEmployeeRange": {
+    "value": {
+      "min": 15000000,
+      "max": 50000000
+    },
+    "unit": "円/年",
+    "basis": "assumption",
+    "source": "仮置き。TODO: 要確認（経済構造実態調査）"
+  },
+  "laborCostRatioTypical": {
+    "value": 0.15,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き。製造業の売上高人件費率は1割台とされる。TODO: 要確認（法人企業統計）"
+  },
+  "growthCurve": {
+    "growthMonths": {
+      "value": 240,
+      "unit": "月",
+      "basis": "assumption",
+      "source": "仮置き。設備が要るので伸びはゆっくり"
+    },
+    "capHeadcount": {
+      "value": 700,
+      "unit": "人",
+      "basis": "assumption",
+      "source": "仮置き。成熟ライン500人より少し上"
+    }
+  },
+  "cyclicality": {
+    "value": 1.1,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。製造業は景気の影響が大きい"
+  },
+  "maturityHeadcount": {
+    "value": 500,
+    "unit": "人",
+    "basis": "assumption",
+    "source": "仮置き"
+  },
+  "remoteAllowed": [
+    "office"
+  ],
+  "adminPerRevenueStaff": {
+    "value": 0.2,
+    "unit": "人/人",
+    "basis": "assumption",
+    "source": "仮置き。事務・品質管理は製造5人に1人"
+  },
+  "managementSpan": {
+    "value": 10,
+    "unit": "人",
+    "basis": "assumption",
+    "source": "仮置き。現場監督1人が見られる人数"
+  },
+  "marketPotentialRange": {
+    "value": {
+      "min": 0.6,
+      "max": 1.3
+    },
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き"
+  },
+  "specialEvents": [
+    "manufacturing_skill_succession",
+    "manufacturing_work_accident"
+  ],
+  "variants": [
+    {
+      "id": "food",
+      "name": "食品",
+      "productivityMultiplier": {
+        "value": 0.8,
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。生活必需品で景気の影響は小さいが、利益率は低め"
+      },
+      "grossMarginRange": {
+        "value": {
+          "min": 0.25,
+          "max": 0.35
+        },
+        "unit": "比",
+        "basis": "assumption",
+        "source": "仮置き。生活必需品で景気の影響は小さいが、利益率は低め。TODO: 要確認（法人企業統計）"
+      },
+      "cyclicalityRange": {
+        "value": {
+          "min": 0.4,
+          "max": 0.7
+        },
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。生活必需品で景気の影響は小さいが、利益率は低め"
+      }
+    },
+    {
+      "id": "metal_parts",
+      "name": "金属部品",
+      "productivityMultiplier": {
+        "value": 1.0,
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。自動車・機械向けで景気に左右される"
+      },
+      "grossMarginRange": {
+        "value": {
+          "min": 0.22,
+          "max": 0.32
+        },
+        "unit": "比",
+        "basis": "assumption",
+        "source": "仮置き。自動車・機械向けで景気に左右される。TODO: 要確認（法人企業統計）"
+      },
+      "cyclicalityRange": {
+        "value": {
+          "min": 1.1,
+          "max": 1.5
+        },
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。自動車・機械向けで景気に左右される"
+      }
+    },
+    {
+      "id": "electronics",
+      "name": "電子部品",
+      "productivityMultiplier": {
+        "value": 1.2,
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。需要の波が大きい"
+      },
+      "grossMarginRange": {
+        "value": {
+          "min": 0.24,
+          "max": 0.36
+        },
+        "unit": "比",
+        "basis": "assumption",
+        "source": "仮置き。需要の波が大きい。TODO: 要確認（法人企業統計）"
+      },
+      "cyclicalityRange": {
+        "value": {
+          "min": 1.2,
+          "max": 1.6
+        },
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。需要の波が大きい"
+      }
+    },
+    {
+      "id": "chemicals",
+      "name": "化学",
+      "productivityMultiplier": {
+        "value": 1.1,
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。装置産業で1人あたりの出荷額が大きい"
+      },
+      "grossMarginRange": {
+        "value": {
+          "min": 0.26,
+          "max": 0.36
+        },
+        "unit": "比",
+        "basis": "assumption",
+        "source": "仮置き。装置産業で1人あたりの出荷額が大きい。TODO: 要確認（法人企業統計）"
+      },
+      "cyclicalityRange": {
+        "value": {
+          "min": 0.8,
+          "max": 1.2
+        },
+        "unit": "倍",
+        "basis": "assumption",
+        "source": "仮置き。装置産業で1人あたりの出荷額が大きい"
+      }
+    }
+  ]
+}
