@@ -19,9 +19,12 @@ import {
 } from '../../report/history';
 import {
   buildRetrospective,
+  changeLessons,
   RETRO_METRICS,
   type Arrow,
   type ChangeItem,
+  type LessonSource,
+  type Movement,
   type RetroCard,
   type RetroMetric,
   type WindowStats,
@@ -30,7 +33,7 @@ import { getProgram } from '../../engine/programs';
 import { economyLabel } from '../parts/Dashboard';
 import { optionName } from '../../store/game';
 import { actions, useGame } from '../useGame';
-import { endStrings, factorNames, orgStrings, policyStrings, reasonNames, reportStrings as t, statusNames } from '../strings';
+import { endStrings, orgStrings, policyStrings, reasonNames, reportStrings as t, statusNames } from '../strings';
 import { dateLabel, pct, yen } from '../format';
 
 const INK = '#1e2b45';
@@ -130,8 +133,38 @@ function ArrowMark({ a }: { a: Arrow | null }) {
   );
 }
 
+/** 前と1年後の動きを文にする（ほとんど変わらない・少し・大きく） */
+function moveText(
+  m: Movement | null,
+  table: { flat: string; up: (size: string) => string; down: (size: string) => string },
+): string {
+  if (!m) return '';
+  if (m.dir === 'flat') return table.flat;
+  return table[m.dir](t.retroSize[m.size]);
+}
+
+/** 何が起きたか：納得感とその理由、お金（§14.7 遊んでみての直し） */
+function happenedText(card: RetroCard): string[] {
+  const factors = t.retroFactors(
+    card.moves.engagement?.dir ?? 'flat',
+    card.factorUp && t.retroFactorUp[card.factorUp],
+    card.factorDown && t.retroFactorDown[card.factorDown],
+  );
+  return [
+    moveText(card.moves.engagement, t.retroEngagement) + factors,
+    moveText(card.moves.operatingProfit, t.retroProfit) + moveText(card.moves.laborCostRatio, t.retroLaborWeight),
+  ].filter((x) => x.length > 0);
+}
+
+function lessonText(l: LessonSource): string {
+  if (l.kind === 'text') return l.text;
+  if (l.kind === 'programStop') return t.retroProgramStop(getProgram(l.programId).name);
+  return t.retroReorg(orgStrings.forms[l.to], orgStrings.formNotes[l.to]);
+}
+
 function RetroCardView({ card, industryId, roleName }: { card: RetroCard; industryId: IndustryId; roleName: (id: string) => string }) {
   const reason = (r: WindowStats['topReason']) => (r ? reasonNames[r] : null);
+  const lessons = changeLessons(card.group.items, industryId);
   return (
     <li className="retro-card">
       <h3 className="retro-title">
@@ -142,53 +175,15 @@ function RetroCardView({ card, industryId, roleName }: { card: RetroCard; indust
         </span>{' '}
         {retroTitle(card, industryId)}
       </h3>
-      <div className="table-scroll">
-        <table className="compare-table retro-table">
-          <thead>
-            <tr>
-              <th />
-              <th scope="col">{t.retroCols.before}</th>
-              <th scope="col">{t.retroCols.soon}</th>
-              <th scope="col">{t.retroCols.later}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {RETRO_METRICS.map((m) => (
-              <tr key={m}>
-                <th scope="row">{t.retroRows[m]}</th>
-                <td className="num">{metricCell(card.before, m)}</td>
-                <td className="num">
-                  {metricCell(card.soon, m)} <ArrowMark a={card.arrows[m].soon} />
-                </td>
-                <td className="num">
-                  {metricCell(card.later, m)} <ArrowMark a={card.arrows[m].later} />
-                </td>
-              </tr>
-            ))}
-            <tr>
-              <th scope="row">{t.retroRows.hires}</th>
-              <td className="num">{card.before.hires}</td>
-              <td className="num">{card.soon.hires}</td>
-              <td className="num">{card.later.hires}</td>
-            </tr>
-            <tr className="retro-context">
-              <th scope="row">{t.retroRows.economy}</th>
-              <td>{economyLabel(card.before.economy)}</td>
-              <td>{economyLabel(card.soon.economy)}</td>
-              <td>{economyLabel(card.later.economy)}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      {(card.factorUp || card.factorDown) && (
-        <p className="retro-line">
-          {t.retroFactors(card.factorUp && factorNames[card.factorUp], card.factorDown && factorNames[card.factorDown])}
+      <p className="retro-head">{t.retroHeads.happened}</p>
+      {happenedText(card).map((line, i) => (
+        <p key={i} className="retro-text">
+          {line}
         </p>
-      )}
-      <p className="retro-line">{t.retroReasons(reason(card.before.topReason), reason(card.later.topReason))}</p>
+      ))}
       {card.voices.length > 0 && (
         <>
-          <p className="retro-line retro-voices-title">{t.retroVoicesTitle}</p>
+          <p className="retro-head">{t.retroVoicesTitle}</p>
           <ul className="feed">
             {card.voices.map((v, i) => (
               <li key={i} className={`feed-voice tone-${v.tone}`}>
@@ -201,6 +196,58 @@ function RetroCardView({ card, industryId, roleName }: { card: RetroCard; indust
           </ul>
         </>
       )}
+      {lessons.length > 0 && (
+        <>
+          <p className="retro-head">{t.retroHeads.general}</p>
+          {lessons.map((l, i) => (
+            <p key={i} className="retro-text">
+              {lessonText(l)}
+            </p>
+          ))}
+        </>
+      )}
+      <details className="retro-numbers">
+        <summary>{t.retroHeads.showNumbers}</summary>
+        <div className="table-scroll">
+          <table className="compare-table retro-table">
+            <thead>
+              <tr>
+                <th />
+                <th scope="col">{t.retroCols.before}</th>
+                <th scope="col">{t.retroCols.soon}</th>
+                <th scope="col">{t.retroCols.later}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {RETRO_METRICS.map((m) => (
+                <tr key={m}>
+                  <th scope="row">{t.retroRows[m]}</th>
+                  <td className="num">{metricCell(card.before, m)}</td>
+                  <td className="num">
+                    {metricCell(card.soon, m)} <ArrowMark a={card.arrows[m].soon} />
+                  </td>
+                  <td className="num">
+                    {metricCell(card.later, m)} <ArrowMark a={card.arrows[m].later} />
+                  </td>
+                </tr>
+              ))}
+              <tr>
+                <th scope="row">{t.retroRows.hires}</th>
+                <td className="num">{card.before.hires}</td>
+                <td className="num">{card.soon.hires}</td>
+                <td className="num">{card.later.hires}</td>
+              </tr>
+              <tr className="retro-context">
+                <th scope="row">{t.retroRows.economy}</th>
+                <td>{economyLabel(card.before.economy)}</td>
+                <td>{economyLabel(card.soon.economy)}</td>
+                <td>{economyLabel(card.later.economy)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p className="retro-line">{t.retroReasons(reason(card.before.topReason), reason(card.later.topReason))}</p>
+      </details>
       <p className="slip-note">※{t.retroNote}</p>
     </li>
   );

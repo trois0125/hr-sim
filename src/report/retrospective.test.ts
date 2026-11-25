@@ -7,10 +7,13 @@ import { runToEnd } from '../engine/tick';
 import type { CompanyState, PolicySet } from '../engine/types';
 import { coef } from '../engine/coefficients';
 import { changePolicies } from '../engine/policyChange';
+import { diagnosisData } from './diagnosis';
 import {
   buildCards,
   buildRetrospective,
+  changeLessons,
   collectChanges,
+  movement,
   groupChanges,
   swingScore,
   typicalSwing,
@@ -372,5 +375,76 @@ describe('記録から計算できない値の矢印', () => {
     expect(card.arrows.laborCostRatio.soon).toBeNull();
     expect(card.arrows.laborCostRatio.later).toBeNull();
     expect(card.arrows.engagement.later).not.toBeNull();
+  });
+});
+
+describe('文章にするための動きの大きさ', () => {
+  it('ふだんの揺れと比べて、ほとんど変わらない・少し・大きくに分ける', () => {
+    const flat = coef('retrospective.flat_ratio');
+    const large = coef('retrospective.large_ratio');
+    expect(movement(10, 10 + flat * 0.9, 1)).toEqual({ dir: 'flat', size: 'flat' });
+    expect(movement(10, 10 + (flat + large) / 2, 1)).toEqual({ dir: 'up', size: 'small' });
+    expect(movement(10, 10 - large * 1.1, 1)).toEqual({ dir: 'down', size: 'large' });
+    expect(movement(null, 5, 1)).toBeNull();
+    expect(movement(5, 5, 0)).toEqual({ dir: 'flat', size: 'flat' });
+  });
+
+  it('カードには前と1年後を比べた動きが入る', () => {
+    const start = setFoundingPolicies(generateCompany({ seed: 21, industryId: 'trading' }), { ...defaultPolicies, training: '0' });
+    const base = runToEnd(start, 36);
+    const changed = runToEnd(changePolicies(base, { ...base.policies, training: '1' }), 18);
+    const card = buildCards(changed).find((x) => x.group.first === 36)!;
+    expect(card.moves.operatingProfit).toEqual(
+      movement(card.before.operatingProfit, card.later.operatingProfit, typicalSwing(changed, 'operatingProfit')),
+    );
+  });
+
+  it('要因の差が小さいときは、上がった・下がった要因に挙げない', () => {
+    const start = setFoundingPolicies(generateCompany({ seed: 21, industryId: 'trading' }), { ...defaultPolicies, training: '0' });
+    const base = runToEnd(start, 36);
+    const changed = runToEnd(changePolicies(base, { ...base.policies, training: '1' }), 18);
+    const tiny = coef('retrospective.factor_min_points') / 2;
+    for (const r of changed.history) {
+      if (!r.org?.factors) continue;
+      const after = r.month >= 42;
+      r.org.factors = { externalPay: 50, internalFairness: 50, evaluation: after ? 50 + tiny : 50, workload: after ? 50 - tiny : 50, growthOpportunity: 50, stability: 50 };
+    }
+    const card = buildCards(changed).find((x) => x.group.first === 36)!;
+    expect(card.factorUp).toBeNull();
+    expect(card.factorDown).toBeNull();
+  });
+});
+
+describe('一般的な解説の出どころ', () => {
+  const initiative = (id: string) => eventDefs.find((e) => e.id === id)!;
+
+  it('制度の変更はカテゴリごとの解説、施策と個別制度を整えたものは選択肢の学び', () => {
+    const programs = initiative('initiative_programs');
+    const install = programs.choices.find((c) => c.effects?.installProgram)!;
+    const training = initiative('initiative_training');
+    const items: ChangeItem[] = [
+      { month: 10, kind: 'policy', changes: [{ category: 'evaluation', option: 'x' }], method: null },
+      { month: 10, kind: 'initiative', eventId: training.id, choiceIndex: 1 },
+      { month: 10, kind: 'program', programId: install.effects!.installProgram!, action: 'install' },
+    ];
+    expect(changeLessons(items, 'trading')).toEqual([
+      { kind: 'text', text: diagnosisData.policyLessons.evaluation },
+      { kind: 'text', text: training.choices[1]!.lesson },
+      { kind: 'text', text: install.lesson },
+    ]);
+  });
+
+  it('個別制度を止めたもの・組織改編は、画面で文を付けるための印を返す。同じものは1つにする', () => {
+    const items: ChangeItem[] = [
+      { month: 10, kind: 'program', programId: 'p1', action: 'stop' },
+      { month: 11, kind: 'reorg', from: 'direct', to: 'functional' },
+      { month: 12, kind: 'policy', changes: [{ category: 'pay', option: 'x' }], method: null },
+      { month: 13, kind: 'policy', changes: [{ category: 'pay', option: 'y' }], method: null },
+    ];
+    expect(changeLessons(items, 'trading')).toEqual([
+      { kind: 'programStop', programId: 'p1' },
+      { kind: 'reorg', to: 'functional' },
+      { kind: 'text', text: diagnosisData.policyLessons.pay },
+    ]);
   });
 });

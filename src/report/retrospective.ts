@@ -4,13 +4,14 @@
  * 文言は画面（src/ui/strings.ts）でつける。乱数は使わない。
  */
 import { coef } from '../engine/coefficients';
-import { eventDefs } from '../engine/eventData';
+import { eventDefs, localizeEvent } from '../engine/eventData';
 import type {
   AttritionReason,
   ChangeMethod,
   CompanyState,
   EngagementFactor,
   FactorScores,
+  IndustryId,
   MonthlyRecord,
   OrgForm,
   PolicySet,
@@ -18,6 +19,7 @@ import type {
   VoiceRecord,
 } from '../engine/types';
 import { ENGAGEMENT_FACTORS, MONTHS_PER_YEAR } from '../engine/types';
+import { diagnosisData } from './diagnosis';
 import { policiesAt } from './history';
 
 // ---------------------------------------------------------------------------
@@ -188,9 +190,11 @@ export type RetroCard = {
   score: number;
   /** 前か後の値が計算できない（売上0の人件費率など）ときは null */
   arrows: Record<RetroMetric, { soon: Arrow | null; later: Arrow | null }>;
-  /** 1年後に前より最も上がった要因（上がったものがなければ null） */
+  /** 前と1年後を比べた動き（文章にする）。値が計算できなければ null */
+  moves: Record<RetroMetric, Movement | null>;
+  /** 1年後に前より最も上がった要因（差が小さければ null） */
   factorUp: EngagementFactor | null;
-  /** 1年後に前より最も下がった要因（下がったものがなければ null） */
+  /** 1年後に前より最も下がった要因（差が小さければ null） */
   factorDown: EngagementFactor | null;
   /** 不満の声と前向きな声を1つずつまで（なければふつうの声で埋める。月の順） */
   voices: VoiceRecord[];
@@ -215,14 +219,25 @@ function arrow(metric: RetroMetric, before: number | null, after: number | null,
   return { dir, tone: sign > 0 ? 'good' : sign < 0 ? 'bad' : 'neutral' };
 }
 
+export type Movement = { dir: 'up' | 'down' | 'flat'; size: 'flat' | 'small' | 'large' };
+
+/** 前と後の差を、ふだんの揺れと比べて「ほとんど変わらない・少し・大きく」に分ける。どちらかが null なら null */
+export function movement(before: number | null, after: number | null, swing: number): Movement | null {
+  if (before === null || after === null) return null;
+  const d = Math.abs(after - before);
+  if (d === 0 || d < swing * coef('retrospective.flat_ratio')) return { dir: 'flat', size: 'flat' };
+  return { dir: after > before ? 'up' : 'down', size: d >= swing * coef('retrospective.large_ratio') ? 'large' : 'small' };
+}
+
 function factorMoves(before: FactorScores | null, later: FactorScores | null) {
   if (!before || !later) return { up: null, down: null };
+  const min = coef('retrospective.factor_min_points');
   let up: EngagementFactor | null = null;
   let down: EngagementFactor | null = null;
   for (const k of ENGAGEMENT_FACTORS) {
     const d = later[k] - before[k];
-    if (d > 0 && (up === null || d > later[up] - before[up])) up = k;
-    if (d < 0 && (down === null || d < later[down] - before[down])) down = k;
+    if (d >= min && (up === null || d > later[up] - before[up])) up = k;
+    if (d <= -min && (down === null || d < later[down] - before[down])) down = k;
   }
   return { up, down };
 }
@@ -266,7 +281,9 @@ export function buildCards(state: CompanyState): RetroCard[] {
     if (!before || !soon || !later || before.months < minBefore || later.months < w) continue;
     let score = 0;
     const arrows = {} as RetroCard['arrows'];
+    const moves = {} as RetroCard['moves'];
     for (const m of RETRO_METRICS) {
+      moves[m] = movement(before[m], later[m], swings[m]);
       score = Math.max(score, swingScore(soon[m], before[m], swings[m]), swingScore(later[m], before[m], swings[m]));
       arrows[m] = { soon: arrow(m, before[m], soon[m], swings[m]), later: arrow(m, before[m], later[m], swings[m]) };
     }
@@ -278,6 +295,7 @@ export function buildCards(state: CompanyState): RetroCard[] {
       later,
       score,
       arrows,
+      moves,
       factorUp: up,
       factorDown: down,
       voices: pickCardVoices(state, group.last, group.last + 2 * w, up, down),
@@ -294,4 +312,64 @@ export function buildRetrospective(state: CompanyState): RetroCard[] {
     .sort((a, b) => b.score - a.score || a.group.first - b.group.first)
     .slice(0, coef('retrospective.max_cards'))
     .sort((a, b) => a.group.first - b.group.first);
+}
+
+// ---------------------------------------------------------------------------
+// 一般的な解説（§14.7 の「一般的には」）
+// ---------------------------------------------------------------------------
+
+/** 解説の文（データにある文）か、画面で文を付けるための印（個別制度を止めた・組織改編） */
+export type LessonSource =
+  | { kind: 'text'; text: string }
+  | { kind: 'programStop'; programId: ProgramId }
+  | { kind: 'reorg'; to: OrgForm };
+
+/** 個別制度を整える選択肢の学び（どの出来事から整えても、施策「個別制度を整える」の一言を先に使う） */
+function programLesson(programId: ProgramId, industryId: IndustryId): string | null {
+  const initiativesFirst = [...eventDefs].sort(
+    (a, b) => Number(b.trigger.type === 'initiative') - Number(a.trigger.type === 'initiative'),
+  );
+  for (const def of initiativesFirst) {
+    const choice = localizeEvent(def, industryId).choices.find((c) => c.effects?.installProgram === programId && c.lesson);
+    if (choice?.lesson) return choice.lesson;
+  }
+  return null;
+}
+
+/** まとまりの変更ごとの解説（同じものは1つにする。順は変更の順） */
+export function changeLessons(items: readonly ChangeItem[], industryId: IndustryId): LessonSource[] {
+  const out: LessonSource[] = [];
+  const seen = new Set<string>();
+  const add = (l: LessonSource) => {
+    const key = l.kind === 'text' ? l.text : l.kind === 'programStop' ? `stop:${l.programId}` : `reorg:${l.to}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(l);
+  };
+  for (const item of items) {
+    switch (item.kind) {
+      case 'policy':
+        for (const c of item.changes) add({ kind: 'text', text: diagnosisData.policyLessons[c.category] });
+        break;
+      case 'initiative': {
+        const def = eventDefs.find((e) => e.id === item.eventId);
+        const lesson = def ? localizeEvent(def, industryId).choices[item.choiceIndex]?.lesson : undefined;
+        if (lesson) add({ kind: 'text', text: lesson });
+        break;
+      }
+      case 'program': {
+        if (item.action === 'stop') {
+          add({ kind: 'programStop', programId: item.programId });
+          break;
+        }
+        const lesson = programLesson(item.programId, industryId);
+        if (lesson) add({ kind: 'text', text: lesson });
+        break;
+      }
+      case 'reorg':
+        add({ kind: 'reorg', to: item.to });
+        break;
+    }
+  }
+  return out;
 }

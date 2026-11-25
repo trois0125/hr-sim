@@ -498,8 +498,6 @@ export const reportStrings = {
   },
   retroArrows: { up: '↑', down: '↓', flat: '→' },
   retroToneLabels: { good: '良くなった', bad: '悪くなった', neutral: '' },
-  retroFactors: (up: string | null, down: string | null) =>
-    ['納得感の内訳', up && `上がった：${up}`, down && `下がった：${down}`].filter(Boolean).join('　'),
   retroReasons: (before: string | null, later: string | null) =>
     `いちばん多い退職理由：前は${before ?? 'なし'}、1年後は${later ?? 'なし'}`,
   retroVoicesTitle: 'そのあとの社員の声',
@@ -512,6 +510,51 @@ export const reportStrings = {
   },
   retroMore: (n: number) => `ほか${n}件`,
   retroRange: (from: string, to: string) => `${from}〜${to}`,
+  retroHeads: { happened: '何が起きたか', general: '一般的には', showNumbers: '数字を見る' },
+  retroSize: { flat: '', small: '少し', large: '大きく' },
+  retroEngagement: {
+    flat: '1年後、社員の納得感はほとんど変わらなかった。',
+    up: (size: string) => `1年後、社員の納得感は${size}上がった。`,
+    down: (size: string) => `1年後、社員の納得感は${size}下がった。`,
+  },
+  retroFactorUp: {
+    externalPay: '社外と比べた給与への納得が高まった',
+    internalFairness: '社内の給与の公平さへの納得が高まった',
+    evaluation: '評価への納得が高まった',
+    workload: '働く負荷への不満がやわらいだ',
+    growthOpportunity: '成長の機会への納得が高まった',
+    stability: '雇用の安定への安心が高まった',
+  },
+  retroFactorDown: {
+    externalPay: '社外と比べた給与への不満が強まった',
+    internalFairness: '社内の給与の公平さへの不満が強まった',
+    evaluation: '評価への不満が強まった',
+    workload: '働く負荷への不満が強まった',
+    growthOpportunity: '成長の機会への不満が強まった',
+    stability: '雇用の安定への不安が強まった',
+  },
+  /** 納得感の全体の動き（dir）と同じ向きの要因を先に書く。逆向きだけなら「一方で」、ほとんど変わらないなら「ただ」 */
+  retroFactors: (dir: 'up' | 'down' | 'flat', up: string | null, down: string | null) => {
+    const [same, other] = dir === 'down' ? [down, up] : [up, down];
+    if (same && other) return `${same}一方で、${other}。`;
+    if (dir === 'flat') return same || other ? `ただ、${same ?? other}。` : '';
+    if (same) return `とくに${same}。`;
+    if (other) return `一方で、${other}。`;
+    return '';
+  },
+  retroProfit: {
+    flat: '利益はほとんど変わらなかった。',
+    up: (size: string) => `利益は${size}伸びた。`,
+    down: (size: string) => `利益は${size}減った。`,
+  },
+  retroLaborWeight: {
+    flat: '売上に占める人件費の重さはほとんど変わらなかった。',
+    up: (size: string) => `売上に占める人件費の重さは${size}増した。`,
+    down: (size: string) => `売上に占める人件費の重さは${size}軽くなった。`,
+  },
+  retroProgramStop: (name: string) =>
+    `${name}を止めると、それを支えにしていた社員の納得感が下がりやすい。整えるときより、止めるときのほうが丁寧な説明が要る。`,
+  retroReorg: (form: string, note: string) => `${form}：${note}。`,
   retroDash: '－',
   noVoices: 'この時期の声はありません',
 } as const;
