@@ -32,12 +32,11 @@ export type EvaluationContext = {
 /** 評価で見える成果をつける（社員を書き換える）。乱数は社員1人につき1回 */
 export function evaluate(employees: Employee[], ctx: Pick<EvaluationContext, 'rng' | 'policies' | 'industry' | 'fits'>): void {
   const noise = evaluationNoise(ctx.policies, employees.length, ctx.industry);
-  const max = coef('policy.evaluation.max_noise');
   const useFits = hasFitEffect(ctx.fits, 'evaluationNoiseMult');
   for (const e of employees) {
-    // 相性で評価がずれやすくなっても、ずれの上限は超えない（§14.8）
+    // 相性で評価がずれやすくなっても、ずれの上限は超えず、等級制度の正確さの効き目は残る（§14.8）
     const mult = useFits ? employeeFitEffects(e, ctx.fits, employees).evaluationNoiseMult : 1;
-    const sd = Math.max(noise, Math.min(max, noise * mult));
+    const sd = mult === 1 ? noise : evaluationNoise(ctx.policies, employees.length, ctx.industry, mult);
     e.perceivedPerformance = clamp(e.ability + ctx.rng.normal(0, sd), SCORE_MIN, SCORE_MAX);
   }
 }

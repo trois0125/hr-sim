@@ -128,3 +128,9 @@ describe('採用の結果', () => {
     expect(off.hires.every((e) => e.hireChannel === 'mid_career')).toBe(true);
   });
 });
+
+describe('相性による採用のしにくさ（§14.8 の17）', () => {
+  it('採用のしにくさの倍率が1より小さいと、同じ乱数でより多く採れる', () => {
+    expect(totalHires({ hiringDifficultyMult: 0.85 })).toBeGreaterThan(totalHires({}));
+  });
+});

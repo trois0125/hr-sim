@@ -312,3 +312,44 @@ describe('相性の効き目：会社のお金・採用', () => {
     expect(computeFactorScores([e], ctx).get(e.id)).toEqual(a);
   });
 });
+
+describe('月の計算（tick）に相性が届く', () => {
+  it('SaaS で職能資格にすると、1か月後にエンジニアの社外と比べた給与と成長の機会が、営業・CS より下がる', async () => {
+    const { generateCompany, setFoundingPolicies } = await import('./generate');
+    const { tick } = await import('./tick');
+    const gap = (grade: PolicySet['grade']) => {
+      const c = tick(setFoundingPolicies(generateCompany({ seed: 9, industryId: 'saas', foundingPatternId: 'carveout' }), { ...defaultPolicies, grade }));
+      const avg = (role: string, k: 'externalPay' | 'growthOpportunity') => {
+        const xs = c.employees.filter((e) => e.role === role && e.factorScores).map((e) => e.factorScores![k]);
+        return xs.reduce((s, x) => s + x, 0) / xs.length;
+      };
+      return { pay: avg('engineer', 'externalPay') - avg('biz', 'externalPay'), growth: avg('engineer', 'growthOpportunity') - avg('biz', 'growthOpportunity') };
+    };
+    const skill = gap('skill');
+    const none = gap('none');
+    expect(skill.pay).toBeLessThan(none.pay);
+    expect(skill.growth).toBeLessThan(none.growth);
+  });
+
+  it('月の記録に、効いている相性の id が残る（振り返りで使う）', async () => {
+    const { generateCompany, setFoundingPolicies } = await import('./generate');
+    const { tick } = await import('./tick');
+    const c = tick(setFoundingPolicies(generateCompany({ seed: 9, industryId: 'saas' }), { ...defaultPolicies, grade: 'skill' }));
+    expect(c.history[c.history.length - 1]!.fits).toContain('skill_grade_engineer');
+  });
+});
+
+describe('評価のずれの上限と等級の正確さ（レビューでの直し）', () => {
+  it('ずれが上限に届く大きな会社でも、等級制度の正確さの効き目は相性で消えない', () => {
+    // 200人で社長評価：ずれはもともと上限。在宅の相性（×1.3）が付いても、職能資格の正確さ（15%）の分は小さくなるはず
+    const es = many(200, () => person('trading', 'sales'));
+    const spread = (grade: PolicySet['grade']) =>
+      mean(Array.from({ length: 10 }, (_, seed) => {
+        const f = fitsOf('trading', { workStyle: 'remote', evaluation: 'ceo', grade }, { headcount: es.length });
+        const copy = es.map((e) => ({ ...e }));
+        evaluate(copy, { rng: createRng(seed), policies: f.company.policies, industry: getIndustry('trading'), fits: f });
+        return mean(copy.map((e) => Math.abs(e.perceivedPerformance - e.ability)));
+      }));
+    expect(spread('skill')).toBeLessThan(spread('none') * 0.9);
+  });
+});

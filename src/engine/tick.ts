@@ -235,6 +235,7 @@ export function tickInPlace(state: CompanyState): CompanyState {
     violations: 0,
     cash: state.cash,
     policies: state.policies,
+    fits: fits.fits.map((f) => f.id),
   };
   state.history.push(record);
   state.unrecordedExtraordinaryCost = 0;

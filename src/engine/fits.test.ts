@@ -286,3 +286,29 @@ describe('採用のしにくさ（17：在宅・ハイブリッド × 地方）'
     expect(mult({ locationType: 'urban' }, 'remote')).toBe(1);
   });
 });
+
+describe('レビューでの直し', () => {
+  it('18：直近12か月の合計が赤字のときだけ「赤字の年」。黒字の年の中の1か月の赤字では効かない', () => {
+    const s = generateCompany({ seed: 3, industryId: 'trading' });
+    const rec = (month: number, operatingProfit: number) => ({ ...s.history[0]!, month, operatingProfit });
+    s.history = Array.from({ length: 12 }, (_, i) => rec(i, i === 5 ? -1_000_000 : 500_000));
+    expect(fitCompanyOf(s).recentLoss).toBe(false);
+    s.history = Array.from({ length: 12 }, (_, i) => rec(i, i === 5 ? -10_000_000 : 500_000));
+    expect(fitCompanyOf(s).recentLoss).toBe(true);
+  });
+
+  it('月の使い回し（fitsFor）と使い回しなしで、出向者のいる職種のプロパーへの効き目が同じ', () => {
+    const s = generateCompany({ seed: 3, industryId: 'saas', foundingPatternId: 'subsidiary' });
+    const sec = s.employees.find((e) => e.affiliation === 'secondee')!;
+    const proper = { ...person('saas', sec.role), id: 'proper-x' };
+    s.employees.push(proper);
+    const memo = fitsFor(s);
+    const plain = { company: memo.company, fits: memo.fits };
+    expect(memo.fits.map((f) => f.id)).toContain('secondee_proper_fairness');
+    expect(employeeFitEffects(proper, memo, s.employees)).toEqual(employeeFitEffects(proper, plain, s.employees));
+    expect(employeeFitEffects(proper, memo, s.employees).factors.internalFairness).toBeLessThan(0);
+    // 呼ぶ側が社員の一覧を渡さなくても、出向者のいる職種は会社の状態から決まる
+    const again = fitsFor(s);
+    expect(employeeFitEffects(proper, again, [proper]).factors.internalFairness).toBeLessThan(0);
+  });
+});

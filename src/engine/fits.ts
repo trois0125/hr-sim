@@ -27,7 +27,7 @@ export type FitCompany = {
   foundingPatternId: FoundingPatternId;
   orgForm: OrgForm;
   headcount: number;
-  /** 直近12か月に赤字の月がある */
+  /** 直近12か月の営業利益の合計が赤字（赤字の年。1か月だけの赤字は数えない） */
   recentLoss: boolean;
   /** 出向者がいる */
   hasSecondees: boolean;
@@ -40,7 +40,7 @@ export type ActiveFits = {
    * 1か月のあいだの計算の使い回し（fitsFor が作る）。社員の条件（職種・雇用形態・入社経路・勤続・所属）は
    * 月の途中で変わらないので、社員ごとの効き目は1か月に1回求めればよい
    */
-  memo?: { effects: Map<string, EmployeeFitEffects>; pool?: Employee[] };
+  memo?: { effects: Map<string, EmployeeFitEffects>; secondeeRoles: Set<string> };
 };
 
 /** 効いている相性に、その種類の効き目を持つものがあるか（なければ差し込み口で計算を省く） */
@@ -57,7 +57,7 @@ export function fitCompanyOf(state: CompanyState): FitCompany {
     foundingPatternId: state.profile.foundingPatternId,
     orgForm: state.organization.form,
     headcount: state.employees.length,
-    recentLoss: recent.some((r) => r.operatingProfit < 0),
+    recentLoss: recent.length > 0 && recent.reduce((s, r) => s + r.operatingProfit, 0) < 0,
     hasSecondees: state.employees.some((e) => e.affiliation === 'secondee'),
   };
 }
@@ -96,6 +96,10 @@ export function fitScale(fit: FitDef, policies: PolicySet): number {
 
 /** その社員に相性が当てはまるか（会社の条件は activeFits で見たあと） */
 export function fitApplies(fit: FitDef, e: Employee, c: FitCompany, employees: readonly Employee[]): boolean {
+  return appliesWith(fit, e, c, secondeeRolesOf(employees));
+}
+
+function appliesWith(fit: FitDef, e: Employee, c: FitCompany, secondeeRoles: ReadonlySet<string>): boolean {
   const w = fit.who;
   if (!w) return true;
   if (w.roleTraits) {
@@ -107,7 +111,7 @@ export function fitApplies(fit: FitDef, e: Employee, c: FitCompany, employees: r
   if (w.hireChannels && !w.hireChannels.includes(e.hireChannel)) return false;
   if (w.maxTenureMonths !== undefined && !(e.tenureMonths < w.maxTenureMonths)) return false;
   if (w.affiliation && e.affiliation !== w.affiliation) return false;
-  if (w.sameRoleHasSecondee && !secondeeRolesOf(employees).has(e.role)) return false;
+  if (w.sameRoleHasSecondee && !secondeeRoles.has(e.role)) return false;
   return true;
 }
 
@@ -118,7 +122,8 @@ function secondeeRolesOf(employees: readonly Employee[]): Set<string> {
 
 export function fitsFor(state: CompanyState): ActiveFits {
   const company = fitCompanyOf(state);
-  return { company, fits: activeFits(company), memo: { effects: new Map() } };
+  // 出向者のいる職種は会社の状態から1回だけ数える（社員ごとに数えると人数の2乗の計算になる）
+  return { company, fits: activeFits(company), memo: { effects: new Map(), secondeeRoles: secondeeRolesOf(state.employees) } };
 }
 
 /** 倍率を強さで弱める（強さ0なら1） */
@@ -139,12 +144,9 @@ export function employeeFitEffects(e: Employee, f: ActiveFits | undefined, emplo
   if (!f || f.fits.length === 0) return out;
   const cached = f.memo?.effects.get(e.id);
   if (cached) return cached;
-  // 出向者のいる職種は1か月に1回だけ数える（社員ごとに数えると人数の2乗の計算になる）
-  const pool = f.memo
-    ? (f.memo.pool ??= [...secondeeRolesOf(employees)].map((role) => ({ role, affiliation: 'secondee' }) as Employee))
-    : employees;
+  const roles = f.memo?.secondeeRoles ?? secondeeRolesOf(employees);
   for (const fit of f.fits) {
-    if (fit.explainOnly || !fitApplies(fit, e, f.company, pool)) continue;
+    if (fit.explainOnly || !appliesWith(fit, e, f.company, roles)) continue;
     const s = fitScale(fit, f.company.policies);
     const x = fit.effects;
     for (const [k, v] of Object.entries(x.factors ?? {})) {
@@ -178,7 +180,8 @@ export function companyFitEffects(f: ActiveFits | undefined, employees: readonly
     const s = fitScale(fit, f.company.policies);
     const x = fit.effects;
     if (x.costPerEmployee) {
-      const n = employees.filter((e) => fitApplies(fit, e, f.company, employees)).length;
+      const roles = f.memo?.secondeeRoles ?? secondeeRolesOf(employees);
+      const n = employees.filter((e) => appliesWith(fit, e, f.company, roles)).length;
       out.costPerMonth += x.costPerEmployee.value * s * n;
     }
     if (x.premiumOvertimeMult) out.premiumOvertimeMult *= scaled(x.premiumOvertimeMult.value, s);

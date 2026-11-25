@@ -37,14 +37,15 @@ export function validatePolicies(policies: PolicySet, industry: IndustryData): v
 // ---------------------------------------------------------------------------
 
 /** 評価のずれの大きさ（標準偏差、点）。社長が決める評価は、人数が増えるほどずれる */
-export function evaluationNoise(policies: PolicySet, headcount: number, industry: IndustryData): number {
+export function evaluationNoise(policies: PolicySet, headcount: number, industry: IndustryData, fitMult = 1): number {
   let noise = policyEffect('evaluation', policies.evaluation, 'noise');
   if (policies.evaluation === 'ceo') {
     noise += coef('policy.evaluation.ceo.noise_per_head') * Math.max(0, headcount - industry.managementSpan.value);
   }
-  // 上限で抑えてから等級制度の効果を掛ける（上限が先でないと、大きな会社で等級制度の効果が消える）
+  // 上限で抑えてから等級制度の効果を掛ける（上限が先でないと、大きな会社で等級制度の効果が消える）。
+  // 相性の倍率（§14.8。1以上）も上限の前に掛ける
   const accuracy = policyEffect('grade', policies.grade, 'accuracy_bonus');
-  return Math.min(coef('policy.evaluation.max_noise'), noise) * (1 - accuracy);
+  return Math.min(coef('policy.evaluation.max_noise'), noise * Math.max(1, fitMult)) * (1 - accuracy);
 }
 
 /** 等級・評価の制度を運用するコスト（円／人／月） */

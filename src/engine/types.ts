@@ -471,6 +471,8 @@ export type MonthlyRecord = {
   cash: number;
   /** その月の制度（人事スタイル診断で「選んでいた期間の長さ」を数えるため。古い記録には無い） */
   policies?: PolicySet;
+  /** その月に効いていた制度と会社の相性の id（§14.8。振り返りで使う。古い記録には無い） */
+  fits?: string[];
 };
 
 /** 制度の変更（§5.1）。変更後しばらく納得感が揺れる */
@@ -1090,7 +1092,7 @@ export type FitWhen = {
   locationType?: LocationType;
   foundingPatterns?: FoundingPatternId[];
   orgForms?: OrgForm[];
-  /** 直近12か月に赤字の月がある */
+  /** 直近12か月の営業利益の合計が赤字（赤字の年） */
   recentLoss?: boolean;
   /** 出向者がいる */
   hasSecondees?: boolean;
