@@ -359,7 +359,7 @@ export function fitStreak(state: CompanyState, fitId: string): number {
 
 /**
  * 兆しが出ているか：相性が目安の月数続けて効き、当てはまる社員が目安の人数以上いる。
- * 対象者は、当てはまる社員（会社全体の相性なら全員）の真ん中の1人（乱数を使わない。本文の {name} に入る）
+ * 対象者は、当てはまる社員（会社全体の相性なら全員）のうちプロパーの正社員の真ん中の1人（乱数を使わない。本文の {name} に入る）
  */
 export function fitSign(state: CompanyState, fitId: string): { ready: boolean; target: Employee | null } {
   if (fitStreak(state, fitId) < coef('fit.sign_months')) return { ready: false, target: null };
@@ -368,6 +368,9 @@ export function fitSign(state: CompanyState, fitId: string): { ready: boolean; t
   if (!f.fits.some((x) => x.id === fitId)) return { ready: false, target: null };
   const affected = state.employees.filter((e) => !e.leave && fitApplies(fit, e, f.company, state.employees));
   if (affected.length < coef('fit.sign_min_affected')) return { ready: false, target: null };
-  const sorted = [...affected].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  // 話し手は、できればプロパーの正社員（出向者は親会社の処遇、パートは立場が違うので、声として不自然になりやすい）
+  const core = affected.filter((e) => e.affiliation === 'proper' && e.employmentType === 'full');
+  const pool = core.length > 0 ? core : affected;
+  const sorted = [...pool].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   return { ready: true, target: sorted[Math.floor(sorted.length / 2)] ?? null };
 }

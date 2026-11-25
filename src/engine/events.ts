@@ -366,7 +366,8 @@ export function applyEffects(state: CompanyState, effects: EventEffects, d: Pend
   if (effects.installProgram) installProgram(state, effects.installProgram);
   if (effects.openReorg) pushDecision(state, { kind: 'reorg', ruleIds: [], eventId: null, vars: {} });
   // 制度の見直し（画面で遊ぶときだけ。自動で進めるときは見直しの判断待ちを作らない）
-  if (effects.openReview && !state.autoPlay) {
+  // 年の決算の見直しがもう判断待ちなら、もう1枚は作らない
+  if (effects.openReview && !state.autoPlay && !state.pendingDecisions.some((x) => x.kind === 'review')) {
     pushDecision(state, { kind: 'review', ruleIds: [], eventId: null, vars: { year: Math.floor(state.month / MONTHS_PER_YEAR), from: 'event' } });
   }
   if (effects.setPolicies) {
