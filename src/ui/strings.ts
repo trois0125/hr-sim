@@ -511,6 +511,7 @@ export const reportStrings = {
     reorg: (from: string, to: string) => `組織を${from}から${to}に`,
   },
   retroMore: (n: number) => `ほか${n}件`,
+  retroRange: (from: string, to: string) => `${from}〜${to}`,
   retroDash: '－',
   noVoices: 'この時期の声はありません',
 } as const;

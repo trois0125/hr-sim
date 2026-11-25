@@ -53,6 +53,33 @@ describe('変更の拾い出し', () => {
     });
   });
 
+  it('施策で「今回はやめておく」を選んだものは拾わない', () => {
+    const c = played(11);
+    c.policyChanges = [];
+    c.programLog = [];
+    c.organization.log = [];
+    const training = eventDefs.find((e) => e.id === 'initiative_training')!;
+    const cancel = training.choices.findIndex((x) => x.cancel);
+    c.decisions = [{ month: 36, eventId: training.id, choiceIndex: cancel, targetId: null, axes: {}, diagnosis: {}, auto: false }];
+    expect(collectChanges(c)).toEqual([]);
+  });
+
+  it('個別制度を整える施策と組織の形の見直しは、個別制度と組織改編の記録だけで拾う（二重にしない）', () => {
+    const c = played(11);
+    c.policyChanges = [];
+    c.organization.log = [];
+    const programs = eventDefs.find((e) => e.id === 'initiative_programs')!;
+    const reorg = eventDefs.find((e) => e.id === 'initiative_reorg')!;
+    const install = programs.choices.findIndex((x) => x.effects?.installProgram);
+    const open = reorg.choices.findIndex((x) => x.effects?.openReorg);
+    c.decisions = [
+      { month: 36, eventId: programs.id, choiceIndex: install, targetId: null, axes: {}, diagnosis: {}, auto: false },
+      { month: 50, eventId: reorg.id, choiceIndex: open, targetId: null, axes: {}, diagnosis: {}, auto: false },
+    ];
+    c.programLog = [{ month: 36, id: programs.choices[install]!.effects!.installProgram!, action: 'install' }];
+    expect(collectChanges(c).map((x) => [x.month, x.kind])).toEqual([[36, 'program']]);
+  });
+
   it('施策でない出来事での判断は拾わない', () => {
     const c = played(11);
     c.policyChanges = [];
@@ -74,10 +101,17 @@ describe('変更のまとめ', () => {
     ]);
   });
 
-  it('4か月おきに続く変更は、1つの長いまとまりになる', () => {
+  it('4か月おきに続く変更も、最初の変更から12か月を超えたら次のまとまりにする', () => {
     const g = groupChanges([0, 4, 8, 12, 16, 20].map((m) => at(m + 10)));
-    expect(g).toHaveLength(1);
-    expect([g[0]!.first, g[0]!.last]).toEqual([10, 30]);
+    expect(g.map((x) => [x.first, x.last])).toEqual([
+      [10, 22],
+      [26, 30],
+    ]);
+  });
+
+  it('5か月おきに何年も続けても、1つのまとまりが何年にも広がらない', () => {
+    const g = groupChanges(Array.from({ length: 40 }, (_, i) => at(12 + i * 5)));
+    for (const x of g) expect(x.last - x.first).toBeLessThanOrEqual(coef('retrospective.group_max_span_months'));
   });
 
   it('変更がなければ空', () => {
@@ -200,8 +234,8 @@ describe('変更の振り返り', () => {
     expect(card.before.months).toBe(W());
     expect(card.soon.months).toBe(W());
     expect(card.later.months).toBe(W());
-    expect(card.arrows.laborCostRatio.later.tone).toBe('neutral');
-    expect(card.arrows.laborCostRatio.soon.tone).toBe('neutral');
+    expect(card.arrows.laborCostRatio.later?.tone).toBe('neutral');
+    expect(card.arrows.laborCostRatio.soon?.tone).toBe('neutral');
   });
 
   it('矢印：営業利益が上がれば良い、離職率が上がれば悪い、小さな差は「→」', () => {
@@ -324,5 +358,19 @@ describe('カードの声の選び方', () => {
     changed.voices = [v(card.group.last + 1, 'negative', 'stability'), v(card.group.last + 2, 'negative', 'workload'), v(card.group.last + 3, 'positive', 'evaluation'), v(card.group.last + 4, 'positive', 'stability')];
     const again = buildCards(changed).find((x) => x.group.first === card.group.first)!;
     expect(again.voices.map((x) => x.text)).toEqual(['negative:workload', 'positive:evaluation']);
+  });
+});
+
+describe('記録から計算できない値の矢印', () => {
+  it('前か後が計算できない（売上0で人件費率が出ない）ときは矢印を出さない', () => {
+    const start = setFoundingPolicies(generateCompany({ seed: 21, industryId: 'trading' }), { ...defaultPolicies, training: '0' });
+    const base = runToEnd(start, 36);
+    const changed = runToEnd(changePolicies(base, { ...base.policies, training: '1' }), 18);
+    for (const r of changed.history) if (r.month >= 30 && r.month < 36) r.revenue = 0;
+    const card = buildCards(changed).find((x) => x.group.first === 36)!;
+    expect(card.before.laborCostRatio).toBeNull();
+    expect(card.arrows.laborCostRatio.soon).toBeNull();
+    expect(card.arrows.laborCostRatio.later).toBeNull();
+    expect(card.arrows.engagement.later).not.toBeNull();
   });
 });

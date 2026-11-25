@@ -47,7 +47,11 @@ export function collectChanges(state: CompanyState): ChangeItem[] {
     });
   }
   for (const d of state.decisions) {
-    if (eventDefs.find((e) => e.id === d.eventId)?.trigger.type !== 'initiative') continue;
+    const e = eventDefs.find((x) => x.id === d.eventId);
+    if (e?.trigger.type !== 'initiative') continue;
+    const choice = e.choices[d.choiceIndex];
+    // やめておいたものは変更ではない。個別制度と組織改編は、それぞれの記録で拾う（二重にしない・見直して形を変えなかったものは入らない）
+    if (!choice || choice.cancel || choice.effects?.installProgram || choice.effects?.openReorg) continue;
     out.push({ month: d.month, kind: 'initiative', eventId: d.eventId, choiceIndex: d.choiceIndex });
   }
   for (const p of state.programLog) out.push({ month: p.month, kind: 'program', programId: p.id, action: p.action });
@@ -58,13 +62,14 @@ export function collectChanges(state: CompanyState): ChangeItem[] {
     .map((y) => y.x);
 }
 
-/** 前の変更から間隔（係数台帳）以内の変更を、1つのまとまりにする */
+/** 前の変更から間隔（係数台帳）以内の変更を、1つのまとまりにする。まとまりは最初の変更から一定の月数まで */
 export function groupChanges(items: readonly ChangeItem[]): ChangeGroup[] {
   const gap = coef('retrospective.group_gap_months');
+  const maxSpan = coef('retrospective.group_max_span_months');
   const out: ChangeGroup[] = [];
   for (const item of items) {
     const g = out[out.length - 1];
-    if (g && item.month - g.last <= gap) {
+    if (g && item.month - g.last <= gap && item.month - g.first <= maxSpan) {
       g.items.push(item);
       g.last = item.month;
     } else {
@@ -181,7 +186,8 @@ export type RetroCard = {
   later: WindowStats;
   /** 4つの指標のうち、前との差がふだんの揺れの何倍か（いちばん大きいもの） */
   score: number;
-  arrows: Record<RetroMetric, { soon: Arrow; later: Arrow }>;
+  /** 前か後の値が計算できない（売上0の人件費率など）ときは null */
+  arrows: Record<RetroMetric, { soon: Arrow | null; later: Arrow | null }>;
   /** 1年後に前より最も上がった要因（上がったものがなければ null） */
   factorUp: EngagementFactor | null;
   /** 1年後に前より最も下がった要因（下がったものがなければ null） */
@@ -198,8 +204,10 @@ const GOOD_WHEN_UP: Record<RetroMetric, 1 | -1 | 0> = {
   engagement: 1,
 };
 
-function arrow(metric: RetroMetric, before: number | null, after: number | null, swing: number): Arrow {
-  if (before === null || after === null || Math.abs(after - before) < swing * coef('retrospective.flat_ratio') || after === before) {
+function arrow(metric: RetroMetric, before: number | null, after: number | null, swing: number): Arrow | null {
+  if (before === null || after === null) return null;
+  // after === before は、ふだんの揺れが0のときに「↑↓」にしないため
+  if (Math.abs(after - before) < swing * coef('retrospective.flat_ratio') || after === before) {
     return { dir: 'flat', tone: 'neutral' };
   }
   const dir = after > before ? 'up' : 'down';

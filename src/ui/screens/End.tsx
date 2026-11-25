@@ -120,7 +120,8 @@ function metricCell(w: WindowStats, m: RetroMetric): string {
   return v === null ? t.retroDash : metricFormat[m](v);
 }
 
-function ArrowMark({ a }: { a: Arrow }) {
+function ArrowMark({ a }: { a: Arrow | null }) {
+  if (!a) return null;
   const label = t.retroToneLabels[a.tone];
   return (
     <span className={`retro-arrow retro-${a.tone}`} title={label || undefined} aria-label={label || undefined}>
@@ -134,7 +135,12 @@ function RetroCardView({ card, industryId, roleName }: { card: RetroCard; indust
   return (
     <li className="retro-card">
       <h3 className="retro-title">
-        <span className="feed-date num">{dateLabel(card.group.first)}</span> {retroTitle(card, industryId)}
+        <span className="feed-date num">
+          {card.group.first === card.group.last
+            ? dateLabel(card.group.first)
+            : t.retroRange(dateLabel(card.group.first), dateLabel(card.group.last))}
+        </span>{' '}
+        {retroTitle(card, industryId)}
       </h3>
       <div className="table-scroll">
         <table className="compare-table retro-table">
