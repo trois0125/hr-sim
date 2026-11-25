@@ -37,7 +37,7 @@ function isMajorEvent(eventId: string): boolean {
 }
 
 /** その月の記録にある制度（なければ今の制度） */
-function policiesAt(state: CompanyState, month: number): PolicySet {
+export function policiesAt(state: CompanyState, month: number): PolicySet {
   return state.history.find((r) => r.month === month)?.policies ?? state.policies;
 }
 
