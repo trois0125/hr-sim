@@ -81,7 +81,10 @@
         "unit": "比",
         "basis": "assumption",
         "source": "DESIGN.md §3.3 を基準に仮置き"
-      }
+      },
+      "traits": [
+        "hardToQuantify"
+      ]
     },
     {
       "id": "management",

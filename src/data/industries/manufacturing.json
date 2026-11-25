@@ -46,7 +46,12 @@
         "unit": "重み",
         "basis": "assumption",
         "source": "仮置き。職種構成の重み"
-      }
+      },
+      "traits": [
+        "team",
+        "synchronous",
+        "skilled"
+      ]
     },
     {
       "id": "office",
@@ -79,7 +84,10 @@
         "unit": "重み",
         "basis": "assumption",
         "source": "仮置き。職種構成の重み"
-      }
+      },
+      "traits": [
+        "hardToQuantify"
+      ]
     },
     {
       "id": "supervisor",
@@ -112,7 +120,11 @@
         "unit": "重み",
         "basis": "assumption",
         "source": "仮置き。職種構成の重み"
-      }
+      },
+      "traits": [
+        "team",
+        "synchronous"
+      ]
     }
   ],
   "partTimeRatioRange": {
@@ -365,5 +377,8 @@
         "source": "仮置き。装置産業で1人あたりの出荷額が大きい"
       }
     }
+  ],
+  "traits": [
+    "peaks"
   ]
 }

@@ -46,7 +46,10 @@
         "unit": "重み",
         "basis": "assumption",
         "source": "仮置き。職種構成の重み"
-      }
+      },
+      "traits": [
+        "marketPriced"
+      ]
     },
     {
       "id": "biz",
@@ -112,7 +115,10 @@
         "unit": "重み",
         "basis": "assumption",
         "source": "仮置き。職種構成の重み"
-      }
+      },
+      "traits": [
+        "hardToQuantify"
+      ]
     },
     {
       "id": "manager",

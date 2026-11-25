@@ -63,7 +63,16 @@ export type RoleData = {
   hiringDifficulty: Sourced<number>;
   /** 職種構成の重み（会社ごとに範囲から抽選し、合計1.0に正規化する） */
   mixWeightRange: Sourced<Range>;
+  /** 仕事の性質の印（制度との相性に使う。§14.8） */
+  traits?: RoleTrait[];
 };
+
+/** 職種の性質の印（§14.8）：チームで成果／全員が同じ時間に動く／シフト勤務／成果を数字にしにくい／市場で値段が付く／店舗の責任者／熟練が要る */
+export const ROLE_TRAITS = ['team', 'synchronous', 'shift', 'hardToQuantify', 'marketPriced', 'storeManager', 'skilled'] as const;
+export type RoleTrait = (typeof ROLE_TRAITS)[number];
+/** 業種の性質の印（§14.8）：繁閑の差が大きい */
+export const INDUSTRY_TRAITS = ['peaks'] as const;
+export type IndustryTrait = (typeof INDUSTRY_TRAITS)[number];
 
 /** 業種の中の要素（商材など、§3.3） */
 export type IndustryVariant = {
@@ -111,6 +120,8 @@ export type IndustryData = {
   /** 業種ごとのイベントID（イベントの型はステップ8で定義） */
   specialEvents: string[];
   variants: IndustryVariant[];
+  /** 業種の性質の印（制度との相性に使う。§14.8） */
+  traits?: IndustryTrait[];
 
   // --- ステップ12：業種ごとの違い（省略すると係数台帳の共通の値。商社は省略） ---
   /** 年齢による賃金カーブ（賃金構造基本統計調査の業種別の年齢階級別所定内給与額に当てはめたもの） */
@@ -1057,4 +1068,86 @@ export type SaveData = {
   company: CompanyState;
   /** 画面の側で一緒に残したいもの（フィードなど）。エンジンは中身を見ない */
   ui?: Record<string, unknown>;
+};
+
+// ---------------------------------------------------------------------------
+// 制度と会社の相性（§14.8。`src/data/fits.json`）
+// ---------------------------------------------------------------------------
+
+export type FitTone = 'good' | 'bad';
+
+/** 相性が効く会社の条件（書いたものすべてに合うとき） */
+export type FitWhen = {
+  /** どれか1つの組（制度のカテゴリ→選択肢の候補）に合えばよい */
+  policiesAny?: Partial<{ [K in keyof PolicySet]: PolicySet[K][] }>[];
+  industryTraits?: IndustryTrait[];
+  /** 業種の景気の波（cyclicality）がこの係数（id）以上 */
+  cyclicalityAtLeast?: string;
+  /** 社員数がこの係数（id）未満 */
+  headcountBelow?: string;
+  /** 社員数が、管理職1人（創業期は社長）の見られる人数を超えた */
+  headcountAboveSpan?: boolean;
+  locationType?: LocationType;
+  foundingPatterns?: FoundingPatternId[];
+  orgForms?: OrgForm[];
+  /** 直近12か月に赤字の月がある */
+  recentLoss?: boolean;
+  /** 出向者がいる */
+  hasSecondees?: boolean;
+};
+
+/** 相性が効く社員の条件（書いたものすべてに合うとき。省略すると全員） */
+export type FitWho = {
+  /** どれかの印を持つ職種 */
+  roleTraits?: RoleTrait[];
+  /** 職種の印に合わなくても、パートなら当てはまる */
+  orPartTime?: boolean;
+  employmentTypes?: EmploymentType[];
+  hireChannels?: HireChannel[];
+  /** 勤続がこの月数未満 */
+  maxTenureMonths?: number;
+  affiliation?: Affiliation;
+  /** 同じ職種に出向者がいる */
+  sameRoleHasSecondee?: boolean;
+};
+
+export type FitEffects = {
+  /** 当てはまる社員の納得感の要因に足す点数 */
+  factors?: Partial<Record<EngagementFactor, Sourced<number>>>;
+  /** 当てはまる社員の評価のずれの倍率 */
+  evaluationNoiseMult?: Sourced<number>;
+  /** 当てはまる社員の立ち上がりの月数の倍率 */
+  rampMult?: Sourced<number>;
+  /** 当てはまる社員の実力の伸びの倍率 */
+  abilityGainMult?: Sourced<number>;
+  /** 当てはまる社員の辞めやすさの倍率 */
+  attritionMult?: Sourced<number>;
+  /** 当てはまる社員1人あたりの費用（円/月） */
+  costPerEmployee?: Sourced<number>;
+  /** 会社全体：割増の付く残業時間の倍率 */
+  premiumOvertimeMult?: Sourced<number>;
+  /** 会社全体：採用のしにくさの倍率 */
+  hiringDifficultyMult?: Sourced<number>;
+  /** 会社全体：等級の運用コストの倍率 */
+  gradeCostMult?: Sourced<number>;
+  /** 会社全体：等級による「成長の機会」の上乗せを消す */
+  cancelGrowthBonus?: boolean;
+};
+
+export type FitDef = {
+  id: string;
+  /** 設計書（§14.8）の表の番号 */
+  no: number;
+  name: string;
+  tone: FitTone;
+  when: FitWhen;
+  who?: FitWho;
+  /** 制度の選択肢ごとの効き目の強さ（例：ハイブリッド0.5・在宅1）。書いていない選択肢は1 */
+  scale?: { category: keyof PolicySet; byOption: Partial<Record<string, number>> };
+  effects: FitEffects;
+  /** 相性そのものの根拠 */
+  basis: Basis;
+  source: string;
+  /** 効き目のない、説明だけの相性（今の計算ですでに起きていること） */
+  explainOnly?: boolean;
 };

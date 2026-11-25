@@ -46,7 +46,12 @@
         "unit": "重み",
         "basis": "assumption",
         "source": "仮置き。職種構成の重み"
-      }
+      },
+      "traits": [
+        "team",
+        "synchronous",
+        "shift"
+      ]
     },
     {
       "id": "hq",
@@ -79,7 +84,10 @@
         "unit": "重み",
         "basis": "assumption",
         "source": "仮置き。職種構成の重み"
-      }
+      },
+      "traits": [
+        "hardToQuantify"
+      ]
     },
     {
       "id": "store_manager",
@@ -112,7 +120,13 @@
         "unit": "重み",
         "basis": "assumption",
         "source": "仮置き。職種構成の重み"
-      }
+      },
+      "traits": [
+        "team",
+        "synchronous",
+        "shift",
+        "storeManager"
+      ]
     }
   ],
   "partTimeRatioRange": {
@@ -375,5 +389,8 @@
         "source": "仮置き。家族連れ中心で安定"
       }
     }
+  ],
+  "traits": [
+    "peaks"
   ]
 }
