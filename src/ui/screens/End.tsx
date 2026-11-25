@@ -9,17 +9,31 @@ import { ATTRITION_REASONS, DIAGNOSIS_AXES, MONTHS_PER_YEAR } from '../../engine
 import { computeDiagnosis, diagnosisData } from '../../report/diagnosis';
 import {
   buildTimeline,
-  pickTurningPoints,
+  pickLessons,
   pickVoices,
   runRival,
   yearlySeries,
+  type LessonPoint,
   type TimelineEntry,
-  type TurningPoint,
   type YearPoint,
 } from '../../report/history';
+import {
+  buildRetrospective,
+  changeLessons,
+  RETRO_METRICS,
+  type Arrow,
+  type ChangeItem,
+  type LessonSource,
+  type Movement,
+  type RetroCard,
+  type RetroMetric,
+  type WindowStats,
+} from '../../report/retrospective';
+import { getProgram } from '../../engine/programs';
+import { economyLabel } from '../parts/Dashboard';
 import { optionName } from '../../store/game';
 import { actions, useGame } from '../useGame';
-import { endStrings, policyStrings, reasonNames, reportStrings as t, statusNames } from '../strings';
+import { endStrings, orgStrings, policyStrings, reasonNames, reportStrings as t, statusNames } from '../strings';
 import { dateLabel, pct, yen } from '../format';
 
 const INK = '#1e2b45';
@@ -61,16 +75,182 @@ function timelineText(e: TimelineEntry, industryId: IndustryId): string {
   }
 }
 
-function turningTitle(p: TurningPoint, industryId: IndustryId): string {
+function lessonTitle(p: LessonPoint, industryId: IndustryId): string {
   if (p.kind === 'event') {
     const ev = eventOf(p.eventId, industryId);
     return t.timeline.event(ev?.title ?? p.eventId, ev?.choices[p.choiceIndex]?.label ?? '');
   }
-  if (p.kind === 'policy') {
-    const how = p.method === 'consent' || p.method === 'rules' ? t.turning.method[p.method] : '';
-    return t.turning.policy(changesText(p.changes)) + how;
-  }
   return t.turning.law(getLaw(p.ruleId).name, p.violationMonths);
+}
+
+// ---------------------------------------------------------------------------
+// 変更の振り返り（§14.7）
+// ---------------------------------------------------------------------------
+
+/** 見出しに並べる項目の上限（超えたら「ほか n 件」） */
+const RETRO_TITLE_ITEMS = 3;
+
+function changeItemText(item: ChangeItem, industryId: IndustryId): string {
+  switch (item.kind) {
+    case 'policy': {
+      const how = item.method === 'consent' || item.method === 'rules' ? t.retroItem.method[item.method] : '';
+      return t.retroItem.policy(changesText(item.changes)) + how;
+    }
+    case 'initiative':
+      return t.retroItem.initiative(eventOf(item.eventId, industryId)?.title ?? item.eventId);
+    case 'program':
+      return t.retroItem.program[item.action](getProgram(item.programId).name);
+    case 'reorg':
+      return t.retroItem.reorg(orgStrings.forms[item.from], orgStrings.forms[item.to]);
+  }
+}
+
+function retroTitle(card: RetroCard, industryId: IndustryId): string {
+  const texts = card.group.items.map((i) => changeItemText(i, industryId));
+  if (texts.length <= RETRO_TITLE_ITEMS + 1) return texts.join('、');
+  return `${texts.slice(0, RETRO_TITLE_ITEMS).join('、')}、${t.retroMore(texts.length - RETRO_TITLE_ITEMS)}`;
+}
+
+const metricFormat: Record<RetroMetric, (v: number) => string> = {
+  laborCostRatio: (v) => pct(v, 1),
+  operatingProfit: yen,
+  attritionRate: (v) => pct(v, 0),
+  engagement: (v) => v.toFixed(1),
+};
+
+function metricCell(w: WindowStats, m: RetroMetric): string {
+  const v = w[m];
+  return v === null ? t.retroDash : metricFormat[m](v);
+}
+
+function ArrowMark({ a }: { a: Arrow | null }) {
+  if (!a) return null;
+  const label = t.retroToneLabels[a.tone];
+  return (
+    <span className={`retro-arrow retro-${a.tone}`} title={label || undefined} aria-label={label || undefined}>
+      {t.retroArrows[a.dir]}
+    </span>
+  );
+}
+
+/** 前と1年後の動きを文にする（ほとんど変わらない・少し・大きく） */
+function moveText(
+  m: Movement | null,
+  table: { flat: string; up: (size: string) => string; down: (size: string) => string },
+): string {
+  if (!m) return '';
+  if (m.dir === 'flat') return table.flat;
+  return table[m.dir](t.retroSize[m.size]);
+}
+
+/** 何が起きたか：納得感とその理由、お金（§14.7 遊んでみての直し） */
+function happenedText(card: RetroCard): string[] {
+  const factors = t.retroFactors(
+    card.moves.engagement?.dir ?? 'flat',
+    card.factorUp && t.retroFactorUp[card.factorUp],
+    card.factorDown && t.retroFactorDown[card.factorDown],
+  );
+  return [
+    moveText(card.moves.engagement, t.retroEngagement) + factors,
+    moveText(card.moves.operatingProfit, t.retroProfit) + moveText(card.moves.laborCostRatio, t.retroLaborWeight),
+  ].filter((x) => x.length > 0);
+}
+
+function lessonText(l: LessonSource): string {
+  if (l.kind === 'text') return l.text;
+  if (l.kind === 'programStop') return t.retroProgramStop(getProgram(l.programId).name);
+  return t.retroReorg(orgStrings.forms[l.to], orgStrings.formNotes[l.to]);
+}
+
+function RetroCardView({ card, industryId, roleName }: { card: RetroCard; industryId: IndustryId; roleName: (id: string) => string }) {
+  const reason = (r: WindowStats['topReason']) => (r ? reasonNames[r] : null);
+  const lessons = changeLessons(card.group.items, industryId);
+  return (
+    <li className="retro-card">
+      <h3 className="retro-title">
+        <span className="feed-date num">
+          {card.group.first === card.group.last
+            ? dateLabel(card.group.first)
+            : t.retroRange(dateLabel(card.group.first), dateLabel(card.group.last))}
+        </span>{' '}
+        {retroTitle(card, industryId)}
+      </h3>
+      <p className="retro-head">{t.retroHeads.happened}</p>
+      {happenedText(card).map((line, i) => (
+        <p key={i} className="retro-text">
+          {line}
+        </p>
+      ))}
+      {card.voices.length > 0 && (
+        <>
+          <p className="retro-head">{t.retroVoicesTitle}</p>
+          <ul className="feed">
+            {card.voices.map((v, i) => (
+              <li key={i} className={`feed-voice tone-${v.tone}`}>
+                <span className="feed-date num">{dateLabel(v.month)}</span>
+                <span>
+                  <q>{v.text}</q> <span className="muted voice-who">{v.name}（{roleName(v.role)}）</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {lessons.length > 0 && (
+        <>
+          <p className="retro-head">{t.retroHeads.general}</p>
+          {lessons.map((l, i) => (
+            <p key={i} className="retro-text">
+              {lessonText(l)}
+            </p>
+          ))}
+        </>
+      )}
+      <details className="retro-numbers">
+        <summary>{t.retroHeads.showNumbers}</summary>
+        <div className="table-scroll">
+          <table className="compare-table retro-table">
+            <thead>
+              <tr>
+                <th />
+                <th scope="col">{t.retroCols.before}</th>
+                <th scope="col">{t.retroCols.soon}</th>
+                <th scope="col">{t.retroCols.later}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {RETRO_METRICS.map((m) => (
+                <tr key={m}>
+                  <th scope="row">{t.retroRows[m]}</th>
+                  <td className="num">{metricCell(card.before, m)}</td>
+                  <td className="num">
+                    {metricCell(card.soon, m)} <ArrowMark a={card.arrows[m].soon} />
+                  </td>
+                  <td className="num">
+                    {metricCell(card.later, m)} <ArrowMark a={card.arrows[m].later} />
+                  </td>
+                </tr>
+              ))}
+              <tr>
+                <th scope="row">{t.retroRows.hires}</th>
+                <td className="num">{card.before.hires}</td>
+                <td className="num">{card.soon.hires}</td>
+                <td className="num">{card.later.hires}</td>
+              </tr>
+              <tr className="retro-context">
+                <th scope="row">{t.retroRows.economy}</th>
+                <td>{economyLabel(card.before.economy)}</td>
+                <td>{economyLabel(card.soon.economy)}</td>
+                <td>{economyLabel(card.later.economy)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p className="retro-line">{t.retroReasons(reason(card.before.topReason), reason(card.later.topReason))}</p>
+      </details>
+      <p className="slip-note">※{t.retroNote}</p>
+    </li>
+  );
 }
 
 /** 年ごとの小さなグラフ（1つの指標） */
@@ -158,7 +338,8 @@ function Report({ company }: { company: CompanyState }) {
       rivalSeries: yearlySeries(rival.history),
       voices: pickVoices(company),
       diagnosis: computeDiagnosis(company),
-      turning: pickTurningPoints(company),
+      retro: buildRetrospective(company),
+      lessons: pickLessons(company),
     };
   }, [company]);
   const industry = getIndustry(company.profile.industryId);
@@ -196,7 +377,68 @@ function Report({ company }: { company: CompanyState }) {
         </dl>
       </header>
 
-      {/* 1. 会社の一生 */}
+      {/* 1. 人事スタイル診断 */}
+      <section className="sheet style-card" aria-labelledby="r-style">
+        <h2 id="r-style" className="report-title">
+          {t.blocks.style}
+        </h2>
+        <p className="style-name">{d.type.name}</p>
+        <p className="style-summary">{d.type.summary}</p>
+        <div className="axes">
+          {DIAGNOSIS_AXES.map((a) => (
+            <AxisBar key={a} axis={a} score={d.axes[a].score} />
+          ))}
+        </div>
+        <dl className="style-notes">
+          <div>
+            <dt>{t.strength}</dt>
+            <dd>{d.type.strength}</dd>
+          </div>
+          <div>
+            <dt>{t.pitfall}</dt>
+            <dd>{d.type.pitfall}</dd>
+          </div>
+        </dl>
+        <p className="slip-note">{t.styleLead}</p>
+      </section>
+
+      {/* 2. 変更の振り返り */}
+      <section className="sheet" aria-labelledby="r-retro">
+        <h2 id="r-retro" className="report-title">
+          {t.blocks.retro}
+        </h2>
+        <p className="muted">{t.retroLead}</p>
+        {report.retro.length === 0 ? (
+          <p>{t.retroEmpty}</p>
+        ) : (
+          <ol className="retro-list">
+            {report.retro.map((card) => (
+              <RetroCardView key={card.group.first} card={card} industryId={company.profile.industryId} roleName={roleName} />
+            ))}
+          </ol>
+        )}
+      </section>
+
+      {/* 3. 法令と出来事の学び */}
+      <section className="sheet" aria-labelledby="r-turning">
+        <h2 id="r-turning" className="report-title">
+          {t.blocks.turning}
+        </h2>
+        <p className="muted">{t.turningLead}</p>
+        <ol className="turning-list">
+          {report.lessons.map((p, i) => (
+            <li key={i}>
+              <span className="feed-date num">{dateLabel(p.month)}</span>
+              <div>
+                <strong>{lessonTitle(p, company.profile.industryId)}</strong>
+                <p>{p.lesson}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* 4. 会社の一生 */}
       <section className="sheet" aria-labelledby="r-life">
         <h2 id="r-life" className="report-title">
           {t.blocks.life}
@@ -211,7 +453,7 @@ function Report({ company }: { company: CompanyState }) {
         </ol>
       </section>
 
-      {/* 2. 数字の推移 */}
+      {/* 5. 数字の推移 */}
       <section className="sheet" aria-labelledby="r-numbers">
         <h2 id="r-numbers" className="report-title">
           {t.blocks.numbers}
@@ -226,7 +468,7 @@ function Report({ company }: { company: CompanyState }) {
         </div>
       </section>
 
-      {/* 3. 同期創業の他社との比較 */}
+      {/* 6. 同期創業の他社との比較 */}
       <section className="sheet" aria-labelledby="r-rival">
         <h2 id="r-rival" className="report-title">
           {t.blocks.rival}
@@ -259,7 +501,7 @@ function Report({ company }: { company: CompanyState }) {
         </div>
       </section>
 
-      {/* 4. 従業員の声 */}
+      {/* 7. 従業員の声 */}
       <section className="sheet" aria-labelledby="r-voices">
         <h2 id="r-voices" className="report-title">
           {t.blocks.voices}
@@ -306,50 +548,6 @@ function Report({ company }: { company: CompanyState }) {
         )}
       </section>
 
-      {/* 5. 人事スタイル診断 */}
-      <section className="sheet style-card" aria-labelledby="r-style">
-        <h2 id="r-style" className="report-title">
-          {t.blocks.style}
-        </h2>
-        <p className="style-name">{d.type.name}</p>
-        <p className="style-summary">{d.type.summary}</p>
-        <div className="axes">
-          {DIAGNOSIS_AXES.map((a) => (
-            <AxisBar key={a} axis={a} score={d.axes[a].score} />
-          ))}
-        </div>
-        <dl className="style-notes">
-          <div>
-            <dt>{t.strength}</dt>
-            <dd>{d.type.strength}</dd>
-          </div>
-          <div>
-            <dt>{t.pitfall}</dt>
-            <dd>{d.type.pitfall}</dd>
-          </div>
-        </dl>
-        <p className="slip-note">{t.styleLead}</p>
-      </section>
-
-      {/* 6. 分岐点の解説 */}
-      <section className="sheet" aria-labelledby="r-turning">
-        <h2 id="r-turning" className="report-title">
-          {t.blocks.turning}
-        </h2>
-        <p className="muted">{t.turningLead}</p>
-        <ol className="turning-list">
-          {report.turning.map((p, i) => (
-            <li key={i}>
-              <span className="feed-date num">{dateLabel(p.month)}</span>
-              <div>
-                <strong>{turningTitle(p, company.profile.industryId)}</strong>
-                <p>{p.lesson}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
-
       <div className="page-actions">
         <button className="btn btn-primary" onClick={() => actions().goto('title')}>
           {endStrings.again}
@@ -359,7 +557,7 @@ function Report({ company }: { company: CompanyState }) {
   );
 }
 
-/** 終了画面：社史レポート（§9 の6ブロック） */
+/** 終了画面：社史レポート（§9 の6ブロック。§14.7 で診断を先頭に、変更の振り返りを足した） */
 export function End() {
   const company = useGame((s) => s.company);
   if (!company) return null;

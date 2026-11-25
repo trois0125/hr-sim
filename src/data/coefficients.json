@@ -2227,5 +2227,68 @@
     "unit": "比",
     "basis": "assumption",
     "source": "仮置き。今月の売れる上限（残業なし）が直近の平均よりこの割合以上少ないと「繁忙」（退職や休職で人手が減ったとき）（はじめ0.05にしたら繁忙が多すぎたので上げた）"
+  },
+  {
+    "id": "retrospective.group_gap_months",
+    "value": 6,
+    "unit": "か月",
+    "basis": "assumption",
+    "source": "仮置き。ステップ20の振り返り：前の変更からこの月数以内の変更は、まとめて1つの変化として扱う"
+  },
+  {
+    "id": "retrospective.window_months",
+    "value": 6,
+    "unit": "か月",
+    "basis": "assumption",
+    "source": "仮置き。ステップ20の振り返り：前・直後・1年後の各期間の長さ（1年後は最後の変更から7〜12か月目）"
+  },
+  {
+    "id": "retrospective.min_before_months",
+    "value": 3,
+    "unit": "か月",
+    "basis": "assumption",
+    "source": "仮置き。ステップ20の振り返り：変更の前の記録がこの月数に満たないもの（創業直後）は振り返りから外す"
+  },
+  {
+    "id": "retrospective.notable_score",
+    "value": 4,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。ステップ20の振り返り：前後の差がふだんの揺れのこの倍数以上なら「大きな変化」として挙げる（はじめ1.5にしたら、4業種×50社・3年ごとに研修か賞与を変えた会社で変更の98%が目安を超え、選ぶ意味がなかった。4で約6割が超え、カードが0件の会社は12%、多くの会社で1〜5件になった）"
+  },
+  {
+    "id": "retrospective.flat_ratio",
+    "value": 0.5,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。ステップ20の振り返り：前後の差がふだんの揺れのこの倍数未満なら「→」（ほぼ変わらない）とする"
+  },
+  {
+    "id": "retrospective.max_cards",
+    "value": 5,
+    "unit": "件",
+    "basis": "assumption",
+    "source": "仮置き。ステップ20の振り返り：カードの最大件数（長くて読まれないのを避ける）"
+  },
+  {
+    "id": "retrospective.group_max_span_months",
+    "value": 12,
+    "unit": "か月",
+    "basis": "assumption",
+    "source": "仮置き。ステップ20の振り返り：1つのまとまりは最初の変更からこの月数まで（変更を続けた会社で、まとまりが何年にも広がって前後の比較が会社の成長ばかりにならないように）"
+  },
+  {
+    "id": "retrospective.large_ratio",
+    "value": 2,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "仮置き。ステップ20の振り返りの文：前と1年後の差がふだんの揺れのこの倍数以上なら「大きく」、それより小さければ「少し」と書く"
+  },
+  {
+    "id": "retrospective.factor_min_points",
+    "value": 2,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "仮置き。ステップ20の振り返りの文：納得感の要因（0〜100点）の前と1年後の差がこれ未満なら、上がった・下がった要因に挙げない"
   }
 ]

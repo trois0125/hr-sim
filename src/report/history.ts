@@ -9,7 +9,6 @@ import { getLaw } from '../engine/lawData';
 import { runToEnd } from '../engine/tick';
 import type { CompanyState, CompanyStatus, MonthlyRecord, PolicySet, VoiceRecord } from '../engine/types';
 import { MONTHS_PER_YEAR } from '../engine/types';
-import { diagnosisData } from './diagnosis';
 
 // ---------------------------------------------------------------------------
 // 年表
@@ -37,7 +36,7 @@ function isMajorEvent(eventId: string): boolean {
 }
 
 /** その月の記録にある制度（なければ今の制度） */
-function policiesAt(state: CompanyState, month: number): PolicySet {
+export function policiesAt(state: CompanyState, month: number): PolicySet {
   return state.history.find((r) => r.month === month)?.policies ?? state.policies;
 }
 
@@ -154,46 +153,30 @@ export function pickVoices(state: CompanyState): VoicePeriod[] {
 }
 
 // ---------------------------------------------------------------------------
-// 分岐点の解説（§9 の6）：主な判断を3〜5つ。別の選択をしていたらの試算はしない
+// 法令と出来事の学び（§14.7。もとは §9 の6「分岐点の解説」。制度の変更は「変更の振り返り」で扱う）
 // ---------------------------------------------------------------------------
 
-export const TURNING_POINTS_MAX = 5;
-/** 同じ種類（法令・制度の変更）から挙げる上限。出来事での判断も入るように */
-export const TURNING_POINTS_PER_KIND = 2;
-/** 法令を後回しにした月数がこれ以上なら、分岐点に挙げる */
+export const LESSONS_MAX = 5;
+/** 法令から挙げる上限。出来事での判断も入るように */
+const LAW_LESSONS_MAX = 2;
+/** 法令を後回しにした月数がこれ以上なら挙げる */
 const VIOLATION_MONTHS_NOTABLE = 6;
 
-export type TurningPoint =
+export type LessonPoint =
   | { month: number; kind: 'event'; eventId: string; choiceIndex: number; lesson: string }
-  | { month: number; kind: 'policy'; changes: { category: keyof PolicySet; option: string }[]; lesson: string; method: string | null }
   | { month: number; kind: 'law'; ruleId: string; violationMonths: number; lesson: string };
 
 /** 候補の重さ（大きいほど優先して挙げる） */
-const WEIGHT = { law: 5, policy: 4, followUp: 4, condition: 4, market: 3, industry: 3, hiring: 3, lawEvent: 3, people: 2 };
+const WEIGHT = { law: 5, followUp: 4, condition: 4, market: 3, industry: 3, hiring: 3, lawEvent: 3, people: 2 };
 
-export function pickTurningPoints(state: CompanyState): TurningPoint[] {
-  const cands: { score: number; point: TurningPoint }[] = [];
+export function pickLessons(state: CompanyState): LessonPoint[] {
+  const cands: { score: number; point: LessonPoint }[] = [];
   for (const c of state.legal.compliance) {
     if (c.violationMonths < VIOLATION_MONTHS_NOTABLE) continue;
     const rule = getLaw(c.ruleId);
     cands.push({
       score: WEIGHT.law,
       point: { month: c.triggeredMonth, kind: 'law', ruleId: c.ruleId, violationMonths: c.violationMonths, lesson: rule.lesson },
-    });
-  }
-  for (const c of state.policyChanges) {
-    const after = policiesAt(state, c.month);
-    const first = c.categories[0];
-    if (!first) continue;
-    cands.push({
-      score: WEIGHT.policy,
-      point: {
-        month: c.month,
-        kind: 'policy',
-        changes: c.categories.map((category) => ({ category, option: after[category] })),
-        lesson: c.categories.map((k) => diagnosisData.policyLessons[k]).join(''),
-        method: c.method,
-      },
     });
   }
   const seen = new Set<string>();
@@ -213,13 +196,12 @@ export function pickTurningPoints(state: CompanyState): TurningPoint[] {
             : WEIGHT[e.category];
     cands.push({ score, point: { month: d.month, kind: 'event', eventId: e.id, choiceIndex: d.choiceIndex, lesson } });
   }
-  const picked: TurningPoint[] = [];
-  const perKind = new Map<string, number>();
+  const picked: LessonPoint[] = [];
+  let laws = 0;
   for (const c of cands.sort((a, b) => b.score - a.score || a.point.month - b.point.month)) {
-    if (picked.length >= TURNING_POINTS_MAX) break;
-    const n = perKind.get(c.point.kind) ?? 0;
-    if (c.point.kind !== 'event' && n >= TURNING_POINTS_PER_KIND) continue;
-    perKind.set(c.point.kind, n + 1);
+    if (picked.length >= LESSONS_MAX) break;
+    if (c.point.kind === 'law' && laws >= LAW_LESSONS_MAX) continue;
+    if (c.point.kind === 'law') laws++;
     picked.push(c.point);
   }
   return picked.sort((a, b) => a.month - b.month);
