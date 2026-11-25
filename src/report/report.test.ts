@@ -16,7 +16,7 @@ import {
   type PolicySet,
 } from '../engine/types';
 import { computeDiagnosis, diagnosisData, eventPart, policyAxisScore, policyPart } from './diagnosis';
-import { buildTimeline, pickTurningPoints, pickVoices, runRival, TURNING_POINTS_MAX, VOICE_PERIOD_YEARS, yearlySeries } from './history';
+import { buildTimeline, LESSONS_MAX, pickLessons, pickVoices, runRival, VOICE_PERIOD_YEARS, yearlySeries } from './history';
 
 /** 自動で最後まで回した会社 */
 function played(seed = 11, policies: PolicySet = defaultPolicies): CompanyState {
@@ -172,35 +172,32 @@ describe('従業員の声', () => {
   });
 });
 
-describe('分岐点の解説', () => {
+describe('法令と出来事の学び', () => {
   it('主な判断を最大5つ、月の順に挙げる。学びの一言がある', () => {
     const c = played(11);
-    const t = pickTurningPoints(c);
-    expect(t.length).toBeGreaterThanOrEqual(3);
-    expect(t.length).toBeLessThanOrEqual(TURNING_POINTS_MAX);
+    const t = pickLessons(c);
+    expect(t.length).toBeGreaterThanOrEqual(1);
+    expect(t.length).toBeLessThanOrEqual(LESSONS_MAX);
     for (let i = 1; i < t.length; i++) expect(t[i]!.month).toBeGreaterThanOrEqual(t[i - 1]!.month);
     for (const p of t) expect(p.lesson.length).toBeGreaterThan(5);
   });
 
-  it('法令を長く後回しにした義務と、制度の変更は優先して挙がる', () => {
+  it('法令を長く後回しにした義務は優先して挙がる。制度の変更は挙がらない（変更の振り返りで扱う）', () => {
     const c = played(11);
     const first = c.legal.compliance[0]!;
     first.violationMonths = 24;
     c.policyChanges.push({ month: 30, categories: ['pay'], resistance: 4, method: 'rules', transition: false, affected: 3, averageCutPct: 5 });
-    const t = pickTurningPoints(c);
+    const t = pickLessons(c);
     expect(t.some((p) => p.kind === 'law' && p.ruleId === first.ruleId)).toBe(true);
-    expect(t.some((p) => p.kind === 'policy' && p.method === 'rules')).toBe(true);
+    expect(t.every((p) => p.kind === 'law' || p.kind === 'event')).toBe(true);
   });
 
-  it('法令と制度の変更はそれぞれ2つまでにして、出来事での判断も入れる', () => {
+  it('法令は2つまでにして、出来事での判断も入れる', () => {
     const c = played(11);
     for (const x of c.legal.compliance) x.violationMonths = 30;
-    for (let m = 20; m < 80; m += 12) {
-      c.policyChanges.push({ month: m, categories: ['training'], resistance: 4, method: null, transition: false, affected: 0, averageCutPct: 0 });
-    }
-    const t = pickTurningPoints(c);
+    const t = pickLessons(c);
     expect(t.filter((p) => p.kind === 'law').length).toBeLessThanOrEqual(2);
-    expect(t.filter((p) => p.kind === 'policy').length).toBeLessThanOrEqual(2);
     expect(t.some((p) => p.kind === 'event')).toBe(true);
   });
 });
+
