@@ -168,7 +168,7 @@ function useBuckets(company: CompanyState, period: Period) {
 // 事業
 // ---------------------------------------------------------------------------
 
-function economyLabel(economy: number): string {
+export function economyLabel(economy: number): string {
   if (economy >= coef('ui.economy.boom_threshold')) return t.business.economyLabels.boom;
   if (economy <= coef('ui.economy.slump_threshold')) return t.business.economyLabels.slump;
   return t.business.economyLabels.normal;

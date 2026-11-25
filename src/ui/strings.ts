@@ -437,7 +437,8 @@ export const reportStrings = {
     rival: '同期創業の他社との比較',
     voices: '従業員の声',
     style: '人事スタイル診断',
-    turning: '分岐点の解説',
+    retro: '変更の振り返り',
+    turning: '法令と出来事の学び',
   },
   timeline: {
     founding: (n: number) => `創業（社員${n}人）`,
@@ -479,12 +480,38 @@ export const reportStrings = {
   strength: '強み',
   pitfall: '落とし穴',
   axisFrom: (from: string) => `材料：${from}・出来事での判断`,
-  turningLead: '主な判断を挙げ、この場面で一般にどうなりやすいかを解説します。別の選択をしていたらどうなったかの試算はしません。',
+  turningLead: '法令の義務を長く後回しにしたことと、出来事での判断から、学びの一言を挙げます。',
   turning: {
-    policy: (text: string) => `制度の変更：${text}`,
-    method: { consent: '（合意を取って）', rules: '（就業規則の変更で）' },
     law: (name: string, months: number) => `${name}を後回しにした（違反の状態が${months}か月）`,
   },
+  retroLead: '途中で変えた制度・打った施策・整えた個別制度・組織改編のうち、数字が大きく動いたものを挙げます。',
+  retroNote: '前と後を比べたものです。景気や会社の成長など、制度以外の動きも混ざっています',
+  retroEmpty: '1年後まで見届けた変更のうち、目立った変化はありませんでした。',
+  retroCols: { before: '前の半年', soon: '直後の半年', later: '1年後（7〜12か月目）' },
+  retroRows: {
+    laborCostRatio: '人件費率',
+    operatingProfit: '営業利益（月平均）',
+    attritionRate: '離職率（年換算）',
+    engagement: '納得感（平均）',
+    hires: '入社（人）',
+    economy: '景気（同じ時期）',
+  },
+  retroArrows: { up: '↑', down: '↓', flat: '→' },
+  retroToneLabels: { good: '良くなった', bad: '悪くなった', neutral: '' },
+  retroFactors: (up: string | null, down: string | null) =>
+    ['納得感の内訳', up && `上がった：${up}`, down && `下がった：${down}`].filter(Boolean).join('　'),
+  retroReasons: (before: string | null, later: string | null) =>
+    `いちばん多い退職理由：前は${before ?? 'なし'}、1年後は${later ?? 'なし'}`,
+  retroVoicesTitle: 'そのあとの社員の声',
+  retroItem: {
+    policy: (text: string) => `制度：${text}`,
+    method: { consent: '（合意を取って）', rules: '（就業規則の変更で）' },
+    initiative: (title: string) => `施策：${title}`,
+    program: { install: (name: string) => `${name}を整えた`, stop: (name: string) => `${name}を止めた` },
+    reorg: (from: string, to: string) => `組織を${from}から${to}に`,
+  },
+  retroMore: (n: number) => `ほか${n}件`,
+  retroDash: '－',
   noVoices: 'この時期の声はありません',
 } as const;
 

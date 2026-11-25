@@ -2060,3 +2060,70 @@ body::before {
   margin: 0;
   font-size: var(--step--1);
 }
+
+/* 変更の振り返り（§14.7。ステップ20） */
+.retro-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 20px;
+}
+
+.retro-card {
+  border-top: 1px solid var(--rule);
+  padding-top: 12px;
+  min-width: 0;
+}
+
+.retro-title {
+  font-size: var(--step-0);
+  margin: 0 0 8px;
+  line-height: 1.5;
+}
+
+.retro-table td {
+  white-space: nowrap;
+}
+
+.retro-table .retro-context th,
+.retro-table .retro-context td {
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+}
+
+.retro-arrow {
+  display: inline-block;
+  min-width: 1em;
+  text-align: center;
+  font-weight: 700;
+}
+
+.retro-good {
+  color: var(--gain);
+}
+
+.retro-bad {
+  color: var(--loss);
+}
+
+.retro-neutral {
+  color: var(--ink-soft);
+}
+
+.retro-line {
+  margin: 6px 0 0;
+  font-size: var(--step--1);
+}
+
+.retro-voices-title {
+  color: var(--ink-soft);
+}
+
+@media (max-width: 480px) {
+  .retro-table th,
+  .retro-table td {
+    padding: 5px 4px;
+    font-size: var(--step--1);
+  }
+}
