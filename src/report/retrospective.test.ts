@@ -5,7 +5,7 @@ import { generateCompany, setFoundingPolicies } from '../engine/generate';
 import { programDefs } from '../engine/programs';
 import { runToEnd } from '../engine/tick';
 import type { CompanyState, PolicySet } from '../engine/types';
-import { collectChanges, groupChanges, type ChangeItem } from './retrospective';
+import { collectChanges, groupChanges, swingScore, typicalSwing, windowStats, type ChangeItem } from './retrospective';
 
 /** 自動で最後まで回した会社 */
 function played(seed = 11, policies: PolicySet = defaultPolicies): CompanyState {
@@ -71,5 +71,80 @@ describe('変更のまとめ', () => {
 
   it('変更がなければ空', () => {
     expect(groupChanges([])).toEqual([]);
+  });
+});
+
+describe('期間の数字', () => {
+  it('6か月の人件費率・営業利益・離職率・入社・納得感を記録から計算する', () => {
+    const c = played(11);
+    const rows = c.history.filter((r) => r.month >= 24 && r.month < 30);
+    const w = windowStats(c, 24, 30)!;
+    const rev = rows.reduce((s, r) => s + r.revenue, 0);
+    const head = rows.reduce((s, r) => s + r.headcount, 0) / 6;
+    expect(w.months).toBe(6);
+    expect(w.laborCostRatio).toBeCloseTo(rows.reduce((s, r) => s + r.labor.total, 0) / rev);
+    expect(w.operatingProfit).toBeCloseTo(rows.reduce((s, r) => s + r.operatingProfit, 0) / 6);
+    expect(w.attritionRate).toBeCloseTo((rows.reduce((s, r) => s + r.resignations, 0) / head) * 2);
+    expect(w.hires).toBe(rows.reduce((s, r) => s + r.hires, 0));
+    expect(w.engagement).toBeCloseTo(rows.reduce((s, r) => s + r.avgEngagement, 0) / 6);
+    expect(w.economy).toBeCloseTo(rows.reduce((s, r) => s + r.economy, 0) / 6);
+  });
+
+  it('退職理由はその期間に自分から辞めた人でいちばん多いもの', () => {
+    const c = played(11);
+    const base = { employeeId: 'e', name: 'n', role: 'r', age: 30, tenureMonths: 12, salaryMonthly: 1, engagement: 1 };
+    c.departures = [
+      { ...base, month: 25, kind: 'resignation', reason: 'workload' },
+      { ...base, month: 26, kind: 'resignation', reason: 'workload' },
+      { ...base, month: 27, kind: 'resignation', reason: 'pay' },
+      { ...base, month: 28, kind: 'retirement', reason: null },
+      { ...base, month: 40, kind: 'resignation', reason: 'pay' },
+    ] as CompanyState['departures'];
+    expect(windowStats(c, 24, 30)!.topReason).toBe('workload');
+    expect(windowStats(c, 0, 6)!.topReason).toBeNull();
+  });
+
+  it('売上が0の期間は人件費率が null で、NaN が出ない', () => {
+    const c = played(11);
+    for (const r of c.history) if (r.month < 6) r.revenue = 0;
+    const w = windowStats(c, 0, 6)!;
+    expect(w.laborCostRatio).toBeNull();
+    expect(Number.isNaN(w.attritionRate)).toBe(false);
+  });
+
+  it('社員が0人の期間でも離職率は0で、NaN が出ない', () => {
+    const c = played(11);
+    for (const r of c.history) if (r.month < 6) r.headcount = 0;
+    expect(windowStats(c, 0, 6)!.attritionRate).toBe(0);
+  });
+
+  it('記録のない期間は null', () => {
+    expect(windowStats(played(11), 9999, 10005)).toBeNull();
+  });
+
+  it('納得感の内訳は記録がある月の平均。内訳がない古い記録では null', () => {
+    const c = played(11);
+    expect(windowStats(c, 24, 30)!.factors).not.toBeNull();
+    for (const r of c.history) delete r.org;
+    expect(windowStats(c, 24, 30)!.factors).toBeNull();
+  });
+});
+
+describe('ふだんの揺れ', () => {
+  it('動きのある会社では正の値', () => {
+    expect(typicalSwing(played(11), 'operatingProfit')).toBeGreaterThan(0);
+  });
+
+  it('ずっと同じ値なら0で、点数も0（0で割らない）', () => {
+    const c = played(11);
+    for (const r of c.history) r.avgEngagement = 50;
+    expect(typicalSwing(c, 'engagement')).toBe(0);
+    expect(swingScore(55, 50, 0)).toBe(0);
+  });
+
+  it('点数は差÷ふだんの揺れ。どちらかが null なら0', () => {
+    expect(swingScore(0.4, 0.3, 0.05)).toBeCloseTo(2);
+    expect(swingScore(0.3, 0.4, 0.05)).toBeCloseTo(2);
+    expect(swingScore(null, 0.3, 0.05)).toBe(0);
   });
 });
