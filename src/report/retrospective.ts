@@ -15,6 +15,7 @@ import type {
   OrgForm,
   PolicySet,
   ProgramId,
+  VoiceRecord,
 } from '../engine/types';
 import { ENGAGEMENT_FACTORS, MONTHS_PER_YEAR } from '../engine/types';
 import { policiesAt } from './history';
@@ -162,4 +163,127 @@ export function typicalSwing(state: CompanyState, metric: RetroMetric): number {
 export function swingScore(a: number | null, b: number | null, swing: number): number {
   if (a === null || b === null || swing <= 0) return 0;
   return Math.abs(a - b) / swing;
+}
+
+// ---------------------------------------------------------------------------
+// カード
+// ---------------------------------------------------------------------------
+
+export type Arrow = { dir: 'up' | 'down' | 'flat'; tone: 'good' | 'bad' | 'neutral' };
+
+export type RetroCard = {
+  group: ChangeGroup;
+  /** 最初の変更の前の期間 */
+  before: WindowStats;
+  /** 最後の変更の月からの期間 */
+  soon: WindowStats;
+  /** その次の期間（最後の変更から7〜12か月目） */
+  later: WindowStats;
+  /** 4つの指標のうち、前との差がふだんの揺れの何倍か（いちばん大きいもの） */
+  score: number;
+  arrows: Record<RetroMetric, { soon: Arrow; later: Arrow }>;
+  /** 1年後に前より最も上がった要因（上がったものがなければ null） */
+  factorUp: EngagementFactor | null;
+  /** 1年後に前より最も下がった要因（下がったものがなければ null） */
+  factorDown: EngagementFactor | null;
+  /** 不満の声と前向きな声を1つずつまで（なければふつうの声で埋める。月の順） */
+  voices: VoiceRecord[];
+};
+
+/** 上がると良い（+1）・悪い（−1）・どちらとも言えない（0）。人件費率は投資の場合もあるので0 */
+const GOOD_WHEN_UP: Record<RetroMetric, 1 | -1 | 0> = {
+  laborCostRatio: 0,
+  operatingProfit: 1,
+  attritionRate: -1,
+  engagement: 1,
+};
+
+function arrow(metric: RetroMetric, before: number | null, after: number | null, swing: number): Arrow {
+  if (before === null || after === null || Math.abs(after - before) < swing * coef('retrospective.flat_ratio') || after === before) {
+    return { dir: 'flat', tone: 'neutral' };
+  }
+  const dir = after > before ? 'up' : 'down';
+  const sign = GOOD_WHEN_UP[metric] * (dir === 'up' ? 1 : -1);
+  return { dir, tone: sign > 0 ? 'good' : sign < 0 ? 'bad' : 'neutral' };
+}
+
+function factorMoves(before: FactorScores | null, later: FactorScores | null) {
+  if (!before || !later) return { up: null, down: null };
+  let up: EngagementFactor | null = null;
+  let down: EngagementFactor | null = null;
+  for (const k of ENGAGEMENT_FACTORS) {
+    const d = later[k] - before[k];
+    if (d > 0 && (up === null || d > later[up] - before[up])) up = k;
+    if (d < 0 && (down === null || d < later[down] - before[down])) down = k;
+  }
+  return { up, down };
+}
+
+/** 並びの真ん中のもの（乱数を使わずに、その時期らしい1件を選ぶ） */
+const middle = <T,>(xs: T[]): T | undefined => xs[Math.floor(xs.length / 2)];
+
+function pickCardVoices(
+  state: CompanyState,
+  from: number,
+  to: number,
+  up: EngagementFactor | null,
+  down: EngagementFactor | null,
+): VoiceRecord[] {
+  const inPeriod = state.voices.filter((v) => v.kind === 'voice' && v.month >= from && v.month < to);
+  const used = new Set<VoiceRecord>();
+  const pick = (tone: VoiceRecord['tone'], factor: EngagementFactor | null) => {
+    const same = inPeriod.filter((v) => v.tone === tone && !used.has(v));
+    const v = middle(same.filter((x) => factor !== null && x.factor === factor)) ?? middle(same);
+    if (v) used.add(v);
+    return v;
+  };
+  // 不満の声と前向きな声。その調子の声がなければ、同じ要因についてのふつうの声で埋める
+  const negative = pick('negative', down) ?? pick('neutral', down);
+  const positive = pick('positive', up) ?? pick('neutral', up);
+  return [negative, positive].filter((v): v is VoiceRecord => v !== undefined).sort((a, b) => a.month - b.month);
+}
+
+/** 振り返りのカード（月の順）。前が短いもの・1年後まで見届けられないものだけ外し、大きさで選ぶ前のもの */
+export function buildCards(state: CompanyState): RetroCard[] {
+  const w = coef('retrospective.window_months');
+  const minBefore = coef('retrospective.min_before_months');
+  const groups = groupChanges(collectChanges(state));
+  if (groups.length === 0) return [];
+  const swings = Object.fromEntries(RETRO_METRICS.map((m) => [m, typicalSwing(state, m)])) as Record<RetroMetric, number>;
+  const out: RetroCard[] = [];
+  for (const group of groups) {
+    const before = windowStats(state, group.first - w, group.first);
+    const soon = windowStats(state, group.last, group.last + w);
+    const later = windowStats(state, group.last + w, group.last + 2 * w);
+    if (!before || !soon || !later || before.months < minBefore || later.months < w) continue;
+    let score = 0;
+    const arrows = {} as RetroCard['arrows'];
+    for (const m of RETRO_METRICS) {
+      score = Math.max(score, swingScore(soon[m], before[m], swings[m]), swingScore(later[m], before[m], swings[m]));
+      arrows[m] = { soon: arrow(m, before[m], soon[m], swings[m]), later: arrow(m, before[m], later[m], swings[m]) };
+    }
+    const { up, down } = factorMoves(before.factors, later.factors);
+    out.push({
+      group,
+      before,
+      soon,
+      later,
+      score,
+      arrows,
+      factorUp: up,
+      factorDown: down,
+      voices: pickCardVoices(state, group.last, group.last + 2 * w, up, down),
+    });
+  }
+  return out;
+}
+
+/** 社史レポートに出す振り返り：大きく動いたもの（目安以上）を点数の高い順に最大件数まで選び、月の順に並べる */
+export function buildRetrospective(state: CompanyState): RetroCard[] {
+  const threshold = coef('retrospective.notable_score');
+  return buildCards(state)
+    .filter((c) => c.score >= threshold)
+    .sort((a, b) => b.score - a.score || a.group.first - b.group.first)
+    .slice(0, coef('retrospective.max_cards'))
+    .sort((a, b) => a.group.first - b.group.first);
 }
