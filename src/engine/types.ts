@@ -684,6 +684,8 @@ export type TargetSpec = {
 /** 社員の集団への効果（「新しい社員」「狙われた営業」など） */
 export type GroupEffect = {
   where: EmployeeCondition[];
+  /** 制度と会社の相性（§14.8）が当てはまる社員だけにする */
+  fitId?: string;
   /** 対象者を除くか */
   excludeTarget?: boolean;
   /** 人数を絞るときの並べ方と人数（limitShare は在籍者に対する割合） */
@@ -797,6 +799,8 @@ export type EventEffects = {
   installProgram?: ProgramId;
   /** 組織の形を選ぶ判断待ち（reorg）を積む（§14.4） */
   openReorg?: boolean;
+  /** 制度の見直しを開く（§14.8 の兆しのイベント。画面で遊ぶときだけ。自動で進めるときは開かない） */
+  openReview?: boolean;
 };
 
 export type EventChoice = {
@@ -823,11 +827,14 @@ export type EventChoice = {
  * - followUp：前の判断で予約されたときだけ起きる（連鎖イベント）
  * - condition：条件を満たした月に、毎月の抽選とは別に起きる（景気後退など。probability は月あたりの確率）
  * - initiative：プレイヤーが「施策を打つ」から起こす（§14.1。抽選しない。自動で進めるときは起きない）
+ * - fit：制度と会社の相性（§14.8）が続けて効き、当てはまる社員が目安以上いると、1社につき1回起きる（抽選しない）
  */
 export type EventTrigger =
   | { type: 'law' }
   | {
-      type: 'random' | 'followUp' | 'condition' | 'initiative';
+      type: 'random' | 'followUp' | 'condition' | 'initiative' | 'fit';
+      /** fit のときの相性の id（src/data/fits.json） */
+      fitId?: string;
       minHeadcount?: number;
       /** condition のときの月あたりの確率（省略すると1） */
       probability?: number;

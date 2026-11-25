@@ -264,6 +264,9 @@ export const reviewStrings = {
     `管理職1人が見る人数 ×${spanMult.toFixed(2)}・判断の速さ ×${speed.toFixed(2)}・調整の手間 −${Math.round(coordination * 1000) / 10}%（いまの人数で）`,
   title: (year: number) => `${year}年目の決算`,
   lead: 'この1年をふり返って、制度を変えるか決めます。',
+  /** 兆しのイベント（§14.8）から開いたとき */
+  fromEventTitle: '制度の見直し',
+  fromEventLead: '現場から上がった声を受けて、制度を変えるか決めます。直近1年の数字も見ながら選べます。',
   keep: 'このまま続ける',
   change: '制度を変える',
   summary: {

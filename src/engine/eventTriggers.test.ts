@@ -195,7 +195,8 @@ describe('イベントのデータ', () => {
     for (const e of nonLaw) {
       const t = e.trigger;
       if (t.type === 'law' || !e.body.includes('{name}')) continue;
-      expect(t.target, e.id).toBeDefined();
+      // 相性の兆しのイベント（§14.8）は、当てはまる社員の1人を必ず対象者にする
+      expect(t.target ?? (t.type === 'fit' ? 'fit' : undefined), e.id).toBeDefined();
     }
   });
 
@@ -235,7 +236,9 @@ describe('業種ごとの文（ステップ12）', () => {
     for (const e of nonLaw) {
       for (const ind of INDUSTRY_IDS) {
         const body = localizeEvent(e, ind).body;
-        if (/\{(name|role)\}/.test(body)) expect(e.trigger.type !== 'law' && e.trigger.target, `${e.id} (${ind})`).toBeTruthy();
+        if (/\{(name|role)\}/.test(body)) {
+          expect(e.trigger.type !== 'law' && (e.trigger.target || e.trigger.type === 'fit'), `${e.id} (${ind})`).toBeTruthy();
+        }
       }
     }
   });

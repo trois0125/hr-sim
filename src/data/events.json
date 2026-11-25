@@ -6436,5 +6436,1194 @@
         }
       }
     ]
+  },
+  {
+    "id": "fit_individual_pay_team",
+    "category": "people",
+    "trigger": {
+      "type": "fit",
+      "fitId": "individual_pay_team"
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "チームの成果と個人の評価",
+    "body": "{name}から「みんなで回している仕事なのに、個人の成績で給料や賞与に差がつくのは納得できない」という声が上がっています。手の空いた人が隣を手伝わなくなってきた、という話も聞こえてきます。",
+    "choices": [
+      {
+        "label": "給与・賞与の決め方を見直す",
+        "effects": {
+          "openReview": true
+        },
+        "axes": {
+          "horizon": 1,
+          "rules": 1
+        },
+        "lesson": "チームで成果を出す仕事では、個人の成果で差をつけると協力が減りやすい。会社やチームの業績と結びつけるほうが受け入れられやすい",
+        "hint": "制度の見直しの画面が開きます。給与や賞与を下げる変更は、合意を取るか就業規則の変更で進めるかを選びます"
+      },
+      {
+        "label": "チームへの貢献も評価に入れる運用にする",
+        "effects": {
+          "cashPerEmployee": -20000,
+          "groups": [
+            {
+              "where": [],
+              "fitId": "individual_pay_team",
+              "engagement": 4
+            }
+          ]
+        },
+        "axes": {
+          "people": 1,
+          "horizon": -1
+        },
+        "lesson": "制度を変えなくても、評価の中で「手伝ったこと」を見るだけで、受け止め方は変わる。ただし評価する人の手間は増える"
+      },
+      {
+        "label": "成果を出した人に報いる考え方を貫く",
+        "effects": {
+          "groups": [
+            {
+              "where": [],
+              "fitId": "individual_pay_team",
+              "engagement": -3
+            }
+          ]
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "lesson": "個人に報いる考え方そのものは悪くない。ただ、成果が個人で切り分けられない仕事では、不公平だと感じる人が増え続ける"
+      }
+    ],
+    "textByIndustry": {
+      "restaurant": {
+        "body": "店舗スタッフの{name}から「店はみんなで回しているのに、個人の成績で給料や賞与に差がつくのは納得できない」という声が上がっています。忙しい時間に隣の持ち場を手伝わなくなってきた、という話も聞こえてきます。"
+      },
+      "manufacturing": {
+        "body": "製造の{name}から「ラインはみんなで動かしているのに、個人の成績で給料や賞与に差がつくのは納得できない」という声が上がっています。ほかの工程を手伝わなくなってきた、という話も聞こえてきます。"
+      }
+    }
+  },
+  {
+    "id": "fit_remote_ceo_eval",
+    "category": "people",
+    "trigger": {
+      "type": "fit",
+      "fitId": "remote_ceo_eval"
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "見えないところでの評価",
+    "body": "在宅で働く{name}から「社長が自分の仕事ぶりをどこまで見ているのか分からない。評価に不安がある」と相談がありました。同じ不安を口にする社員が増えています。",
+    "choices": [
+      {
+        "label": "評価の制度を見直す",
+        "effects": {
+          "openReview": true
+        },
+        "axes": {
+          "horizon": 1,
+          "rules": 1
+        },
+        "lesson": "在宅が増えると、社長が一人で見て評価するのは難しくなる。目標や行動の基準で評価する仕組みにすると、見えにくさを補える"
+      },
+      {
+        "label": "定期的な面談で仕事ぶりを確かめる",
+        "effects": {
+          "cashPerEmployee": -20000,
+          "groups": [
+            {
+              "where": [],
+              "fitId": "remote_ceo_eval",
+              "engagement": 4
+            }
+          ]
+        },
+        "axes": {
+          "people": 1,
+          "horizon": -1
+        },
+        "lesson": "面談で仕事ぶりを確かめれば、在宅でも評価の材料が増える。社長の時間はかかる"
+      },
+      {
+        "label": "成果が出ていれば分かるはずだと考える",
+        "effects": {
+          "groups": [
+            {
+              "where": [],
+              "fitId": "remote_ceo_eval",
+              "engagement": -3
+            }
+          ]
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "lesson": "在宅では、成果が出るまでの過程が見えない。見てもらえていないという不安は、評価への不信につながる"
+      }
+    ]
+  },
+  {
+    "id": "fit_flex_synchronous",
+    "category": "people",
+    "trigger": {
+      "type": "fit",
+      "fitId": "flex_synchronous"
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "そろわない始業時刻",
+    "body": "フレックスタイム制にしたものの、{name}から「全員がそろわないと仕事が始められない。結局みんな同じ時間に来ている」という声が上がっています。例外の調整に手間もかかっています。",
+    "choices": [
+      {
+        "label": "労働時間の制度を見直す",
+        "effects": {
+          "openReview": true
+        },
+        "axes": {
+          "horizon": 1,
+          "rules": 1
+        },
+        "lesson": "全員が同じ時間に動く仕事では、フレックスの良さは出にくい。繁閑に合わせて時間を組む変形労働時間制のほうが合うことが多い"
+      },
+      {
+        "label": "シフトの組み方を工夫して運用する",
+        "effects": {
+          "cashPerEmployee": -20000,
+          "groups": [
+            {
+              "where": [],
+              "fitId": "flex_synchronous",
+              "engagement": 4
+            }
+          ]
+        },
+        "axes": {
+          "people": 1,
+          "horizon": -1
+        },
+        "lesson": "同じ時間に動く仕事でも、シフトの組み方で一人ひとりの都合に合わせる余地は作れる。調整の手間は増える"
+      },
+      {
+        "label": "制度はそのままにする",
+        "effects": {
+          "groups": [
+            {
+              "where": [],
+              "fitId": "flex_synchronous",
+              "engagement": -3
+            }
+          ]
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "lesson": "制度があっても使えない状態が続くと、「名ばかりの制度」と受け止められ、かえって不満の種になる"
+      }
+    ],
+    "textByIndustry": {
+      "restaurant": {
+        "body": "フレックスタイム制にしたものの、店舗の{name}から「開店から閉店まで人数がそろわないと店が回らない。結局みんなシフトどおりに来ている」という声が上がっています。例外の調整に手間もかかっています。"
+      },
+      "manufacturing": {
+        "body": "フレックスタイム制にしたものの、製造の{name}から「ラインは全員がそろわないと動かせない。結局みんな同じ時間に来ている」という声が上がっています。例外の調整に手間もかかっています。"
+      }
+    }
+  },
+  {
+    "id": "fit_mbo_hard_to_quantify",
+    "category": "people",
+    "trigger": {
+      "type": "fit",
+      "fitId": "mbo_hard_to_quantify"
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "数字にならない仕事の目標",
+    "body": "目標管理（MBO）の面談で、{name}から「自分の仕事は数字で目標を立てにくい。毎回、達成できそうな目標を無理に作っている」と打ち明けられました。",
+    "choices": [
+      {
+        "label": "評価の制度を見直す",
+        "effects": {
+          "openReview": true
+        },
+        "axes": {
+          "horizon": 1,
+          "rules": 1
+        },
+        "lesson": "成果を数字にしにくい仕事では、目標の達成度より、仕事の進め方や行動を見る評価のほうが合いやすい"
+      },
+      {
+        "label": "職種に合わせた目標の立て方を作る",
+        "effects": {
+          "cashPerEmployee": -20000,
+          "groups": [
+            {
+              "where": [],
+              "fitId": "mbo_hard_to_quantify",
+              "engagement": 4
+            }
+          ]
+        },
+        "axes": {
+          "people": 1,
+          "horizon": -1
+        },
+        "lesson": "数字の目標だけでなく、仕事の進め方や改善の目標を立てられるようにすると、目標管理でも納得感は保てる。作る手間はかかる"
+      },
+      {
+        "label": "目標管理を全員同じやり方で続ける",
+        "effects": {
+          "groups": [
+            {
+              "where": [],
+              "fitId": "mbo_hard_to_quantify",
+              "engagement": -3
+            }
+          ]
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "lesson": "評価されにくい目標は避けられ、目標が低く抑えられる。全員同じやり方は公平に見えて、職種によっては形だけになる"
+      }
+    ]
+  },
+  {
+    "id": "fit_skill_grade_engineer",
+    "category": "people",
+    "trigger": {
+      "type": "fit",
+      "fitId": "skill_grade_engineer"
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "エンジニアの物足りなさ",
+    "body": "エンジニアの{name}から「技術を身につけても等級はなかなか上がらない。勤めた年数で決まっているように見える」と相談がありました。転職サイトに登録したエンジニアもいるようです。",
+    "choices": [
+      {
+        "label": "等級の制度を見直す",
+        "effects": {
+          "openReview": true
+        },
+        "axes": {
+          "horizon": 1,
+          "rules": 1
+        },
+        "lesson": "職能資格は年功的に運用されやすい。市場で値段が付く専門職には、仕事の中身や役割で決まる等級のほうが納得されやすい",
+        "hint": "制度の見直しの画面が開きます。給与や賞与を下げる変更は、合意を取るか就業規則の変更で進めるかを選びます"
+      },
+      {
+        "label": "技術を評価する特別な手当を出す",
+        "effects": {
+          "cashPerEmployee": -30000,
+          "groups": [
+            {
+              "where": [],
+              "fitId": "skill_grade_engineer",
+              "engagement": 4
+            }
+          ]
+        },
+        "axes": {
+          "people": 1,
+          "horizon": -1
+        },
+        "lesson": "制度を変えずに手当で補うことはできる。ただ、手当が増えると給与の仕組みが分かりにくくなる"
+      },
+      {
+        "label": "長く勤めれば報われると説明する",
+        "effects": {
+          "groups": [
+            {
+              "where": [],
+              "fitId": "skill_grade_engineer",
+              "engagement": -3
+            }
+          ]
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "lesson": "長く勤めれば報われる仕組みは安心につながる一方、市場の値段を知っている人には物足りない。待てない人から辞めていく"
+      }
+    ]
+  },
+  {
+    "id": "fit_remote_new_grad",
+    "category": "people",
+    "trigger": {
+      "type": "fit",
+      "fitId": "remote_new_grad"
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "画面越しの新人",
+    "body": "在宅で働く新人の{name}から「分からないことを誰に聞けばいいか分からない。周りが何をしているかも見えない」と相談がありました。育ちが遅いと感じている先輩もいます。",
+    "choices": [
+      {
+        "label": "働き方の制度を見直す",
+        "effects": {
+          "openReview": true
+        },
+        "axes": {
+          "horizon": 1,
+          "rules": 1
+        },
+        "lesson": "新人はそばで見て覚えることが多い。在宅が中心の職場では、新人の時期だけ出社を増やすなどの工夫が要る"
+      },
+      {
+        "label": "新人に先輩を一人ずつ付ける",
+        "effects": {
+          "cashPerEmployee": -20000,
+          "groups": [
+            {
+              "where": [],
+              "fitId": "remote_new_grad",
+              "engagement": 4
+            }
+          ]
+        },
+        "axes": {
+          "people": 1,
+          "horizon": -1
+        },
+        "lesson": "在宅でも、決まった相談相手がいれば新人は育ちやすい。先輩の時間はかかる"
+      },
+      {
+        "label": "自分から聞くように伝える",
+        "effects": {
+          "groups": [
+            {
+              "where": [],
+              "fitId": "remote_new_grad",
+              "engagement": -3
+            }
+          ]
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "lesson": "自分から聞ける新人ばかりではない。聞けないまま迷う時間が長いほど、育ちが遅れ、辞めやすくなる"
+      }
+    ]
+  },
+  {
+    "id": "fit_grade_small_company",
+    "category": "people",
+    "trigger": {
+      "type": "fit",
+      "fitId": "grade_small_company"
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "小さな会社の立派な制度",
+    "body": "整えた等級制度について、{name}から「人数が少ないのに等級の段階が多くて、上がる道筋がかえって見えない。書類ばかり増えた」という声が出ています。",
+    "choices": [
+      {
+        "label": "等級の制度を見直す",
+        "effects": {
+          "openReview": true
+        },
+        "axes": {
+          "horizon": 1,
+          "rules": 1
+        },
+        "lesson": "人数の少ない会社では、立派な等級制度は運用の手間に見合わないことが多い。会社が大きくなってから整えても遅くない"
+      },
+      {
+        "label": "運用を簡単にして続ける",
+        "effects": {
+          "cashPerEmployee": -20000,
+          "groups": [
+            {
+              "where": [],
+              "fitId": "grade_small_company",
+              "engagement": 4
+            }
+          ]
+        },
+        "axes": {
+          "people": 1,
+          "horizon": -1
+        },
+        "lesson": "段階を減らし書類を減らせば、小さな会社でも等級制度は回せる。仕組みを持っておくことは、大きくなったときの備えになる"
+      },
+      {
+        "label": "決めた制度をそのまま回す",
+        "effects": {
+          "groups": [
+            {
+              "where": [],
+              "fitId": "grade_small_company",
+              "engagement": -3
+            }
+          ]
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "lesson": "人数に合わない制度は、手間だけがかかり、目指す姿も見えにくい。形だけになると、制度そのものへの信頼が下がる"
+      }
+    ]
+  },
+  {
+    "id": "fit_multi_rater_shift",
+    "category": "people",
+    "trigger": {
+      "type": "fit",
+      "fitId": "multi_rater_shift"
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "会わない人を評価する",
+    "body": "360度評価の時期になり、{name}から「同じ時間に働いたことのない人を評価してくださいと言われても困る」という声が上がっています。集計にも手間がかかっています。",
+    "choices": [
+      {
+        "label": "評価の制度を見直す",
+        "effects": {
+          "openReview": true
+        },
+        "axes": {
+          "horizon": 1,
+          "rules": 1
+        },
+        "lesson": "360度評価は、互いの仕事ぶりを見ている人どうしで初めて意味を持つ。勤務が重ならない職場では、上司が見て評価するほうが合いやすい"
+      },
+      {
+        "label": "一緒に働いた人だけで評価する",
+        "effects": {
+          "cashPerEmployee": -10000,
+          "groups": [
+            {
+              "where": [],
+              "fitId": "multi_rater_shift",
+              "engagement": 4
+            }
+          ]
+        },
+        "axes": {
+          "people": 1,
+          "horizon": -1
+        },
+        "lesson": "評価する人を、実際に一緒に働いた人に絞れば、ずれは小さくなる。組み合わせを決める手間はかかる"
+      },
+      {
+        "label": "全員で評価する形を続ける",
+        "effects": {
+          "groups": [
+            {
+              "where": [],
+              "fitId": "multi_rater_shift",
+              "engagement": -3
+            }
+          ]
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "lesson": "見ていない人の評価が混ざると、評価はずれ、集計の手間だけが増える。評価そのものへの信頼が下がる"
+      }
+    ],
+    "textByIndustry": {
+      "restaurant": {
+        "body": "360度評価の時期になり、店舗の{name}から「シフトが重ならない人を評価してくださいと言われても困る」という声が上がっています。パートの人数が多く、集計にも手間がかかっています。"
+      }
+    }
+  },
+  {
+    "id": "fit_seniority_cyclical",
+    "category": "people",
+    "trigger": {
+      "type": "fit",
+      "fitId": "seniority_cyclical"
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "景気が落ちても下がらない人件費",
+    "body": "{name}から「景気が悪いのに、毎年きちんと昇給する。ありがたいけれど、会社は大丈夫なのか」と心配する声が届きました。売上が落ちても人件費は年々重くなっています。",
+    "choices": [
+      {
+        "label": "給与の決め方を見直す",
+        "effects": {
+          "openReview": true
+        },
+        "axes": {
+          "horizon": 1,
+          "rules": 1
+        },
+        "lesson": "景気の波が大きい業種では、年功給は不況でも人件費が下がらない。業績や相場と連動させる部分を持つと、波を吸収しやすい",
+        "hint": "制度の見直しの画面が開きます。給与や賞与を下げる変更は、合意を取るか就業規則の変更で進めるかを選びます"
+      },
+      {
+        "label": "賞与で調整して乗り切る",
+        "effects": {
+          "cashPerEmployee": -20000,
+          "groups": [
+            {
+              "where": [],
+              "fitId": "seniority_cyclical",
+              "engagement": 4
+            }
+          ]
+        },
+        "axes": {
+          "people": 1,
+          "horizon": -1
+        },
+        "lesson": "月給は守り、賞与で業績の波を吸収するのは、雇用の安定と会社の安定を両立させる方法の一つ"
+      },
+      {
+        "label": "社員の安心を優先して続ける",
+        "effects": {
+          "groups": [
+            {
+              "where": [],
+              "fitId": "seniority_cyclical",
+              "engagement": -3
+            }
+          ]
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "lesson": "年功給の安心感は大きい。ただ、不況が長引くと人件費が利益を圧迫し、雇用そのものを守れなくなることもある"
+      }
+    ]
+  },
+  {
+    "id": "fit_ceo_eval_large",
+    "category": "people",
+    "trigger": {
+      "type": "fit",
+      "fitId": "ceo_eval_large"
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "社長の目が届かない",
+    "body": "社員が増え、{name}から「社長は自分のことを覚えているのだろうか。評価の理由がよく分からない」という声が出ています。社長自身も評価に時間がかかりすぎると漏らしています。",
+    "choices": [
+      {
+        "label": "評価の制度を見直す",
+        "effects": {
+          "openReview": true
+        },
+        "axes": {
+          "horizon": 1,
+          "rules": 1
+        },
+        "lesson": "社長が全員を見られる人数には限りがある。会社が大きくなったら、基準を決めて管理職が評価する仕組みに移る時期"
+      },
+      {
+        "label": "社長が全員と短く面談する",
+        "effects": {
+          "cashPerEmployee": -20000,
+          "groups": [
+            {
+              "where": [],
+              "fitId": "ceo_eval_large",
+              "engagement": 4
+            }
+          ]
+        },
+        "axes": {
+          "people": 1,
+          "horizon": -1
+        },
+        "lesson": "面談で顔を合わせれば、評価の材料は増える。ただ、人数が増えるほど社長の時間がそれだけで埋まる"
+      },
+      {
+        "label": "社長の目を信じて続ける",
+        "effects": {
+          "groups": [
+            {
+              "where": [],
+              "fitId": "ceo_eval_large",
+              "engagement": -3
+            }
+          ]
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "lesson": "社長が見られる人数を超えると、評価は当て推量になる。評価への不信は、優秀な人から辞める理由になる"
+      }
+    ]
+  },
+  {
+    "id": "fit_new_grad_small_company",
+    "category": "people",
+    "trigger": {
+      "type": "fit",
+      "fitId": "new_grad_small_company"
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "小さな会社の新卒",
+    "body": "入社して間もない新卒の{name}から「同期がいなくて相談できる相手がいない。このまま続けていけるか不安」と打ち明けられました。",
+    "choices": [
+      {
+        "label": "採用方針を見直す",
+        "effects": {
+          "openReview": true
+        },
+        "axes": {
+          "horizon": 1,
+          "rules": 1
+        },
+        "lesson": "小さな会社ほど、新卒は3年以内に辞めやすい。育てる人と仕組みが整うまでは、経験者を中心に採るほうが合うことが多い"
+      },
+      {
+        "label": "年の近い先輩を相談相手に付ける",
+        "effects": {
+          "cashPerEmployee": -20000,
+          "groups": [
+            {
+              "where": [],
+              "fitId": "new_grad_small_company",
+              "engagement": 4
+            }
+          ]
+        },
+        "axes": {
+          "people": 1,
+          "horizon": -1
+        },
+        "lesson": "同期や相談相手がいない孤立は、新卒が辞める大きな理由の一つ。決まった相談相手がいるだけで続けやすくなる"
+      },
+      {
+        "label": "仕事を覚えれば慣れると伝える",
+        "effects": {
+          "groups": [
+            {
+              "where": [],
+              "fitId": "new_grad_small_company",
+              "engagement": -3
+            }
+          ]
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "lesson": "小さな会社の新卒は、教える人も時間も足りないまま放っておかれがち。慣れる前に辞めてしまう人が多い"
+      }
+    ]
+  },
+  {
+    "id": "fit_overtime_store_manager",
+    "category": "people",
+    "trigger": {
+      "type": "fit",
+      "fitId": "overtime_store_manager"
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "店長の長い一日",
+    "body": "店長の{name}から「人が足りない時間は自分が入るしかない。休みの日も店のことが頭から離れない」と相談がありました。ほかの店長も同じように長く働いています。",
+    "choices": [
+      {
+        "label": "残業の方針を見直す",
+        "effects": {
+          "openReview": true
+        },
+        "axes": {
+          "horizon": 1,
+          "rules": 1
+        },
+        "lesson": "飲食の店長は長時間労働になりやすい。残業の上限を下げ、店長が埋めている時間を人を増やして埋めるほうが長続きする"
+      },
+      {
+        "label": "店長の代わりに入る人を手当てする",
+        "effects": {
+          "cashPerEmployee": -30000,
+          "groups": [
+            {
+              "where": [],
+              "fitId": "overtime_store_manager",
+              "engagement": 4
+            }
+          ]
+        },
+        "axes": {
+          "people": 1,
+          "horizon": -1
+        },
+        "lesson": "応援の人を手当てすれば、店長の負担はすぐに軽くなる。費用はかかる"
+      },
+      {
+        "label": "店長の責任として任せる",
+        "effects": {
+          "groups": [
+            {
+              "where": [],
+              "fitId": "overtime_store_manager",
+              "engagement": -3
+            }
+          ]
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "lesson": "店長を管理監督者として扱っても、長時間働かせてよいわけではない（いわゆる名ばかり管理職）。倒れる前に手を打つ必要がある"
+      }
+    ],
+    "excludeIndustries": [
+      "trading",
+      "saas",
+      "manufacturing"
+    ]
+  },
+  {
+    "id": "fit_training_part_time",
+    "category": "people",
+    "trigger": {
+      "type": "fit",
+      "fitId": "training_part_time"
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "届かない研修",
+    "body": "研修に力を入れているものの、{name}から「研修の日はシフトに入れないので、パートは結局ほとんど受けていない」という声が届きました。",
+    "choices": [
+      {
+        "label": "育成投資を見直す",
+        "effects": {
+          "openReview": true
+        },
+        "axes": {
+          "horizon": 1,
+          "rules": 1
+        },
+        "lesson": "研修はパートには届きにくい（Off-JT の受講は正社員のおよそ4割）。同じ費用でも、誰に届けるかで効き目は大きく変わる"
+      },
+      {
+        "label": "パートも受けやすい研修を用意する",
+        "effects": {
+          "cashPerEmployee": -20000,
+          "groups": [
+            {
+              "where": [],
+              "fitId": "training_part_time",
+              "engagement": 4
+            }
+          ]
+        },
+        "axes": {
+          "people": 1,
+          "horizon": -1
+        },
+        "lesson": "短い時間で受けられる研修や、仕事の中で教える仕組みにすれば、パートにも届く。用意する手間はかかる"
+      },
+      {
+        "label": "正社員の研修を優先する",
+        "effects": {
+          "groups": [
+            {
+              "where": [],
+              "fitId": "training_part_time",
+              "engagement": -3
+            }
+          ]
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "lesson": "正社員を優先するのは一つの考え方。ただ、パートが店や現場の中心なら、その人たちが育たないと全体の力は伸びない"
+      }
+    ]
+  },
+  {
+    "id": "fit_mid_career_skilled",
+    "category": "people",
+    "trigger": {
+      "type": "fit",
+      "fitId": "mid_career_skilled"
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "経験者でも慣れない現場",
+    "body": "中途で入った製造の{name}から「前の会社とは設備も手順も違う。一人前になるのにまだ時間がかかりそう」と相談がありました。",
+    "choices": [
+      {
+        "label": "採用方針を見直す",
+        "effects": {
+          "openReview": true
+        },
+        "axes": {
+          "horizon": 1,
+          "rules": 1
+        },
+        "lesson": "熟練が要る仕事では、経験者でもその会社の設備と技能を身につけるまで時間がかかる。新卒から育てて技能を受け継ぐ道もある"
+      },
+      {
+        "label": "ベテランと組ませて技能を伝える",
+        "effects": {
+          "cashPerEmployee": -20000,
+          "groups": [
+            {
+              "where": [],
+              "fitId": "mid_career_skilled",
+              "engagement": 4
+            }
+          ]
+        },
+        "axes": {
+          "people": 1,
+          "horizon": -1
+        },
+        "lesson": "ベテランと組んで教われば、経験者は早く現場に慣れる。技能の継承にもなる"
+      },
+      {
+        "label": "経験者なので任せておく",
+        "effects": {
+          "groups": [
+            {
+              "where": [],
+              "fitId": "mid_career_skilled",
+              "engagement": -3
+            }
+          ]
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "lesson": "経験者でも、設備と手順が違えば一から覚え直すことが多い。任せきりにすると、一人前になるまでが長引く"
+      }
+    ],
+    "excludeIndustries": [
+      "trading",
+      "saas",
+      "restaurant"
+    ]
+  },
+  {
+    "id": "fit_company_bonus_loss",
+    "category": "people",
+    "trigger": {
+      "type": "fit",
+      "fitId": "company_bonus_loss"
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "消えた賞与",
+    "body": "赤字の年が続き、業績連動の賞与がほとんど出なくなりました。{name}から「生活の見通しが立たない。住宅ローンもあるのに」という声が届いています。",
+    "choices": [
+      {
+        "label": "賞与の決め方を見直す",
+        "effects": {
+          "openReview": true
+        },
+        "axes": {
+          "horizon": 1,
+          "rules": 1
+        },
+        "lesson": "業績連動の賞与は、会社が苦しいときに人件費を下げられる。その分、社員の生活の見通しは揺らぐ。固定の部分を持つと安心につながる",
+        "hint": "制度の見直しの画面が開きます。給与や賞与を下げる変更は、合意を取るか就業規則の変更で進めるかを選びます"
+      },
+      {
+        "label": "一時金で生活を支える",
+        "effects": {
+          "cashPerEmployee": -30000,
+          "groups": [
+            {
+              "where": [],
+              "fitId": "company_bonus_loss",
+              "engagement": 4
+            }
+          ]
+        },
+        "axes": {
+          "people": 1,
+          "horizon": -1
+        },
+        "lesson": "赤字の年に一時金を出すのは会社にとって重い。ただ、社員の生活を支える姿勢は、苦しい時期の踏ん張りにつながる"
+      },
+      {
+        "label": "業績が戻るまで待ってもらう",
+        "effects": {
+          "groups": [
+            {
+              "where": [],
+              "fitId": "company_bonus_loss",
+              "engagement": -3
+            }
+          ]
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "lesson": "業績連動の仕組みは、約束どおりに動いている。ただ、生活の不安が続くと、安定を求める人から辞めていく"
+      }
+    ]
+  },
+  {
+    "id": "fit_secondee_proper_fairness",
+    "category": "people",
+    "trigger": {
+      "type": "fit",
+      "fitId": "secondee_proper_fairness"
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "出向者との差",
+    "body": "プロパー社員の{name}から「同じ仕事をしているのに、親会社から来た人のほうが給料が高い。どうしてなのか」と尋ねられました。",
+    "choices": [
+      {
+        "label": "給与の決め方を見直す",
+        "effects": {
+          "openReview": true
+        },
+        "axes": {
+          "horizon": 1,
+          "rules": 1
+        },
+        "lesson": "出向者の給与は親会社の水準のまま。同じ仕事で差が見えると、プロパー社員は不公平だと感じやすい。子会社の給与の決め方を見直す時期",
+        "hint": "制度の見直しの画面が開きます。給与や賞与を下げる変更は、合意を取るか就業規則の変更で進めるかを選びます"
+      },
+      {
+        "label": "差の理由を説明し、プロパーにも手当を出す",
+        "effects": {
+          "cashPerEmployee": -20000,
+          "groups": [
+            {
+              "where": [],
+              "fitId": "secondee_proper_fairness",
+              "engagement": 4
+            }
+          ]
+        },
+        "axes": {
+          "people": 1,
+          "horizon": -1
+        },
+        "lesson": "差がある理由を説明し、プロパー社員にも報いれば、不公平感は和らぐ。費用はかかる"
+      },
+      {
+        "label": "親会社の決まりなので仕方ないと伝える",
+        "effects": {
+          "groups": [
+            {
+              "where": [],
+              "fitId": "secondee_proper_fairness",
+              "engagement": -3
+            }
+          ]
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "lesson": "「仕方ない」という説明では、不公平感は消えない。プロパー社員が育つ会社にしたいなら、向き合う必要がある"
+      }
+    ]
+  },
+  {
+    "id": "fit_matrix_eval",
+    "category": "people",
+    "trigger": {
+      "type": "fit",
+      "fitId": "matrix_eval"
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "二人の上司",
+    "body": "マトリクス組織で働く{name}から「二人の上司の言うことが違う。どちらの評価が本当なのか分からない」と相談がありました。",
+    "choices": [
+      {
+        "label": "評価の制度を見直す",
+        "effects": {
+          "openReview": true
+        },
+        "axes": {
+          "horizon": 1,
+          "rules": 1
+        },
+        "lesson": "上司が二人いる組織では、一人の目で評価すると食い違いが起きやすい。複数の目で見る評価のほうが合いやすい"
+      },
+      {
+        "label": "二人の上司ですり合わせてから評価する",
+        "effects": {
+          "cashPerEmployee": -20000,
+          "groups": [
+            {
+              "where": [],
+              "fitId": "matrix_eval",
+              "engagement": 4
+            }
+          ]
+        },
+        "axes": {
+          "people": 1,
+          "horizon": -1
+        },
+        "lesson": "評価の前に二人の上司が話し合えば、食い違いは小さくなる。上司の手間は増える"
+      },
+      {
+        "label": "それぞれの上司に任せる",
+        "effects": {
+          "groups": [
+            {
+              "where": [],
+              "fitId": "matrix_eval",
+              "engagement": -3
+            }
+          ]
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "lesson": "評価が食い違うまま返されると、社員はどちらに合わせればよいか迷う。評価への信頼が下がる"
+      }
+    ]
+  },
+  {
+    "id": "fit_carveout_seniority",
+    "category": "people",
+    "trigger": {
+      "type": "fit",
+      "fitId": "carveout_seniority"
+    },
+    "weight": 1.0,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "advanced"
+    ],
+    "title": "重く始まった人件費",
+    "body": "事業を切り出して始めた会社には、長く勤めてきた社員が多くいます。{name}から「前の会社のときと同じように毎年上がるのか」と尋ねられました。人件費は年々重くなっています。",
+    "choices": [
+      {
+        "label": "給与の決め方を見直す",
+        "effects": {
+          "openReview": true
+        },
+        "axes": {
+          "horizon": 1,
+          "rules": 1
+        },
+        "lesson": "年齢と勤続の高い社員を抱えて始めた会社で年功給を続けると、人件費は重いまま上がり続ける。仕事や相場で決まる部分を持つ時期",
+        "hint": "制度の見直しの画面が開きます。給与や賞与を下げる変更は、合意を取るか就業規則の変更で進めるかを選びます"
+      },
+      {
+        "label": "役割に応じた手当に少しずつ移す",
+        "effects": {
+          "cashPerEmployee": -20000,
+          "groups": [
+            {
+              "where": [],
+              "fitId": "carveout_seniority",
+              "engagement": 4
+            }
+          ]
+        },
+        "axes": {
+          "people": 1,
+          "horizon": -1
+        },
+        "lesson": "いきなり変えずに、役割に応じた手当へ少しずつ移せば、受け止める側の負担は小さい。時間はかかる"
+      },
+      {
+        "label": "前の会社と同じやり方を続ける",
+        "effects": {
+          "groups": [
+            {
+              "where": [],
+              "fitId": "carveout_seniority",
+              "engagement": -3
+            }
+          ]
+        },
+        "axes": {
+          "horizon": -1,
+          "people": -1
+        },
+        "lesson": "慣れた仕組みを続ける安心感は大きい。ただ、新しい会社の稼ぐ力に見合わない人件費は、いずれ会社の重荷になる"
+      }
+    ]
   }
 ]

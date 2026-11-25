@@ -7,6 +7,8 @@
  * - 法令のイベントは法令対応の方針（autoPlay.legal）で、それ以外は判断の傾向（autoPlay.style）で自動に選ぶ
  * - 選んだ選択肢は state.decisions に記録する（社史レポートと人事スタイル診断に使う）
  */
+import { getFit } from './fitData';
+import { fitApplies, fitsFor } from './fits';
 import { coef } from './coefficients';
 import { addExtraordinaryCost, addFunding } from './cash';
 export { addExtraordinaryCost, addFunding } from './cash';
@@ -35,7 +37,7 @@ import type {
   TargetEffect,
   TemporaryModifier,
 } from './types';
-import { JUDGMENT_AXES } from './types';
+import { JUDGMENT_AXES, MONTHS_PER_YEAR } from './types';
 
 /** % を比に直すときの分母 */
 const PERCENT = 100;
@@ -259,8 +261,13 @@ function applyTargetEffect(state: CompanyState, e: Employee, t: TargetEffect): v
 /** 集団への効果の対象（条件に合う人を並べて、人数を絞る） */
 export function groupMembers(state: CompanyState, g: GroupEffect, targetId: string | null): Employee[] {
   const industry = getIndustry(state.profile.industryId);
+  const fit = g.fitId ? fitsFor(state) : null;
+  const fitDef = g.fitId ? getFit(g.fitId) : null;
   let members = state.employees.filter(
-    (e) => !(g.excludeTarget && e.id === targetId) && matchesEmployee(e, g.where, industry),
+    (e) =>
+      !(g.excludeTarget && e.id === targetId) &&
+      matchesEmployee(e, g.where, industry) &&
+      (!fit || !fitDef || fitApplies(fitDef, e, fit.company, state.employees)),
   );
   if (g.sortBy) {
     const key = g.sortBy;
@@ -358,6 +365,10 @@ export function applyEffects(state: CompanyState, effects: EventEffects, d: Pend
   }
   if (effects.installProgram) installProgram(state, effects.installProgram);
   if (effects.openReorg) pushDecision(state, { kind: 'reorg', ruleIds: [], eventId: null, vars: {} });
+  // 制度の見直し（画面で遊ぶときだけ。自動で進めるときは見直しの判断待ちを作らない）
+  if (effects.openReview && !state.autoPlay) {
+    pushDecision(state, { kind: 'review', ruleIds: [], eventId: null, vars: { year: Math.floor(state.month / MONTHS_PER_YEAR), from: 'event' } });
+  }
   if (effects.setPolicies) {
     // その業種で選べない働き方にはしない（念のため。そうなるイベントは excludeIndustries で起きないようにしている）
     const next = { ...state.policies, ...effects.setPolicies };

@@ -209,8 +209,11 @@ function ReviewSlip({ d, company }: { d: PendingDecision; company: CompanyState 
   const sum = (f: (r: (typeof year)[number]) => number) => year.reduce((s, r) => s + f(r), 0);
   const t = reviewStrings.summary;
   return (
-    <Slip kind={reviewStrings.editorTitle} title={reviewStrings.title(Number(d.vars.year ?? 0))}>
-      <p>{reviewStrings.lead}</p>
+    <Slip
+      kind={reviewStrings.editorTitle}
+      title={d.vars.from === 'event' ? reviewStrings.fromEventTitle : reviewStrings.title(Number(d.vars.year ?? 0))}
+    >
+      <p>{d.vars.from === 'event' ? reviewStrings.fromEventLead : reviewStrings.lead}</p>
       <dl className="summary-grid">
         <div>
           <dt>{t.revenue}</dt>

@@ -10,7 +10,9 @@
  * 対象者の条件（社員の項目）を比べる。条件に合う対象者がいなければ、そのイベントは起きない。
  * 法令のイベントは laws.ts から起きる（ここでは抽選しない）。
  */
-import { coefGroup } from './coefficients';
+import { getFit } from './fitData';
+import { fitApplies, fitsFor } from './fits';
+import { coef, coefGroup } from './coefficients';
 import { getIndustry } from './data';
 import { eventDefs } from './eventData';
 import { compare, matchesEmployee } from './eventConditions';
@@ -304,6 +306,18 @@ export function runEvents(state: CompanyState, rng: Rng): string[] {
     if (tryFire(state, event, industry, rng)) fired.push(event.id);
   }
 
+  // 2b. 制度と会社の相性の兆し（§14.8）：抽選しない。1社につき1回。重ならないよう1か月に1つまで（相性の番号の順）
+  for (const event of fitSignEvents) {
+    const t = event.trigger;
+    if (t.type !== 'fit' || !t.fitId) continue;
+    if (!availableInIndustry(event, industry) || everFired(event, state)) continue;
+    const sign = fitSign(state, t.fitId);
+    if (!sign.ready) continue;
+    fireEvent(state, event, sign.target, rng);
+    fired.push(event.id);
+    break;
+  }
+
   // 3. 毎月の抽選
   if (rng.next() < K().monthlyP) {
     const pool = eligibleRandomEvents(state);
@@ -313,4 +327,47 @@ export function runEvents(state: CompanyState, rng: Rng): string[] {
     }
   }
   return fired;
+}
+
+// ---------------------------------------------------------------------------
+// 制度と会社の相性の兆し（§14.8。ステップ22）
+// ---------------------------------------------------------------------------
+
+/** 兆しのイベント（相性の番号の順） */
+const fitSignEvents = eventDefs
+  .filter((e) => e.trigger.type === 'fit' && e.trigger.fitId)
+  .sort((a, b) => getFit(a.trigger.type === 'fit' ? a.trigger.fitId! : '').no - getFit(b.trigger.type === 'fit' ? b.trigger.fitId! : '').no);
+
+/** そのイベントがこれまでに起きたか（判断待ち・判断済み・個別制度で軽く済んだもの） */
+function everFired(event: EventDef, state: CompanyState): boolean {
+  return (
+    state.pendingDecisions.some((d) => d.eventId === event.id) ||
+    state.decisions.some((d) => d.eventId === event.id) ||
+    state.mitigations.some((m) => m.eventId === event.id)
+  );
+}
+
+/** 相性が続けて効いた月数（月の記録の終わりから数える） */
+export function fitStreak(state: CompanyState, fitId: string): number {
+  let n = 0;
+  for (let i = state.history.length - 1; i >= 0; i--) {
+    if (!state.history[i]?.fits?.includes(fitId)) break;
+    n++;
+  }
+  return n;
+}
+
+/**
+ * 兆しが出ているか：相性が目安の月数続けて効き、当てはまる社員が目安の人数以上いる。
+ * 対象者は、当てはまる社員（会社全体の相性なら全員）の真ん中の1人（乱数を使わない。本文の {name} に入る）
+ */
+export function fitSign(state: CompanyState, fitId: string): { ready: boolean; target: Employee | null } {
+  if (fitStreak(state, fitId) < coef('fit.sign_months')) return { ready: false, target: null };
+  const fit = getFit(fitId);
+  const f = fitsFor(state);
+  if (!f.fits.some((x) => x.id === fitId)) return { ready: false, target: null };
+  const affected = state.employees.filter((e) => !e.leave && fitApplies(fit, e, f.company, state.employees));
+  if (affected.length < coef('fit.sign_min_affected')) return { ready: false, target: null };
+  const sorted = [...affected].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  return { ready: true, target: sorted[Math.floor(sorted.length / 2)] ?? null };
 }
