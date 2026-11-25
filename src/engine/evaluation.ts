@@ -10,6 +10,7 @@ import { coef } from './coefficients';
 import { percentiles } from './engagement';
 import { SCORE_MAX, SCORE_MIN, ageSalaryFactor, clamp, marketSalaryFor, minimumMonthlyWage } from './employees';
 import { annualAbilityGain, bonusMonthlyFor, evaluationNoise, policyEffect } from './policies';
+import { employeeFitEffects, hasFitEffect, type ActiveFits } from './fits';
 import type { Rng } from './rng';
 import type { Employee, IndustryData, LocationData, PolicySet } from './types';
 import { MONTHS_PER_YEAR } from './types';
@@ -21,16 +22,23 @@ export type EvaluationContext = {
   rng: Rng;
   policies: PolicySet;
   industry: IndustryData;
+  /** その月に効いている制度と会社の相性（§14.8）。省略すると効かない */
+  fits?: ActiveFits;
   location: LocationData;
   /** 前年の営業利益の合計 */
   lastYearProfit: number;
 };
 
 /** 評価で見える成果をつける（社員を書き換える）。乱数は社員1人につき1回 */
-export function evaluate(employees: Employee[], ctx: Pick<EvaluationContext, 'rng' | 'policies' | 'industry'>): void {
+export function evaluate(employees: Employee[], ctx: Pick<EvaluationContext, 'rng' | 'policies' | 'industry' | 'fits'>): void {
   const noise = evaluationNoise(ctx.policies, employees.length, ctx.industry);
+  const max = coef('policy.evaluation.max_noise');
+  const useFits = hasFitEffect(ctx.fits, 'evaluationNoiseMult');
   for (const e of employees) {
-    e.perceivedPerformance = clamp(e.ability + ctx.rng.normal(0, noise), SCORE_MIN, SCORE_MAX);
+    // 相性で評価がずれやすくなっても、ずれの上限は超えない（§14.8）
+    const mult = useFits ? employeeFitEffects(e, ctx.fits, employees).evaluationNoiseMult : 1;
+    const sd = Math.max(noise, Math.min(max, noise * mult));
+    e.perceivedPerformance = clamp(e.ability + ctx.rng.normal(0, sd), SCORE_MIN, SCORE_MAX);
   }
 }
 
@@ -156,9 +164,11 @@ export function runAnnualReview(employees: Employee[], ctx: EvaluationContext): 
 }
 
 /** 毎月の実力の伸び（社員を書き換える） */
-export function growAbility(employees: Employee[], policies: PolicySet): void {
+export function growAbility(employees: Employee[], policies: PolicySet, fits?: ActiveFits): void {
+  const useFits = hasFitEffect(fits, 'abilityGainMult');
   for (const e of employees) {
-    e.ability = clamp(e.ability + annualAbilityGain(e, policies) / MONTHS_PER_YEAR, SCORE_MIN, SCORE_MAX);
+    const mult = useFits ? employeeFitEffects(e, fits, employees).abilityGainMult : 1;
+    e.ability = clamp(e.ability + annualAbilityGain(e, policies, mult) / MONTHS_PER_YEAR, SCORE_MIN, SCORE_MAX);
   }
 }
 

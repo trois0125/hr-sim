@@ -8,6 +8,7 @@
  * - それ以外は納得感と給与の相場との差で増減し、理由は納得感をいちばん引き下げている要因になる
  * - 出向者は退職せず、出向期間が終わると親会社に戻る（納得感が低いと早く戻ることがある）
  */
+import { employeeFitEffects, hasFitEffect, type ActiveFits } from './fits';
 import { coef, coefGroup } from './coefficients';
 import { piecewise, sampleDrag } from './engagement';
 import { marketSalaryFor } from './employees';
@@ -83,12 +84,16 @@ export type AttritionContext = {
   location: LocationData;
   month: number;
   policies: PolicySet;
+  /** その月に効いている制度と会社の相性（§14.8）。省略すると効かない */
+  fits?: ActiveFits;
 };
 
 /** 月の退職確率の内訳 */
 export function resignationProbability(
   e: Employee,
   ctx: Omit<AttritionContext, 'rng' | 'month'>,
+  /** 同じ会社の社員（相性の条件に使う） */
+  employees: readonly Employee[] = [e],
 ): { unrelated: number; related: number } {
   const monthlyBase = ctx.industry.baseAttritionRate.value / MONTHS_PER_YEAR;
   const { unrelatedShare, earlyMonths, partMult } = K();
@@ -112,7 +117,8 @@ export function resignationProbability(
       engagementMultiplier(e.engagement) *
       marketGapMultiplier(compRatio) *
       early *
-      part,
+      part *
+      (hasFitEffect(ctx.fits, 'attritionMult') ? employeeFitEffects(e, ctx.fits, employees).attritionMult : 1),
   };
 }
 
@@ -169,7 +175,7 @@ export function runAttrition(
       continue;
     }
 
-    const p = resignationProbability(e, ctx);
+    const p = resignationProbability(e, ctx, employees);
     if (roll < p.unrelated) {
       // 家庭の事情か人間関係か。人間関係による退職は、在宅が多い職場の新人ほど起きやすい
       // （その倍率は resignationProbability の unrelated に入っているので、理由の割合も合わせて決める）

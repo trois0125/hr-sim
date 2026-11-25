@@ -273,3 +273,16 @@ describe('効き目のまとめ', () => {
     expect(fitsFor(s).company).toEqual(fc);
   });
 });
+
+describe('採用のしにくさ（17：在宅・ハイブリッド × 地方）', () => {
+  it('地方で在宅にすると採用のしにくさが下がり、ハイブリッドはその半分。都市では変わらない', () => {
+    const e = [person('trading', 'sales')];
+    const mult = (over: Partial<FitCompany>, workStyle: PolicySet['workStyle']) => {
+      const c = company('trading', over, { workStyle });
+      return companyFitEffects({ company: c, fits: activeFits(c) }, e).hiringDifficultyMult;
+    };
+    expect(mult({ locationType: 'rural' }, 'remote')).toBeCloseTo(0.85);
+    expect(mult({ locationType: 'rural' }, 'hybrid')).toBeCloseTo(0.925);
+    expect(mult({ locationType: 'urban' }, 'remote')).toBe(1);
+  });
+});

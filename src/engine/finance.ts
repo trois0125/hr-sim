@@ -5,6 +5,7 @@
  *   人件費   = 給与 ＋ 賞与の月割り ＋ 法定福利費 ＋ 残業代 ＋ 採用費 ＋ 育成費
  *   営業利益 = 売上 × 粗利率 − 人件費 − その他の固定費
  */
+import { companyFitEffects, type ActiveFits } from './fits';
 import { coef } from './coefficients';
 import { defaultPolicies } from './data';
 import { hrSystemCostPerEmployee, paidOvertimeHours, policyEffect, premiumOvertimeHours } from './policies';
@@ -20,12 +21,14 @@ const PERCENT = 100;
 export function overtimePay(
   e: Pick<Employee, 'salaryMonthly' | 'overtimeHours' | 'employmentType'>,
   policies: PolicySet = defaultPolicies,
+  /** 相性による割増の付く残業の倍率（§14.8） */
+  premiumFitMult = 1,
 ): number {
   // 固定残業代はフルタイムだけ
   const hours =
     e.employmentType === 'part'
-      ? premiumOvertimeHours(e.overtimeHours, policies)
-      : paidOvertimeHours(e.overtimeHours, policies);
+      ? premiumOvertimeHours(e.overtimeHours, policies, premiumFitMult)
+      : paidOvertimeHours(e.overtimeHours, policies, premiumFitMult);
   const hourly = e.salaryMonthly / coef('labor.scheduled_hours_monthly');
   const threshold = coef('labor.overtime_premium_threshold');
   const normal = Math.min(hours, threshold);
@@ -49,6 +52,8 @@ export type FinanceInput = {
   programCost?: number;
   /** 売上を外から決める（積み上がる売上の業種）。省略すると min(需要, 売れる上限＋残業) */
   revenue?: number;
+  /** その月に効いている制度と会社の相性（§14.8）。省略すると効かない */
+  fits?: ActiveFits;
 };
 
 export type FinanceResult = {
@@ -65,6 +70,7 @@ export type FinanceResult = {
 
 export function computeFinance(input: FinanceInput): FinanceResult {
   const { employees, policies } = input;
+  const fit = companyFitEffects(input.fits, employees);
   const revenue = input.revenue ?? Math.min(input.demand, input.capacity + input.overtimeCapacity);
   const grossProfit = revenue * input.grossMargin;
 
@@ -80,7 +86,7 @@ export function computeFinance(input: FinanceInput): FinanceResult {
       continue;
     }
     salaries += e.salaryMonthly;
-    overtime += overtimePay(e, policies);
+    overtime += overtimePay(e, policies, fit.premiumOvertimeMult);
     // 賞与は年1回の評価で決めた額を、毎月に割り振って計上する
     bonus += e.bonusMonthly;
   }
@@ -97,7 +103,9 @@ export function computeFinance(input: FinanceInput): FinanceResult {
     total: salaries + bonus + legalWelfare + overtime + input.hiringCost + training,
   };
 
-  const hrSystemCost = hrSystemCostPerEmployee(policies) * employees.length;
+  // 等級・評価の運用コスト。相性（§14.8）で等級の手間が割高になる分と、運用で補う手間を足す
+  const gradeExtra = policyEffect('grade', policies.grade, 'cost_per_employee') * (fit.gradeCostMult - 1);
+  const hrSystemCost = (hrSystemCostPerEmployee(policies) + gradeExtra) * employees.length + fit.costPerMonth;
   const officeCost =
     coef('cost.office_per_employee') * policyEffect('workStyle', policies.workStyle, 'office_cost_mult') * employees.length;
   const legalCost = input.legalCost ?? 0;

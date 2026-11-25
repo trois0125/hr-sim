@@ -133,16 +133,16 @@ export function stabilityBonus(policies: PolicySet): number {
 }
 
 /** 割増の付く残業時間（変形労働時間制では繁閑を吸収できるぶん減る） */
-export function premiumOvertimeHours(hours: number, policies: PolicySet): number {
+export function premiumOvertimeHours(hours: number, policies: PolicySet, fitMult = 1): number {
   if (policies.workHours === 'variable') {
-    return hours * (1 - coef('policy.workHours.variable.premium_reduction'));
+    return hours * (1 - coef('policy.workHours.variable.premium_reduction')) * fitMult;
   }
-  return hours;
+  return hours * fitMult;
 }
 
 /** 実際に払う残業代のもとになる時間。固定残業代では、含めた時間ぶんは残業がなくても払う */
-export function paidOvertimeHours(hours: number, policies: PolicySet): number {
-  const premium = premiumOvertimeHours(hours, policies);
+export function paidOvertimeHours(hours: number, policies: PolicySet, fitMult = 1): number {
+  const premium = premiumOvertimeHours(hours, policies, fitMult);
   if (policies.workHours === 'fixed_overtime') {
     return Math.max(premium, coef('policy.workHours.fixed_overtime.included_hours'));
   }
@@ -187,6 +187,8 @@ export function growthBonus(policies: PolicySet): number {
 export function rampParams(
   e: Pick<Employee, 'hireChannel'>,
   policies: PolicySet,
+  /** 相性による立ち上がりの倍率（§14.8） */
+  fitMult = 1,
 ): { months: number; start: number } {
   const months =
     e.hireChannel === 'founding'
@@ -194,7 +196,7 @@ export function rampParams(
       : policyEffect('hiring', e.hireChannel, 'ramp_months');
   const start =
     e.hireChannel === 'founding' ? coef('performance.ramp_start') : policyEffect('hiring', e.hireChannel, 'ramp_start');
-  return { months: months * policyEffect('workStyle', policies.workStyle, 'ramp_mult'), start };
+  return { months: months * policyEffect('workStyle', policies.workStyle, 'ramp_mult') * fitMult, start };
 }
 
 /**
@@ -214,8 +216,8 @@ export function fillRateMultiplier(channel: HiringPolicy, policies: PolicySet): 
 }
 
 /** 1年あたりの実力の伸び（点）。若いほど伸び、100に近いほど伸びにくい */
-export function annualAbilityGain(e: Pick<Employee, 'age' | 'ability'>, policies: PolicySet): number {
+export function annualAbilityGain(e: Pick<Employee, 'age' | 'ability'>, policies: PolicySet, fitMult = 1): number {
   const base = policyEffect('training', policies.training, 'ability_gain');
   const youth = e.age < coef('performance.ability_growth.youth_age') ? coef('performance.ability_growth.youth_mult') : 1;
-  return base * youth * clamp(1 - e.ability / SCORE_MAX, 0, 1);
+  return base * youth * fitMult * clamp(1 - e.ability / SCORE_MAX, 0, 1);
 }

@@ -579,7 +579,7 @@ describe('判断の傾向（自動で選ぶとき）', () => {
       return n;
     };
     expect(eventResignations(style({ people: -1 }))).toBeGreaterThan(eventResignations(style({ people: 1 })));
-  });
+  }, 20_000); // 15年を24社回すので、既定の5秒では足りない（相性の計算が入って4秒台から5秒前後になった）
 });
 
 describe('画面で選ぶとき', () => {

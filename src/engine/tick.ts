@@ -8,6 +8,7 @@
  * 判断待ち（節目・イベント）は state.pendingDecisions に積まれる。autoPlay があればその場で選ぶ。
  * autoPlay がなければ、判断待ちが残っている間はティックを進めない（画面で選んでから次に進む）。
  */
+import { companyFitEffects, fitsFor } from './fits';
 import { coef } from './coefficients';
 import { getIndustry, getLocation } from './data';
 import { retireEmployees, runAttrition } from './attrition';
@@ -112,13 +113,15 @@ export function tickInPlace(state: CompanyState): CompanyState {
   // 組織の形の効き目（管理職の数・判断の速さ・調整の手間・改編の混乱。§14.4）
   if (state.organization.transition && state.month >= state.organization.transition.until) state.organization.transition = null;
   const orgNow = companyOrgEffects(state);
+  // 制度と会社の相性（§14.8）：月のはじめの会社の状態で1回求める
+  const fits = fitsFor(state);
   const orgPerf = () => {
     const e = companyOrgEffects(state);
     return { spanMult: e.spanMult, capacityMult: 1 - e.coordinationLoss - transitionLoss(state.organization, state.month) };
   };
 
   // 2. 採用
-  const before = computePerformance(state.employees, industry, variant, state.policies, orgPerf());
+  const before = computePerformance(state.employees, industry, variant, state.policies, orgPerf(), fits);
   // 積み上がる売上の業種（SaaS）は、需要いっぱいではなく「今の売上＋先行投資の分」までの体制を目指して採る
   const rr = industry.recurringRevenue;
   // 小さい会社でも1人は先に採れるよう、売上を生む職種1人ぶんの売上を足す
@@ -143,6 +146,7 @@ export function tickInPlace(state: CompanyState): CompanyState {
     policies: state.policies,
     month: state.month,
     reputation: hiringAttractionModifier(state),
+    hiringDifficultyMult: companyFitEffects(fits, state.employees).hiringDifficultyMult,
     projectedDemand: Math.min(
       demandAt(state.market, state.profile, industry, state.month + coef('policy.hiring.new_grad.projection_months')) *
         demandMult,
@@ -153,7 +157,7 @@ export function tickInPlace(state: CompanyState): CompanyState {
   state.nextEmployeeId += hiring.hires.length;
 
   // 3. 社員ごとの稼働と成果（足りないぶんは、売上を生むフルタイム社員の残業で埋める）
-  const perf = computePerformance(state.employees, industry, variant, state.policies, orgPerf());
+  const perf = computePerformance(state.employees, industry, variant, state.policies, orgPerf(), fits);
   // 残業の上限：ふだんは方針の上限の半分、繁忙（需要の急増・人手の急減）の月だけ方針の上限まで（§14.5）
   const busy = isBusyMonth(state.history.slice(-coef('overtime.lookback_months')), demand, perf.capacity);
   const fiscalYear = Math.floor(state.month / MONTHS_PER_YEAR);
@@ -195,6 +199,7 @@ export function tickInPlace(state: CompanyState): CompanyState {
     legalCost: legalMonthlyCost(state),
     programCost: programMonthlyCost(state, state.employees.length),
     revenue,
+    fits,
   });
   state.cash += fin.operatingProfit;
   // 取りこぼした需要は、将来の取り分を減らす（積み上がる売上の業種でも、取りこぼしは「出せる上限」で見る）
@@ -248,6 +253,7 @@ export function tickInPlace(state: CompanyState): CompanyState {
     violations: state.history[state.history.length - 2]?.violations ?? 0,
     programs: state.programs,
     orgBonus: companyOrgEffects(state).factorBonus,
+    fits,
   });
 
   // 6. 退職（と出向者の帰任）
@@ -257,6 +263,7 @@ export function tickInPlace(state: CompanyState): CompanyState {
     location,
     month: state.month,
     policies: state.policies,
+    fits,
   });
   state.employees = attrition.stay;
   state.departures.push(...attrition.departures);
@@ -299,7 +306,7 @@ export function tickInPlace(state: CompanyState): CompanyState {
 
   // 激変緩和で下げている途中の給与を1か月ぶん下げ、実力を伸ばす
   stepSalaryTransitions(state.employees);
-  growAbility(state.employees, state.policies);
+  growAbility(state.employees, state.policies, fits);
 
   // 月を進める（勤続と年齢）。1年ごと（決算月）に 7. 評価・等級・昇給・賞与を行い、全員が1歳年をとる
   state.month += 1;
@@ -311,6 +318,7 @@ export function tickInPlace(state: CompanyState): CompanyState {
       industry,
       location,
       lastYearProfit: state.history.slice(-MONTHS_PER_YEAR).reduce((s, r) => s + r.operatingProfit, 0),
+      fits: fitsFor(state),
     });
   }
   for (const e of state.employees) {

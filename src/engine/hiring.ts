@@ -47,6 +47,8 @@ export type HiringInput = {
   projectedDemand?: number;
   /** 評判による求人の埋まりやすさの倍率（イベントの一時的な効果）。省略すると1 */
   reputation?: number;
+  /** 相性による採用のしにくさの倍率（§14.8）。省略すると1 */
+  hiringDifficultyMult?: number;
   /** 組織の形による、管理職1人が見る人数の倍率（§14.4）。省略すると1 */
   spanMult?: number;
 };
@@ -200,7 +202,7 @@ export function runHiring(input: HiringInput): HiringResult {
       const fillRate = Math.min(
         1,
         (coef('hiring.fill_rate_base') * intensity * fillRateMultiplier(channel, policies) * attraction) /
-          (role.hiringDifficulty.value * location.hiringDifficulty.value),
+          (role.hiringDifficulty.value * location.hiringDifficulty.value * (input.hiringDifficultyMult ?? 1)),
       );
       if (fillRoll >= fillRate) continue;
       const candidate = createEmployee({

@@ -6,6 +6,7 @@
  * - 管理が足りないと、全体の効率が下がる（社長が見られる人数まではかからない）
  * - 需要が上限を超えたぶんは、売上を生むフルタイム社員の残業で埋める
  */
+import { employeeFitEffects, hasFitEffect, type ActiveFits } from './fits';
 import { coef, coefGroup, coefPath } from './coefficients';
 import { SCORE_MAX, ageSalaryFactor, clamp } from './employees';
 import { defaultPolicies } from './data';
@@ -85,8 +86,10 @@ export function effectiveWork(
   policies: PolicySet = defaultPolicies,
   incentive = 0,
   industry?: Pick<IndustryData, 'salaryCurve' | 'experienceElasticity' | 'partTimeProductivity'>,
+  /** 相性による立ち上がりの倍率（§14.8） */
+  fitRampMult = 1,
 ): number {
-  const ramp = rampParams(e, policies);
+  const ramp = rampParams(e, policies, fitRampMult);
   const motivation = 1 + incentive * (SCORE_MID / SCORE_MAX + e.values.money);
   return (
     motivation *
@@ -178,12 +181,15 @@ export function computePerformance(
   policies: PolicySet = defaultPolicies,
   /** 組織の形の効き目（§14.4）：管理職1人が見る人数の倍率と、調整の手間・改編の混乱で残る割合 */
   org: { spanMult: number; capacityMult: number } = { spanMult: 1, capacityMult: 1 },
+  /** その月に効いている制度と会社の相性（§14.8）。省略すると効かない */
+  fits?: ActiveFits,
 ): PerformanceResult {
   const incentive = incentiveStrength(policies, employees.length, industry);
   const newcomerMonths = coef('policy.workStyle.newcomer_months');
   const newcomers = employees.filter((e) => e.tenureMonths < newcomerMonths).length;
   const cohesion = cohesionFactor(policies, employees.length > 0 ? newcomers / employees.length : 0);
   const kinds = roleKindMap(industry);
+  const useRamp = hasFitEffect(fits, 'rampMult');
   let revenueOutput = 0;
   let overtimeEligible = 0;
   let revenueStaffFte = 0;
@@ -193,7 +199,8 @@ export function computePerformance(
 
   for (const e of employees) {
     const kind = kinds.get(e.role);
-    const work = effectiveWork(e, policies, incentive, industry) * cohesion;
+    const rampMult = useRamp ? employeeFitEffects(e, fits, employees).rampMult : 1;
+    const work = effectiveWork(e, policies, incentive, industry, rampMult) * cohesion;
     if (kind === 'revenue') {
       const out = work * nominalOutputPerRevenueStaff(industry, variant, e.role);
       revenueOutput += out;

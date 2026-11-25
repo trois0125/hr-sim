@@ -33,7 +33,20 @@ export type FitCompany = {
   hasSecondees: boolean;
 };
 
-export type ActiveFits = { company: FitCompany; fits: FitDef[] };
+export type ActiveFits = {
+  company: FitCompany;
+  fits: FitDef[];
+  /**
+   * 1か月のあいだの計算の使い回し（fitsFor が作る）。社員の条件（職種・雇用形態・入社経路・勤続・所属）は
+   * 月の途中で変わらないので、社員ごとの効き目は1か月に1回求めればよい
+   */
+  memo?: { effects: Map<string, EmployeeFitEffects>; pool?: Employee[] };
+};
+
+/** 効いている相性に、その種類の効き目を持つものがあるか（なければ差し込み口で計算を省く） */
+export function hasFitEffect(f: ActiveFits | undefined, key: keyof FitDef['effects']): f is ActiveFits {
+  return !!f && f.fits.some((x) => !x.explainOnly && x.effects[key] !== undefined);
+}
 
 export function fitCompanyOf(state: CompanyState): FitCompany {
   const recent = state.history.slice(-MONTHS_PER_YEAR);
@@ -94,13 +107,18 @@ export function fitApplies(fit: FitDef, e: Employee, c: FitCompany, employees: r
   if (w.hireChannels && !w.hireChannels.includes(e.hireChannel)) return false;
   if (w.maxTenureMonths !== undefined && !(e.tenureMonths < w.maxTenureMonths)) return false;
   if (w.affiliation && e.affiliation !== w.affiliation) return false;
-  if (w.sameRoleHasSecondee && !employees.some((x) => x.role === e.role && x.affiliation === 'secondee')) return false;
+  if (w.sameRoleHasSecondee && !secondeeRolesOf(employees).has(e.role)) return false;
   return true;
+}
+
+/** 出向者のいる職種 */
+function secondeeRolesOf(employees: readonly Employee[]): Set<string> {
+  return new Set(employees.filter((x) => x.affiliation === 'secondee').map((x) => x.role));
 }
 
 export function fitsFor(state: CompanyState): ActiveFits {
   const company = fitCompanyOf(state);
-  return { company, fits: activeFits(company) };
+  return { company, fits: activeFits(company), memo: { effects: new Map() } };
 }
 
 /** 倍率を強さで弱める（強さ0なら1） */
@@ -118,9 +136,15 @@ export type EmployeeFitEffects = {
 /** その社員への効き目（f がなければ中立） */
 export function employeeFitEffects(e: Employee, f: ActiveFits | undefined, employees: readonly Employee[]): EmployeeFitEffects {
   const out: EmployeeFitEffects = { factors: {}, evaluationNoiseMult: 1, rampMult: 1, abilityGainMult: 1, attritionMult: 1 };
-  if (!f) return out;
+  if (!f || f.fits.length === 0) return out;
+  const cached = f.memo?.effects.get(e.id);
+  if (cached) return cached;
+  // 出向者のいる職種は1か月に1回だけ数える（社員ごとに数えると人数の2乗の計算になる）
+  const pool = f.memo
+    ? (f.memo.pool ??= [...secondeeRolesOf(employees)].map((role) => ({ role, affiliation: 'secondee' }) as Employee))
+    : employees;
   for (const fit of f.fits) {
-    if (fit.explainOnly || !fitApplies(fit, e, f.company, employees)) continue;
+    if (fit.explainOnly || !fitApplies(fit, e, f.company, pool)) continue;
     const s = fitScale(fit, f.company.policies);
     const x = fit.effects;
     for (const [k, v] of Object.entries(x.factors ?? {})) {
@@ -132,6 +156,7 @@ export function employeeFitEffects(e: Employee, f: ActiveFits | undefined, emplo
     if (x.abilityGainMult) out.abilityGainMult *= scaled(x.abilityGainMult.value, s);
     if (x.attritionMult) out.attritionMult *= scaled(x.attritionMult.value, s);
   }
+  f.memo?.effects.set(e.id, out);
   return out;
 }
 

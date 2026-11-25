@@ -25,6 +25,7 @@ import type {
   ProgramState,
   Values,
 } from './types';
+import { companyFitEffects, employeeFitEffects, hasFitEffect, type ActiveFits } from './fits';
 import { programBonusFor } from './programs';
 import { ENGAGEMENT_FACTORS, MONTHS_PER_YEAR } from './types';
 
@@ -257,6 +258,8 @@ export type EngagementContext = {
   programs?: readonly ProgramState[];
   /** 組織の形による、全員の要因への上乗せ（§14.4） */
   orgBonus?: Partial<Record<EngagementFactor, number>>;
+  /** その月に効いている制度と会社の相性（§14.8）。省略すると効かない */
+  fits?: ActiveFits;
 };
 
 /** 会社の状況から決まる要因（全員共通） */
@@ -268,7 +271,10 @@ export function companyFactors(ctx: EngagementContext): { growthOpportunity: num
   const profit = window.reduce((s, r) => s + r.operatingProfit, 0);
   const monthlyLoss = window.length > 0 ? -profit / window.length : 0;
   return {
-    growthOpportunity: score(growthOpportunityScore(ctx.policies.training, growth) + growthBonus(ctx.policies)),
+    growthOpportunity: score(
+      growthOpportunityScore(ctx.policies.training, growth) +
+        (companyFitEffects(ctx.fits, []).cancelGrowthBonus ? 0 : growthBonus(ctx.policies)),
+    ),
     stability: score(
       stabilityScore(profit, monthlyLoss, ctx.cash) +
         stabilityBonus(ctx.policies) -
@@ -288,11 +294,17 @@ export function computeFactorScores(employees: readonly Employee[], ctx: Engagem
   const workBonus = workloadBonus(ctx.policies);
   const out = new Map<string, FactorScores>();
   const programs = ctx.programs ?? [];
+  const useFitFactors = hasFitEffect(ctx.fits, 'factors');
   for (const e of employees) {
     const market = marketSalaryFor(ctx.industry, ctx.location, e.role, e.age, e.employmentType);
     const p: Partial<Record<EngagementFactor, number>> = { ...(ctx.orgBonus ?? {}) };
     if (programs.length > 0) {
       for (const [f, v] of Object.entries(programBonusFor(e, programs, ctx.industry))) {
+        p[f as EngagementFactor] = (p[f as EngagementFactor] ?? 0) + (v ?? 0);
+      }
+    }
+    if (useFitFactors) {
+      for (const [f, v] of Object.entries(employeeFitEffects(e, ctx.fits, employees).factors)) {
         p[f as EngagementFactor] = (p[f as EngagementFactor] ?? 0) + (v ?? 0);
       }
     }
