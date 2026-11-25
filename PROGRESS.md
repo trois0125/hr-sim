@@ -9,7 +9,7 @@
   - `npm test`（27ファイル・約420件。数分かかる）、`npm run typecheck`、`npm run build`
   - `npx tsx scripts/simulate.ts --industry all --runs 1000`（4業種の比較。`out/` に出る。残す結果は `docs/balance/` にコピーしている）
   - `npx tsx scripts/data-todo.ts` → `docs/DATA_TODO.md`（仮置きの数値の一覧）
-- **スマホ用のページ**：claude.ai のページ https://claude.ai/artifact/3uXfwYJKEZoDs367SroWzJ （中身は**ステップ20の版**（2026-11-25 に更新）。ユーザーに言われたときだけ新しくする）。作り直しは `npm run build:artifact` → `dist-artifact/page.html` と `dist-artifact/assets/*` を同じページに公開し直す
+- **スマホ用のページ**：claude.ai のページ https://claude.ai/artifact/3uXfwYJKEZoDs367SroWzJ （中身は**ステップ21の版**（2026-11-25 に更新）。ユーザーに言われたときだけ新しくする）。作り直しは `npm run build:artifact` → `dist-artifact/page.html` と `dist-artifact/assets/*` を同じページに公開し直す
 - **主なファイル**：仕様は `DESIGN.md`、エンジンは `src/engine/`（`tick.ts` が1か月の処理）、データは `src/data/`（係数台帳 `coefficients.json`、業種 `industries/*.json`、イベント `events.json`、法令 `laws.json`）、ストアは `src/store/game.ts`、画面は `src/ui/`（文言は `strings.ts`）、社史と診断は `src/report/`
 - **進め方の約束**（CLAUDE.md とユーザーの好み）：提案の前に2〜3問、選択式で質問して前提をそろえる。ボトルネックになりそうな課題は先に質問する。各ステップは方針を3〜5行で示してから始め、終わったら報告して止まる
 - **大きな残課題**（遊んでみて決めるもの）
