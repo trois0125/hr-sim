@@ -9,22 +9,25 @@
  * 自動で進めるとき（simulate.ts）は「今の制度のまま」で進む。
  */
 import stanceData from '../../data/intermediate/stances.json';
+import type { PolicySet } from '../types';
 import { levelsOf, validateDetailed, type DetailedPolicies } from './detailedPolicy';
 import type { Premise } from './fit';
 import { totalHeadcount } from './layers';
 import { changeDetailedPolicies, type ChangeOptions } from './regroup';
 import type { IntermediateState } from './types';
 
-export type SceneKind = 'founding' | 'premise' | 'chain';
+export type SceneKind = 'founding' | 'premise' | 'chain' | 'case';
 
 export type Scene = {
   kind: SceneKind;
+  /** 追体験の場面のID（kind が case のとき） */
+  caseSceneId?: string;
   /** 場面が出た年（この年の初めに判断する） */
   year: number;
   /** 新しく当てはまるようになった前提 */
-  premiseOn: (keyof Premise)[];
+  premiseOn: PremiseKey[];
   /** 当てはまらなくなった前提 */
-  premiseOff: (keyof Premise)[];
+  premiseOff: PremiseKey[];
   chainStage: number;
   /** 本文への差し込み（数字は画面で整える） */
   vars: { headcount: number; growthRate: number; agingShare: number; economy: number };
@@ -51,6 +54,8 @@ export function applyStance(detail: DetailedPolicies, stanceId: string): Detaile
 }
 
 const PREMISE_KEYS = ['growth', 'aging', 'postGlut', 'recession', 'large'] as const;
+/** 会社の状態から出す前提（中級（自由）の場面に使うもの） */
+export type PremiseKey = (typeof PREMISE_KEYS)[number];
 
 /** 年末に、次の年の初めに出す場面があるかを調べる */
 export function detectScene(input: {
@@ -91,10 +96,12 @@ export function foundingScene(state: IntermediateState): Scene {
 /** 場面で判断する（制度を決めて場面を閉じる。状態を書き換える） */
 export function resolveScene(
   state: IntermediateState,
-  choice: { stanceId: string; detail: DetailedPolicies; options?: ChangeOptions },
+  choice: { stanceId: string; detail: DetailedPolicies; options?: ChangeOptions; base?: Partial<PolicySet> },
 ): void {
   const scene = state.pendingScene;
   if (!scene) throw new Error('場面がありません');
+  // 報酬の核4つ以外（採用・労働時間・育成・働き方・残業）は初級の選択肢のまま変える
+  if (choice.base) state.policies = { ...state.policies, ...choice.base };
   const result = changeDetailedPolicies(state, choice.detail, choice.options);
   state.sceneLog.push({ year: scene.year, kind: scene.kind, stanceId: choice.stanceId, regrouped: result.regrouped });
   state.pendingScene = null;

@@ -1,6 +1,6 @@
 # 統計で確認が必要な値（DATA_TODO）
 
-source に `TODO` が付いた値の一覧（51件。根拠付きの数値は全部で514件で、いまはすべて `basis: "assumption"`）。
+source に `TODO` が付いた値の一覧（58件。根拠付きの数値は全部で601件で、いまはすべて `basis: "assumption"`）。
 統計で確認できたら値を直し、`basis` を `statistic` にして source を統計名・表番号に書き換える。ステップ6（バランス確認）の前にまとめて差し替える予定。
 
 このファイルは `npx tsx scripts/data-todo.ts` で作り直す（手で編集しない）。
@@ -58,3 +58,10 @@ source に `TODO` が付いた値の一覧（51件。根拠付きの数値は全
 | `coefficients.json` | `[leave.parental.return_rate]` | 0.9 | 確率 | 仮置き。育児休業から復帰する割合。雇用均等基本調査（育児休業後の復職者割合）で確認する。TODO: 要確認 |
 | `coefficients.json` | `[leave.sick.months]` | 6 | か月 | 仮置き。メンタル不調・健康被害による私傷病休職の期間。労働安全衛生調査・JILPTの調査で確認する。TODO: 要確認 |
 | `coefficients.json` | `[leave.sick.return_rate]` | 0.55 | 確率 | 仮置き。私傷病休職から復帰する割合。JILPT「メンタルヘルス、私傷病などの治療と職業生活の両立支援に関する調査」（休職者のうち退職した割合）で確認する。TODO: 要確認 |
+| `intermediate/cases/mitsubishi.json` | `initialCash` | 50000000000 | 円 | 仮置き（docs/DATA_TODO.md）。大合同直後の資金の規模は未確認 |
+| `intermediate/cases/mitsubishi.json` | `initialAgeShares` | （一覧） |  | 仮置き（docs/DATA_TODO.md）。戦後の復員・学制改革で若い社員が多かったとみなした（人的資本レポート P.5 の記述から） |
+| `intermediate/cases/mitsubishi.json` | `headcountPath` | （一覧） |  | 単体の社員数の目安。2020年度 5,361人・2024年度 5,725人は人的資本レポート P.27。それ以前は仮置き（docs/DATA_TODO.md）。需要はこの人数で回る大きさにする |
+| `intermediate/cases/mitsubishi.json` | `retirementAges` | （一覧） |  | 定年は55歳から60歳へ延長した（人的資本レポート P.7。年は未確認）。60歳定年は高年齢者雇用安定法で1998年から義務、65歳までの雇用確保は2013年から全員が対象。会社の延長の年は仮置き（docs/DATA_TODO.md） |
+| `intermediate/cases/mitsubishi.json` | `economyShocks` | （一覧） |  | 大きな景気の落ち込みの年（第一次石油危機、プラザ合意後の円高不況、バブル崩壊、リーマン・ショック）。人的資本レポート P.6〜9 の時代背景から。落ち込みの大きさは仮置き TODO: 要確認（有価証券報告書・社史のPDFで差し替える） |
+| `intermediate/cases/mitsubishi.json` | `grossMargin` | 0.2 | 比 | 仮置き（docs/DATA_TODO.md）。商社（機械）の粗利率の範囲（industries/trading.json）の上の端。各時代の実際の利益率は未確認 |
+| `intermediate/cases/mitsubishi.json` | `unconfirmedSceneYears` | 1986・1993・1999・2002 |  | 場面の年を仮置きしたもの：定年延長（1986）、業績連動報酬の導入（1993）、ヒューマンリンクの設立（1999）、新卒採用の一時抑制（2002）。画面には年を出さない。TODO: 要確認 |

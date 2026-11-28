@@ -10,10 +10,13 @@ import { needsRegroup, proportionalMapping } from '../../engine/intermediate/reg
 import { STANCES, applyStance, type Scene } from '../../engine/intermediate/scenes';
 import type { IntermediateState } from '../../engine/intermediate/types';
 import type { PolicySet } from '../../engine/types';
+import { getIndustry } from '../../engine/data';
+import { getCase, getCaseScene } from '../../engine/intermediate/caseMode';
+import { OPTIONS } from './PolicyForm';
 import { optionName } from '../../store/game';
 import { actions } from '../useGame';
 import { pct } from '../format';
-import { intermediateStrings as t } from '../strings';
+import { intermediateStrings as t, policyStrings } from '../strings';
 
 type Cat = keyof DetailedPolicies;
 const CATS: Cat[] = ['grade', 'evaluation', 'pay', 'bonus'];
@@ -41,6 +44,18 @@ function formatValue(v: number, unit: string): string {
 function SceneBody({ scene, state }: { scene: Scene | null; state: IntermediateState }) {
   if (!scene) return null;
   if (scene.kind === 'founding') return <p>{t.foundingBody(scene.vars.headcount)}</p>;
+  if (scene.kind === 'case' && scene.caseSceneId) {
+    const data = getCase(state.caseId ?? '');
+    const cs = getCaseScene(state, scene.caseSceneId);
+    return (
+      <>
+        <p className="muted">{t.caseYear(cs.year, cs.yearConfirmed)}</p>
+        <p>{cs.body}</p>
+        <p className="muted">{t.caseSource(data.sourceDocument, cs.source)}</p>
+        <p className="muted">{data.disclaimer}</p>
+      </>
+    );
+  }
   if (scene.kind === 'chain') {
     const voices = t.chainVoices[Math.min(4, scene.chainStage)] ?? [];
     return (
@@ -76,6 +91,9 @@ function SceneBody({ scene, state }: { scene: Scene | null; state: IntermediateS
 export function DesignModal({ state }: { state: IntermediateState }) {
   const scene = state.pendingScene;
   const [stanceId, setStanceId] = useState('keep');
+  const [base, setBase] = useState<PolicySet>({ ...state.policies });
+  const industry = getIndustry(state.profile.industryId);
+  const caseTitle = scene?.caseSceneId ? getCaseScene(state, scene.caseSceneId).title : null;
   const [detail, setDetail] = useState<DetailedPolicies>(structuredClone(state.detail));
   const oldLevels = levelsOf(state.detail);
   const regroup = needsRegroup(state.detail, detail);
@@ -97,15 +115,16 @@ export function DesignModal({ state }: { state: IntermediateState }) {
   };
   const decide = () => {
     const options = regroup ? { gradeMapping: map, transitionYears: years } : undefined;
-    if (scene) actions().answerScene(stanceId, detail, options);
-    else actions().redesign(detail, options);
+    const { grade: _g, evaluation: _e, pay: _p, bonus: _b, ...others } = base;
+    if (scene) actions().answerScene(stanceId, detail, options, others);
+    else actions().redesign(detail, options, others);
   };
 
   return (
     <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="design-title">
       <div className="slip">
         <div className="slip-head">
-          <h2 id="design-title">{t.sceneTitle[scene ? scene.kind : 'free']}</h2>
+          <h2 id="design-title">{caseTitle ?? t.sceneTitle[scene ? scene.kind : 'free']}</h2>
         </div>
         <div className="slip-body">
           <SceneBody scene={scene} state={state} />
@@ -177,6 +196,24 @@ export function DesignModal({ state }: { state: IntermediateState }) {
                 })}
             </fieldset>
           ))}
+
+          <fieldset className="policy-field">
+            <legend>{t.otherPolicies}</legend>
+            {(['hiring', 'workHours', 'training', 'workStyle', 'overtime'] as const).map((cat) => (
+              <label key={cat} className="design-row">
+                <span>{policyStrings.categories[cat]}</span>
+                <select value={base[cat]} onChange={(e) => setBase({ ...base, [cat]: e.target.value } as PolicySet)}>
+                  {(OPTIONS[cat] as readonly string[])
+                    .filter((o) => cat !== 'workStyle' || industry.remoteAllowed.includes(o as PolicySet['workStyle']))
+                    .map((o) => (
+                      <option key={o} value={o}>
+                        {optionName(cat, o as never)}
+                      </option>
+                    ))}
+                </select>
+              </label>
+            ))}
+          </fieldset>
 
           {regroup && (
             <fieldset className="policy-field">

@@ -9,6 +9,7 @@ const files = [
   'locations.json',
   'coefficients.json',
   'foundings.json',
+  ...readdirSync(join(dataDir, 'intermediate', 'cases')).map((f) => join('intermediate', 'cases', f)),
 ].filter((f) => f.endsWith('.json'));
 
 type Row = { file: string; path: string; value: string; unit: string; source: string };
@@ -20,11 +21,12 @@ function walk(node: unknown, path: string, file: string) {
     node.forEach((x, i) => walk(x, `${path}[${(x as { id?: string })?.id ?? i}]`, file));
   } else if (node && typeof node === 'object') {
     const o = node as Record<string, unknown>;
-    if ('value' in o && 'basis' in o) {
+    // 値の一覧（追体験の人数の目安など）は value を持たないので、basis と source だけで数える
+    if ('basis' in o && 'source' in o && ('value' in o || String(o.source).includes('TODO'))) {
       total++;
       const source = String(o.source);
       if (!source.includes('TODO')) return;
-      const v = o.value as number | { min: number; max: number };
+      const v = ('value' in o ? o.value : '（一覧）') as number | string | { min: number; max: number };
       rows.push({
         file,
         path,

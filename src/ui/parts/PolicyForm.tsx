@@ -16,7 +16,7 @@ import { policyStrings } from '../strings';
 import { optionKey } from '../guide';
 import { HelpButton } from './Guide';
 
-const OPTIONS: { [K in keyof PolicySet]: readonly PolicySet[K][] } = {
+export const OPTIONS: { [K in keyof PolicySet]: readonly PolicySet[K][] } = {
   grade: GRADE_SYSTEMS,
   evaluation: EVALUATION_SYSTEMS,
   pay: PAY_POLICIES,

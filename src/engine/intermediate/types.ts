@@ -88,5 +88,9 @@ export type IntermediateState = {
   sceneLog: { year: number; kind: SceneKind; stanceId: string; regrouped: boolean }[];
   /** 場面を自動で（今の制度のまま）進めるか。画面で遊ぶときは false */
   autoScenes: boolean;
+  /** 追体験のデータのID（中級（自由）なら null。§15.7） */
+  caseId: string | null;
+  /** 自動で進めるとき、場面で史実の方針を選ぶか（史実の影の計算） */
+  historical: boolean;
   rng: RngStreamsState;
 };

@@ -2430,5 +2430,12 @@
     "unit": "割合",
     "basis": "assumption",
     "source": "職責による基本給の振れ幅を最大にしたとき、「次の段階が見えない」ずれを減らす割合。DESIGN.md §15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.fit.lifetime_seniority_mult",
+    "value": 0.3,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "長期雇用が当たり前の時代（人が辞めずに社内で育つ）には、年功のずれ（成長期×年功、ポスト詰まり×年功）をこの倍率に軽くする。追体験の前提にだけ使う。DESIGN.md §15.7（ステップ23）。仮置き"
   }
 ]

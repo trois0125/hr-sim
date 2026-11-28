@@ -16,6 +16,8 @@
 //
 // 中級（DESIGN.md §15。1年ごと・層で計算）の1社を見る：
 //   npx tsx scripts/simulate.ts --mode intermediate --seed 42 --industry trading --founding carveout --years 25
+//   npx tsx scripts/simulate.ts --mode intermediate --case mitsubishi --seed 1            （追体験：今の制度のまま）
+//   npx tsx scripts/simulate.ts --mode intermediate --case mitsubishi --seed 1 --history  （追体験：史実の影の計算）
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { Worker } from 'node:worker_threads';
 import { availableParallelism } from 'node:os';
@@ -24,6 +26,7 @@ import { generateCompany, setFoundingPolicies } from '../src/engine/generate';
 import { createRng } from '../src/engine/rng';
 import { runToEnd } from '../src/engine/tick';
 import { runIntermediateToEnd, startIntermediate } from '../src/engine/intermediate/yearTick';
+import { runHistoricalShadow, startCase } from '../src/engine/intermediate/caseMode';
 import {
   ENGAGEMENT_FACTORS,
   INDUSTRY_IDS,
@@ -266,7 +269,13 @@ function single(): void {
 /** 中級の1社を終わりまで回し、年ごとの数字を表示する */
 function intermediateSingle(): void {
   const start = Date.now();
-  const state = runIntermediateToEnd(
+  const caseId = arg('case');
+  const seed = Number(arg('seed') ?? 42);
+  const state = caseId
+    ? process.argv.includes('--history')
+      ? runHistoricalShadow(caseId, seed)
+      : runIntermediateToEnd(startCase(caseId, seed, { autoScenes: true }))
+    : runIntermediateToEnd(
     startIntermediate({
       seed: Number(arg('seed') ?? 42),
       industryId: (arg('industry') ?? 'trading') as IndustryId,
@@ -276,7 +285,7 @@ function intermediateSingle(): void {
     }),
   );
   const oku = (x: number) => (x / 1e8).toFixed(2);
-  console.log(`中級（自由）：${state.profile.name}（${getIndustry(state.profile.industryId).name}・${getFoundingPattern(state.profile.foundingPatternId).name}）`);
+  console.log(`${caseId ? '追体験' : '中級（自由）'}：${state.profile.name}（${getIndustry(state.profile.industryId).name}・${getFoundingPattern(state.profile.foundingPatternId).name}）`);
   console.log('年\t社員\t層\t売上(億)\t人件費(億)\t人件費率\t利益(億)\t入社\t昇格\t退職\t定年\t帰任\t離職率\t納得感\t残業h\t連鎖\tずれ');
   for (const r of state.history) {
     console.log(

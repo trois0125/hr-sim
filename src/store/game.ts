@@ -28,9 +28,14 @@ import { isWaitingForScene, resolveScene } from '../engine/intermediate/scenes';
 import type { Difficulty, IntermediateState } from '../engine/intermediate/types';
 import { toCompanyView } from '../engine/intermediate/view';
 import { fromCompany, yearTick } from '../engine/intermediate/yearTick';
+import { getCase, startCase } from '../engine/intermediate/caseMode';
+import { setCalendarStartYear } from '../engine/calendar';
 import { yen } from '../ui/format';
 import { browserStorage, readSave, writeSave, type SaveStorage } from './persist';
-import { feedStrings, orgStrings, policyStrings } from '../ui/strings';
+import { feedStrings, intermediateStrings, orgStrings, policyStrings } from '../ui/strings';
+import { getIndustry } from '../engine/data';
+import { ageBandOf, bandWidth } from '../engine/intermediate/layers';
+import type { Employee } from '../engine/types';
 
 export type Screen = 'title' | 'howto' | 'generate' | 'policies' | 'main' | 'end';
 
@@ -142,9 +147,11 @@ export type GameActions = {
   /** 中級：生成した会社で始める（最初の制度は創業の場面で決める） */
   startIntermediateGame(): void;
   /** 中級：場面で制度を決める */
-  answerScene(stanceId: string, detail: DetailedPolicies, options?: DetailChangeOptions): void;
+  answerScene(stanceId: string, detail: DetailedPolicies, options?: DetailChangeOptions, base?: Partial<PolicySet>): void;
   /** 中級：場面の外で制度を設計し直す */
-  redesign(detail: DetailedPolicies, options?: DetailChangeOptions): void;
+  redesign(detail: DetailedPolicies, options?: DetailChangeOptions, base?: Partial<PolicySet>): void;
+  /** 追体験を始める（§15.7） */
+  startCaseGame(caseId: string): void;
 };
 
 export type GameStore = GameState & GameActions;
@@ -249,6 +256,16 @@ export function collectFeed(prev: CompanyState | null, next: CompanyState): Feed
   return out;
 }
 
+/** 中級の層の名前（画面用） */
+function layerNamer(industryId: CompanyState['profile']['industryId']) {
+  const roles = new Map(getIndustry(industryId).roles.map((r) => [r.id, r.name]));
+  return (rep: Employee) => {
+    const band = ageBandOf(rep.age);
+    return intermediateStrings.layerName(roles.get(rep.role) ?? rep.role, band, band + bandWidth() - 1, rep.grade);
+  };
+}
+const view = (s: IntermediateState) => toCompanyView(s, layerNamer(s.profile.industryId));
+
 /** 制度の選択肢の名前 */
 export function optionName<K extends keyof PolicySet>(category: K, option: PolicySet[K]): string {
   const opts = policyStrings.options[category] as Record<string, readonly [string, string]>;
@@ -325,7 +342,7 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
     /** 中級の状態を新しくし、表示用の会社を作り直す */
     const commitIntermediate = (next: IntermediateState, extra: Partial<GameState> = {}) => {
       set({ intermediate: next });
-      commit(toCompanyView(next), extra);
+      commit(view(next), extra);
     };
     const stopTimer = () => {
       if (timer) clearTimeout(timer);
@@ -366,6 +383,7 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
       goto(screen) {
         if (screen === 'title') {
           stopTimer();
+          setCalendarStartYear(null);
           if (saveTimer) saveNow(); // 書きかけの保存を先に書く
           set({ ...initial, savedGame: get().savedGame, saveProblem: get().saveProblem, saveFailed: get().saveFailed, canSave: get().canSave, difficulty: get().difficulty });
           return;
@@ -425,27 +443,35 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
       setDifficulty(difficulty) {
         set({ difficulty });
       },
+      startCaseGame(caseId) {
+        setCalendarStartYear(getCase(caseId).startYear);
+        const inter = startCase(caseId, newSeed(), { autoScenes: false });
+        set({ ...initial, canSave: get().canSave, difficulty: 'intermediate', screen: 'main', intermediate: inter, company: view(inter), speed: 1 });
+        schedule();
+      },
       startIntermediateGame() {
+        setCalendarStartYear(null);
         const cand = get().candidate;
         if (!cand) return;
         const c = structuredClone(cand);
         c.maxMonths = get().gameYears * MONTHS_PER_YEAR;
         const inter = fromCompany(c, { autoScenes: false });
-        set({ ...initial, canSave: get().canSave, gameYears: get().gameYears, difficulty: 'intermediate', screen: 'main', intermediate: inter, company: toCompanyView(inter), speed: 1 });
+        set({ ...initial, canSave: get().canSave, gameYears: get().gameYears, difficulty: 'intermediate', screen: 'main', intermediate: inter, company: view(inter), speed: 1 });
         schedule();
       },
-      answerScene(stanceId, detail, opts) {
+      answerScene(stanceId, detail, opts, base) {
         const inter = get().intermediate;
         if (!inter?.pendingScene) return;
         const next = structuredClone(inter);
-        resolveScene(next, { stanceId, detail, options: opts });
+        resolveScene(next, { stanceId, detail, options: opts, base });
         commitIntermediate(next, { editorOpen: false });
         schedule();
       },
-      redesign(detail, opts) {
+      redesign(detail, opts, base) {
         const inter = get().intermediate;
         if (!inter) return;
         const next = structuredClone(inter);
+        if (base) next.policies = { ...next.policies, ...base };
         changeDetailedPolicies(next, detail, opts);
         commitIntermediate(next, { editorOpen: false });
         schedule();
@@ -482,6 +508,7 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
         set({ candidate: generateCompany({ seed: newSeed(), industryId, autoPlay: null }) });
       },
       startGame(policies) {
+        setCalendarStartYear(null);
         const cand = get().candidate;
         if (!cand) return;
         const company = setFoundingPolicies(structuredClone(cand), policies);

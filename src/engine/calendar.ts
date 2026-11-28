@@ -7,10 +7,19 @@ import { MONTHS_PER_YEAR } from './types';
 
 export type GameDate = { year: number; month: number };
 
+/**
+ * 追体験（DESIGN.md §15.7）では、ゲームの日付を史実の年から数える。画面の表示だけに使う上書き
+ * （法令の施行日の判定 monthIndexOf は係数台帳の開始年のまま）。null で元に戻す
+ */
+let startYearOverride: number | null = null;
+export function setCalendarStartYear(year: number | null): void {
+  startYearOverride = year;
+}
+
 export function gameDate(elapsedMonths: number): GameDate {
   const start = (coef('calendar.start_month') - 1) + elapsedMonths;
   return {
-    year: coef('calendar.start_year') + Math.floor(start / MONTHS_PER_YEAR),
+    year: (startYearOverride ?? coef('calendar.start_year')) + Math.floor(start / MONTHS_PER_YEAR),
     month: (start % MONTHS_PER_YEAR) + 1,
   };
 }

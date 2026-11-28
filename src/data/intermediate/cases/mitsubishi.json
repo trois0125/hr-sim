@@ -1,0 +1,670 @@
+{
+  "id": "mitsubishi",
+  "name": "三菱商事",
+  "title": "追体験：三菱商事",
+  "description": "1954年の大合同から2025年まで、三菱商事の人事制度の歩みを追体験します。場面の年と順番は史実のまま進みます。",
+  "disclaimer": "三菱商事「人的資本レポート Ver1.0」などの公開資料をもとに単純化したシミュレーションです。実際の会社の数字や結果を示すものではありません。金額は今の物価で表しています。",
+  "sourceDocument": "三菱商事「人的資本レポート Ver1.0」（2025年）",
+  "startYear": 1954,
+  "endYear": 2025,
+  "industryId": "trading",
+  "variantId": "machinery",
+  "locationId": "tokyo",
+  "initialCash": {
+    "value": 50000000000,
+    "unit": "円",
+    "basis": "assumption",
+    "source": "仮置き（docs/DATA_TODO.md）。大合同直後の資金の規模は未確認"
+  },
+  "initialAgeShares": {
+    "basis": "assumption",
+    "source": "仮置き（docs/DATA_TODO.md）。戦後の復員・学制改革で若い社員が多かったとみなした（人的資本レポート P.5 の記述から）",
+    "bands": {
+      "20": 0.2,
+      "25": 0.2,
+      "30": 0.18,
+      "35": 0.15,
+      "40": 0.12,
+      "45": 0.08,
+      "50": 0.07
+    }
+  },
+  "headcountPath": {
+    "basis": "assumption",
+    "source": "単体の社員数の目安。2020年度 5,361人・2024年度 5,725人は人的資本レポート P.27。それ以前は仮置き（docs/DATA_TODO.md）。需要はこの人数で回る大きさにする",
+    "points": [
+      {
+        "year": 1954,
+        "headcount": 3000
+      },
+      {
+        "year": 1965,
+        "headcount": 6000
+      },
+      {
+        "year": 1975,
+        "headcount": 9000
+      },
+      {
+        "year": 1990,
+        "headcount": 9500
+      },
+      {
+        "year": 2000,
+        "headcount": 6500
+      },
+      {
+        "year": 2010,
+        "headcount": 5800
+      },
+      {
+        "year": 2020,
+        "headcount": 5361
+      },
+      {
+        "year": 2025,
+        "headcount": 5725
+      }
+    ]
+  },
+  "retirementAges": {
+    "basis": "assumption",
+    "source": "定年は55歳から60歳へ延長した（人的資本レポート P.7。年は未確認）。60歳定年は高年齢者雇用安定法で1998年から義務、65歳までの雇用確保は2013年から全員が対象。会社の延長の年は仮置き（docs/DATA_TODO.md）",
+    "eras": [
+      {
+        "fromYear": 1954,
+        "age": 55
+      },
+      {
+        "fromYear": 1986,
+        "age": 60
+      },
+      {
+        "fromYear": 2013,
+        "age": 65
+      }
+    ]
+  },
+  "economyShocks": {
+    "basis": "assumption",
+    "source": "大きな景気の落ち込みの年（第一次石油危機、プラザ合意後の円高不況、バブル崩壊、リーマン・ショック）。人的資本レポート P.6〜9 の時代背景から。落ち込みの大きさは仮置き TODO: 要確認（有価証券報告書・社史のPDFで差し替える）",
+    "points": [
+      {
+        "year": 1974,
+        "economy": -0.25
+      },
+      {
+        "year": 1986,
+        "economy": -0.2
+      },
+      {
+        "year": 1992,
+        "economy": -0.25
+      },
+      {
+        "year": 2009,
+        "economy": -0.3
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "id": "1954_merger",
+      "year": 1954,
+      "yearConfirmed": true,
+      "source": "P.5",
+      "title": "大合同：ばらばらの経歴と給与をどうそろえるか",
+      "body": "約12の会社が一つになった。復員や学制改革で、社員の学歴や年齢、それまでの給与の決め方はばらばら。まずは誰もが「公平だ」と思える軸が必要だ。",
+      "premise": {
+        "growth": false,
+        "aging": false,
+        "postGlut": false,
+        "recession": false,
+        "large": true,
+        "lifetimeEmployment": true
+      },
+      "history": {
+        "stanceId": "nurture",
+        "summary": "学歴や兵役などを調整した「換算年次」と「基本給制度」で、卒業後の年数に応じた公平な軸をつくった",
+        "patch": {
+          "grade": {
+            "system": "role",
+            "levels": 3,
+            "seniorityCap": 2
+          },
+          "pay": {
+            "basis": "seniority"
+          },
+          "evaluation": {
+            "separateGrowthTalk": false
+          }
+        }
+      }
+    },
+    {
+      "id": "1955_hiring",
+      "year": 1955,
+      "yearConfirmed": true,
+      "source": "P.5",
+      "title": "人員過大の中で、採用を再開するか",
+      "body": "統合で人は余っている。採用を控えるべきだという声もある。一方で、採用を止めると将来の人材に穴があく。",
+      "premise": {
+        "growth": false,
+        "aging": false,
+        "postGlut": true,
+        "recession": false,
+        "large": true,
+        "lifetimeEmployment": true
+      },
+      "history": {
+        "stanceId": "keep",
+        "summary": "大局的・長期的な視点から、翌年には本格的な採用を始めた（縁故採用を排する「子弟非採用ルール」も定めた）",
+        "base": {
+          "hiring": "new_grad"
+        }
+      }
+    },
+    {
+      "id": "1958_language",
+      "year": 1958,
+      "yearConfirmed": true,
+      "source": "P.10",
+      "title": "海外語学研修生を送り出すか",
+      "body": "商社の仕事は海外に広がっていく。まだ会社は統合したばかりで余裕はないが、言葉を話せる人材は一朝一夕には育たない。",
+      "premise": {
+        "growth": true,
+        "aging": false,
+        "postGlut": false,
+        "recession": false,
+        "large": true,
+        "lifetimeEmployment": true
+      },
+      "history": {
+        "stanceId": "keep",
+        "summary": "大合同からわずか4年後に、カイロへのアラビア語研修生派遣を始めた（1985年には16語学・約300人）",
+        "base": {
+          "training": "1"
+        }
+      }
+    },
+    {
+      "id": "1960_posts",
+      "year": 1960,
+      "yearConfirmed": true,
+      "source": "P.11",
+      "title": "役職が足りない：昇進の行き詰まり",
+      "body": "事業は伸び、社員は増えた。だが課長や部長の席は限られ、役職で処遇を決める仕組みでは、昇進できない人が増えている。",
+      "premise": {
+        "growth": true,
+        "aging": false,
+        "postGlut": true,
+        "recession": false,
+        "large": true,
+        "lifetimeEmployment": true
+      },
+      "history": {
+        "stanceId": "keep",
+        "summary": "課長代理制度（1960年）、参事・主事制度（1961年）、基本給バーの引き上げ（1965年頃）で、役職以外のステイタスを足した",
+        "patch": {
+          "grade": {
+            "levels": 5,
+            "seniorityCap": 3
+          }
+        }
+      }
+    },
+    {
+      "id": "1968_division",
+      "year": 1968,
+      "yearConfirmed": true,
+      "source": "P.5, P.10",
+      "title": "人を育てる責任は誰が持つのか",
+      "body": "人が増え、本店がすべてを見ることはできなくなった。商品ごとに利益の責任を持たせるなら、人を育てる責任もはっきりさせたい。",
+      "premise": {
+        "growth": true,
+        "aging": false,
+        "postGlut": false,
+        "recession": false,
+        "large": true,
+        "lifetimeEmployment": true
+      },
+      "history": {
+        "stanceId": "nurture",
+        "summary": "商品本部制に移り、配属された一人ひとりの育成責任者を明確にする「人事管轄」を導入した",
+        "patch": {
+          "evaluation": {
+            "separateGrowthTalk": false
+          }
+        }
+      }
+    },
+    {
+      "id": "1971_qualification",
+      "year": 1971,
+      "yearConfirmed": true,
+      "source": "P.6, P.11",
+      "title": "役職と処遇を切り離すか",
+      "body": "中間管理職のポストを増やし続け、組織は「屋上屋」になった。問題の本質は、役職と処遇が切り離せないことにある。ただ、役職は社内外でのステイタスそのものだ。",
+      "premise": {
+        "growth": true,
+        "aging": false,
+        "postGlut": true,
+        "recession": false,
+        "large": true,
+        "lifetimeEmployment": true
+      },
+      "history": {
+        "stanceId": "keep",
+        "summary": "役職制を廃止し、資格（等級）で処遇する資格制度を導入した。一定の等級までは勤続で上がり、それより上は選抜にした",
+        "patch": {
+          "grade": {
+            "system": "skill",
+            "levels": 8,
+            "seniorityCap": 4
+          }
+        }
+      }
+    },
+    {
+      "id": "1973_school",
+      "year": 1973,
+      "yearConfirmed": true,
+      "source": "P.6, P.10",
+      "title": "若手をビジネススクールに送るか",
+      "body": "国際化が進み、海外の企業の幹部候補と渡り合える人材が要る。費用はかかるが、現場の経験だけでは身につかないものもある。",
+      "premise": {
+        "growth": true,
+        "aging": false,
+        "postGlut": false,
+        "recession": false,
+        "large": true,
+        "lifetimeEmployment": true
+      },
+      "history": {
+        "stanceId": "keep",
+        "summary": "欧米のビジネススクールへの派遣を制度化し、海外研修や階層別研修を体系化した",
+        "base": {
+          "training": "1"
+        }
+      }
+    },
+    {
+      "id": "1977_z",
+      "year": 1977,
+      "yearConfirmed": true,
+      "source": "P.6",
+      "title": "低成長と高齢化に備える",
+      "body": "石油危機を経て、高度成長は終わった。社員の年齢は上がり、これまでの延長では全員を活かしきれない。",
+      "premise": {
+        "growth": false,
+        "aging": true,
+        "postGlut": true,
+        "recession": true,
+        "large": true,
+        "lifetimeEmployment": true
+      },
+      "history": {
+        "stanceId": "keep",
+        "summary": "「Z作戦」で、全社員を長期的にどう活かすかという未来図を描き、年功だけでなく能力で全員をフル稼働させる方向を定めた",
+        "patch": {
+          "grade": {
+            "seniorityCap": 3
+          }
+        }
+      }
+    },
+    {
+      "id": "1981_team",
+      "year": 1981,
+      "yearConfirmed": true,
+      "source": "P.6, P.11",
+      "title": "中間管理職を一本化する",
+      "body": "「課」や「課長」という固定的な呼び名が、管理職への偏った意識を生んでいる。資格の区分も細かく、柔軟に人を動かしにくい。",
+      "premise": {
+        "growth": false,
+        "aging": true,
+        "postGlut": true,
+        "recession": false,
+        "large": true,
+        "lifetimeEmployment": true
+      },
+      "history": {
+        "stanceId": "keep",
+        "summary": "「課」を「チーム」、「課長」を「チームリーダー」と改め、資格区分を1〜10級からA〜D級に改めて中間管理職層を一本化した",
+        "patch": {
+          "grade": {
+            "levels": 6,
+            "seniorityCap": 3
+          }
+        }
+      }
+    },
+    {
+      "id": "1983_survey",
+      "year": 1983,
+      "yearConfirmed": true,
+      "source": "P.7, P.10",
+      "title": "組織の状態をどう知るか",
+      "body": "制度を変えても、現場でどう受け止められているかが見えない。幹部のマネジメントも人によって差がある。",
+      "premise": {
+        "growth": false,
+        "aging": true,
+        "postGlut": true,
+        "recession": false,
+        "large": true,
+        "lifetimeEmployment": true
+      },
+      "history": {
+        "stanceId": "keep",
+        "summary": "組織活性度調査を始め、制度改定の影響や幹部のマネジメント力を見えるようにした（1988年には幹部向けのEDPも導入）",
+        "patch": {
+          "evaluation": {
+            "system": "multi_rater"
+          }
+        }
+      }
+    },
+    {
+      "id": "1986_retirement",
+      "year": 1986,
+      "yearConfirmed": false,
+      "source": "P.7",
+      "title": "定年延長とキープヤング",
+      "body": "定年を55歳から60歳に延ばすことは避けられない。だが、上が詰まれば若手の出番が減り、組織の活力が落ちる。",
+      "premise": {
+        "growth": false,
+        "aging": true,
+        "postGlut": true,
+        "recession": true,
+        "large": true,
+        "lifetimeEmployment": true
+      },
+      "history": {
+        "stanceId": "keep",
+        "summary": "役職定年やポストオフ、準定年退職の対象年齢の引き下げ、再雇用制度で、経験者の活用と若手の登用を両立させた",
+        "patch": {
+          "grade": {
+            "seniorityCap": 2
+          }
+        }
+      }
+    },
+    {
+      "id": "1993_performance",
+      "year": 1993,
+      "yearConfirmed": false,
+      "source": "P.7",
+      "title": "売上の大きさか、稼ぐ力か",
+      "body": "バブルが崩れ、売上の規模を追う時代は終わった。各本部が利益の責任を持つなら、報酬もそれに合わせたい。幹部の若返りも課題だ。",
+      "premise": {
+        "growth": false,
+        "aging": true,
+        "postGlut": true,
+        "recession": true,
+        "large": true,
+        "lifetimeEmployment": true
+      },
+      "history": {
+        "stanceId": "reward",
+        "summary": "評価の軸を売上から収益性へ変える業績連動報酬を導入し、昇格基準の厳格化と登用年齢の引き下げで幹部を若返らせた",
+        "patch": {
+          "grade": {
+            "seniorityCap": 2
+          },
+          "bonus": {
+            "variableShare": 0.15,
+            "companyWeight": 0.6
+          }
+        }
+      }
+    },
+    {
+      "id": "1994_cdp",
+      "year": 1994,
+      "yearConfirmed": true,
+      "source": "P.7, P.10",
+      "title": "若手の異動を計画的に",
+      "body": "配属された部署にずっといる若手が多く、経験が偏っている。厳しい環境だが、育成への投資を止めれば将来の経営人材がいなくなる。",
+      "premise": {
+        "growth": false,
+        "aging": true,
+        "postGlut": true,
+        "recession": true,
+        "large": true,
+        "lifetimeEmployment": true
+      },
+      "history": {
+        "stanceId": "keep",
+        "summary": "CDPを導入し、入社後9年間で最低1回の異動、1業務は最長5年を全社のルールにした。上級管理職候補向けのMC経営スクールも開いた",
+        "base": {
+          "training": "1"
+        }
+      }
+    },
+    {
+      "id": "1999_outsourcing",
+      "year": 1999,
+      "yearConfirmed": false,
+      "source": "P.7, P.12",
+      "title": "人事部の仕事をどこまで自前で持つか",
+      "body": "人事部の事務の仕事が増え、制度の企画に手が回らない。受け皿になる専門の会社はまだ世の中にない。",
+      "premise": {
+        "growth": false,
+        "aging": true,
+        "postGlut": true,
+        "recession": false,
+        "large": true,
+        "lifetimeEmployment": true
+      },
+      "history": {
+        "stanceId": "keep",
+        "summary": "自らアウトソーシング会社（ヒューマンリンク）を設立し、人事の事務を任せて人事部をスリムにした"
+      }
+    },
+    {
+      "id": "2000_market",
+      "year": 2000,
+      "yearConfirmed": true,
+      "source": "P.8, P.13",
+      "title": "30年続いた制度を土台から作り直すか",
+      "body": "事業はトレーディングから事業投資へ。求められるのは、顧客・市場から評価されるプロ人材だ。だが今の制度は20〜30年前のもので、横並びの処遇が残っている。",
+      "premise": {
+        "growth": false,
+        "aging": true,
+        "postGlut": true,
+        "recession": false,
+        "large": true,
+        "lifetimeEmployment": false
+      },
+      "history": {
+        "stanceId": "reward",
+        "summary": "6つの基本原則のもと、職責区分（同じ資格でも職責で基本給が110%〜90%）、資格の3層への大くくり化、変動部分の拡大（上位者ほど大きく）を行った",
+        "patch": {
+          "grade": {
+            "system": "skill",
+            "levels": 3,
+            "seniorityCap": 0,
+            "dutySpread": 0.1
+          },
+          "pay": {
+            "basis": "performance",
+            "meritSpread": 0.03
+          },
+          "bonus": {
+            "variableShare": 0.3,
+            "companyWeight": 0.5,
+            "progressive": true
+          }
+        }
+      }
+    },
+    {
+      "id": "2002_hiring",
+      "year": 2002,
+      "yearConfirmed": false,
+      "source": "P.9",
+      "title": "新卒採用を絞るか",
+      "body": "事業の選別が進み、人員の最適化が求められている。採用を抑えれば人件費は下がるが、その世代の人材は後から取り戻せない。",
+      "premise": {
+        "growth": false,
+        "aging": true,
+        "postGlut": true,
+        "recession": true,
+        "large": true,
+        "lifetimeEmployment": false
+      },
+      "history": {
+        "stanceId": "lean",
+        "summary": "2000年代前半に新卒採用を一時的に抑え、後半には再び拡充した",
+        "base": {
+          "hiring": "mid_career"
+        }
+      }
+    },
+    {
+      "id": "2003_bu",
+      "year": 2003,
+      "yearConfirmed": true,
+      "source": "P.8",
+      "title": "部長ポストを若返らせる",
+      "body": "意思決定を速めるため、小さな単位に損益と人事の責任を持たせたい。それには現場のリーダーの力が要る。",
+      "premise": {
+        "growth": false,
+        "aging": true,
+        "postGlut": true,
+        "recession": false,
+        "large": true,
+        "lifetimeEmployment": false
+      },
+      "history": {
+        "stanceId": "keep",
+        "summary": "BU制を導入して損益と人事の責任を小さな単位に移し、部長ポストを大胆に若返らせた"
+      }
+    },
+    {
+      "id": "2006_steps",
+      "year": 2006,
+      "yearConfirmed": true,
+      "source": "P.13",
+      "title": "「次に目指す段階が見えない」",
+      "body": "資格を大くくりにして、柔軟に人を動かせるようになった。一方で社員からは「次に目指すべき段階が見えない」「自分の立ち位置が分かりづらい」という声が上がっている。",
+      "premise": {
+        "growth": false,
+        "aging": true,
+        "postGlut": false,
+        "recession": false,
+        "large": true,
+        "lifetimeEmployment": false
+      },
+      "history": {
+        "stanceId": "keep",
+        "summary": "P層をP1・P2・P3に細分化し、段階的な昇格の道筋を設けた",
+        "patch": {
+          "grade": {
+            "levels": 5,
+            "seniorityCap": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "2009_lehman",
+      "year": 2009,
+      "yearConfirmed": true,
+      "source": "P.9",
+      "title": "リーマン・ショックの後も新卒を採るか",
+      "body": "多くの企業が採用を絞っている。足元の業績は厳しいが、採用を止めた世代は将来の人材の断層になる。",
+      "premise": {
+        "growth": false,
+        "aging": true,
+        "postGlut": false,
+        "recession": true,
+        "large": true,
+        "lifetimeEmployment": false
+      },
+      "history": {
+        "stanceId": "keep",
+        "summary": "足元と将来の見通しを見極めながら、安定的な新卒採用を続けた",
+        "base": {
+          "hiring": "new_grad"
+        }
+      }
+    },
+    {
+      "id": "2019_hybrid",
+      "year": 2019,
+      "yearConfirmed": true,
+      "source": "P.9, P.14",
+      "title": "業界のプロから経営人材へ",
+      "body": "事業は投資から経営へ。投資先の経営を任せられる人材が足りない。欧米流の「ジョブ型」をそのまま入れると、異動で人を育てる強みを失うおそれもある。",
+      "premise": {
+        "growth": false,
+        "aging": true,
+        "postGlut": false,
+        "recession": false,
+        "large": true,
+        "lifetimeEmployment": false
+      },
+      "history": {
+        "stanceId": "reward",
+        "summary": "資格制度と職務給のハイブリッド（経営職務グレードG3以上は職務給）、M層以上への株式交付、評価と育成を分けた「成長対話」を導入した",
+        "patch": {
+          "grade": {
+            "system": "job",
+            "levels": 6,
+            "seniorityCap": 1,
+            "dutySpread": 0.1
+          },
+          "evaluation": {
+            "system": "multi_rater",
+            "separateGrowthTalk": true
+          },
+          "pay": {
+            "basis": "performance",
+            "meritSpread": 0.03
+          },
+          "bonus": {
+            "variableShare": 0.3,
+            "companyWeight": 0.5,
+            "progressive": true
+          }
+        }
+      }
+    },
+    {
+      "id": "2024_dear",
+      "year": 2024,
+      "yearConfirmed": true,
+      "source": "P.18〜25",
+      "title": "10年後の世代交代に備える",
+      "body": "今後10年で大規模な世代交代が進む。新卒の市場は縮み、人材の流動化は加速している。会社と社員の関係は「従属」から「パートナーシップ」へ変わりつつある。",
+      "premise": {
+        "growth": false,
+        "aging": true,
+        "postGlut": false,
+        "recession": false,
+        "large": true,
+        "lifetimeEmployment": false
+      },
+      "history": {
+        "stanceId": "keep",
+        "summary": "MC HR Vision「DEAR」を定め、採用の複線化・キャリア採用の強化、働く場所と時間の柔軟化などを進めた",
+        "base": {
+          "hiring": "mid_career",
+          "workStyle": "hybrid"
+        }
+      }
+    }
+  ],
+  "grossMargin": {
+    "value": 0.2,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "仮置き（docs/DATA_TODO.md）。商社（機械）の粗利率の範囲（industries/trading.json）の上の端。各時代の実際の利益率は未確認"
+  },
+  "unconfirmedSceneYears": {
+    "value": "1986・1993・1999・2002",
+    "basis": "assumption",
+    "source": "場面の年を仮置きしたもの：定年延長（1986）、業績連動報酬の導入（1993）、ヒューマンリンクの設立（1999）、新卒採用の一時抑制（2002）。画面には年を出さない。TODO: 要確認"
+  }
+}

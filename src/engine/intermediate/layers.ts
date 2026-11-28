@@ -142,9 +142,10 @@ export function ageLayers(
   layers: IntermediateLayer[],
   industry: IndustryData,
   rng: Rng,
+  /** 定年の年齢（追体験では時代ごとに変わる。省略すると係数台帳の retirement.age） */
+  retireAge: number = coef('retirement.age'),
 ): { layers: IntermediateLayer[]; retirees: number; retired: Employee[] } {
   const w = bandWidth();
-  const retireAge = coef('retirement.age');
   const movers: { from: IntermediateLayer; n: number }[] = [];
   for (const l of layers) {
     l.rep.tenureMonths += MONTHS_PER_YEAR;

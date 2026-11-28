@@ -10,15 +10,19 @@ import { MONTHS_PER_YEAR } from '../types';
 import type { IntermediateState } from './types';
 
 /** 層を一人ひとりに広げる（画面で選べるように、別々の番号を付ける） */
-export function viewEmployees(state: Pick<IntermediateState, 'layers'>): Employee[] {
+/** 層の名前の付け方（画面の文言は画面の側で決める。省略すると層のキー） */
+export type LayerNamer = (rep: Employee) => string;
+
+export function viewEmployees(state: Pick<IntermediateState, 'layers'>, namer?: LayerNamer): Employee[] {
   const out: Employee[] = [];
   for (const l of state.layers) {
-    for (let i = 0; i < l.headcount; i++) out.push({ ...l.rep, id: `${l.key}#${i}`, name: l.rep.name });
+    const name = namer ? namer(l.rep) : l.rep.name;
+    for (let i = 0; i < l.headcount; i++) out.push({ ...l.rep, id: `${l.key}#${i}`, name });
   }
   return out;
 }
 
-export function toCompanyView(state: IntermediateState): CompanyState {
+export function toCompanyView(state: IntermediateState, namer?: LayerNamer): CompanyState {
   return {
     ...state.base,
     seed: state.seed,
@@ -29,7 +33,7 @@ export function toCompanyView(state: IntermediateState): CompanyState {
     policies: state.policies,
     cash: state.cash,
     negativeCashMonths: state.negativeCashMonths,
-    employees: viewEmployees(state),
+    employees: viewEmployees(state, namer),
     market: state.market,
     hiring: state.hiring,
     history: state.monthly,

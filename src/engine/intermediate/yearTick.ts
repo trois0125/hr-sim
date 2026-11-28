@@ -35,7 +35,8 @@ import {
 import { annualHr, bonusMonthly, defaultDetailedPolicies, levelsOf, toBasePolicies } from './detailedPolicy';
 import { computePremise, findMismatches, fitEffects, nextChainStage, totalMismatch } from './fit';
 import { applySalaryTransitions } from './regroup';
-import { detectScene, foundingScene, isWaitingForScene } from './scenes';
+import { detectScene, foundingScene, isWaitingForScene, resolveScene } from './scenes';
+import { applyCaseYear, caseRetirementAge, casePremise, caseSceneAt, getCaseScene, historicalChoice } from './caseMode';
 import type { IntermediateState, YearRecord } from './types';
 
 function variantOf(state: Pick<IntermediateState, 'profile'>) {
@@ -78,6 +79,8 @@ export function fromCompany(c: CompanyState, options: { autoScenes?: boolean } =
     pendingScene: null,
     sceneLog: [],
     autoScenes: options.autoScenes ?? true,
+    caseId: null,
+    historical: false,
     rng: c.rng,
   };
   state.pendingScene = foundingScene(state);
@@ -100,9 +103,17 @@ export function yearTickInPlace(state: IntermediateState): IntermediateState {
   if (state.status !== 'running' || isWaitingForScene(state)) return state;
   // 自動で進めるときは、場面は「今の制度のまま」で閉じる
   if (state.pendingScene) {
-    state.sceneLog.push({ year: state.pendingScene.year, kind: state.pendingScene.kind, stanceId: 'keep', regrouped: false });
-    state.pendingScene = null;
+    const scene = state.pendingScene;
+    if (state.historical && scene.caseSceneId) {
+      // 史実の影の計算：史実の方針を選ぶ
+      const h = historicalChoice(state, getCaseScene(state, scene.caseSceneId));
+      resolveScene(state, h);
+    } else {
+      state.sceneLog.push({ year: scene.year, kind: scene.kind, stanceId: 'keep', regrouped: false });
+      state.pendingScene = null;
+    }
   }
+  if (state.caseId) applyCaseYear(state);
   const streams = restoreStreams(state.rng);
   const industry = getIndustry(state.profile.industryId);
   const variant = variantOf(state);
@@ -110,12 +121,10 @@ export function yearTickInPlace(state: IntermediateState): IntermediateState {
   const startHeadcount = totalHeadcount(state.layers);
 
   // 前提（会社の状態から）と、合わない組み合わせ。連鎖は、ずれが基準以上なら1段進み、下回れば1段戻る
-  const premise = computePremise({
-    layers: state.layers,
-    history: state.history,
-    detail: state.detail,
-    economy: state.market.economy,
-  });
+  // 追体験では前提を場面のデータから取る（§15.6）
+  const premise = state.caseId
+    ? casePremise(state)
+    : computePremise({ layers: state.layers, history: state.history, detail: state.detail, economy: state.market.economy });
   const mismatches = findMismatches(premise, state.detail);
   state.chainStage = nextChainStage(state.chainStage, totalMismatch(mismatches));
   const effects = fitEffects(mismatches, state.chainStage);
@@ -280,7 +289,7 @@ export function yearTickInPlace(state: IntermediateState): IntermediateState {
   state.layers = pruneEmpty(state.layers);
 
   // 加齢と定年
-  const aged = ageLayers(state.layers, industry, streams.attrition);
+  const aged = ageLayers(state.layers, industry, streams.attrition, state.caseId ? caseRetirementAge(state) : undefined);
   state.layers = aged.layers;
   for (const r of aged.retired) state.departures.push(toDeparture(r, yearEndMonth, 'retirement', null));
 
@@ -319,7 +328,10 @@ export function yearTickInPlace(state: IntermediateState): IntermediateState {
   state.rng = getStreamsState(streams);
   state.status = checkEndYear(state);
   // 次の年の初めに出す場面（前提が変わった、連鎖が進んだ）
-  if (state.status === 'running') {
+  if (state.status === 'running' && state.caseId) {
+    // 追体験：場面は史実の年に出る
+    state.pendingScene = caseSceneAt(state);
+  } else if (state.status === 'running') {
     const next = computePremise({ layers: state.layers, history: state.history, detail: state.detail, economy: state.market.economy });
     const old = state.layers.filter((l) => l.rep.age >= coef('intermediate.premise.aging_age')).reduce((a, l) => a + l.headcount, 0);
     state.pendingScene = detectScene({
@@ -337,6 +349,7 @@ export function yearTickInPlace(state: IntermediateState): IntermediateState {
 export function checkEndYear(state: IntermediateState): IntermediateState['status'] {
   if (state.negativeCashMonths >= coef('end.bankruptcy_months')) return 'bankrupt';
   if (state.year >= state.maxYears) return 'timeout';
+  if (state.caseId) return 'running'; // 追体験は終わりの年まで進む（成熟では終わらない）
   const years = coef('end.maturity_years');
   const industry = getIndustry(state.profile.industryId);
   const h = state.history;

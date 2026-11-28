@@ -758,7 +758,13 @@ export const intermediateStrings = {
     premise: '会社の様子が変わってきた',
     chain: '社員の様子が気になる',
     free: '制度を設計する',
+    case: '',
   },
+  caseStart: (title: string) => title,
+  caseYear: (year: number, confirmed: boolean) => (confirmed ? `${year}年` : '年は確認中'),
+  caseSource: (doc: string, pages: string) => `出典：${doc} ${pages}`,
+  otherPolicies: 'そのほかの制度（初級と同じ選択肢）',
+  layerName: (role: string, bandFrom: number, bandTo: number, grade: number) => `${role}・${bandFrom}〜${bandTo}歳・${grade + 1}段目`,
   foundingBody: (headcount: number) =>
     `創業メンバーは${headcount}人。これから人を増やしていくにあたり、等級・評価・給与・賞与の仕組みを決めます。`,
   premiseOn: {

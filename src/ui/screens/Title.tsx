@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { actions, useGame } from '../useGame';
 import { guideStrings, strings } from '../strings';
+import { CASES } from '../../engine/intermediate/caseMode';
 import { dateLabel } from '../format';
 
 export function Title() {
@@ -44,6 +45,12 @@ export function Title() {
           <button className={saved ? 'btn' : 'btn btn-primary'} onClick={() => (saved ? setConfirming(true) : startNew())}>
             {strings.newGame}
           </button>
+          {Object.values(CASES).map((c) => (
+            <button key={c.id} className="btn" onClick={() => actions().startCaseGame(c.id)}>
+              {c.title}
+              <span className="btn-detail">{c.description}</span>
+            </button>
+          ))}
           <button className="btn" onClick={() => actions().goto('howto')}>
             {strings.howTo}
           </button>

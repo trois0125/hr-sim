@@ -22,6 +22,8 @@ export type Premise = {
   postGlut: boolean;
   recession: boolean;
   large: boolean;
+  /** 長期雇用が当たり前の時代か（追体験の場面のデータにだけ書く。中級（自由）では使わない） */
+  lifetimeEmployment?: boolean;
 };
 
 export const MISMATCH_IDS = [
@@ -82,10 +84,11 @@ export function findMismatches(premise: Premise, d: DetailedPolicies): Mismatch[
   const add = (id: MismatchId, severity: number, factor: EngagementFactor) => {
     if (severity > 0) out.push({ id, severity, factor });
   };
+  const lifetime = premise.lifetimeEmployment ? coef('intermediate.fit.lifetime_seniority_mult') : 1;
   const seniority = over(seniorityShare(d), coef('intermediate.fit.seniority_share_high'), 1);
   const variable = over(d.bonus.variableShare, coef('intermediate.fit.variable_share_high'), fieldMax('bonus.variableShare'));
 
-  if (premise.growth) add('seniority_in_growth', seniority, 'growthOpportunity');
+  if (premise.growth) add('seniority_in_growth', seniority * lifetime, 'growthOpportunity');
   if (premise.aging) add('seniority_in_aging', seniority, 'internalFairness');
   if (premise.large && d.grade.system !== 'none') {
     const minLevels = coef('intermediate.fit.min_levels_large');
@@ -103,7 +106,7 @@ export function findMismatches(premise: Premise, d: DetailedPolicies): Mismatch[
   if (!d.evaluation.separateGrowthTalk) {
     add('merit_without_growth_talk', over(d.pay.meritSpread, coef('intermediate.fit.merit_spread_high'), fieldMax('pay.meritSpread')) * coef('intermediate.fit.merit_weight'), 'growthOpportunity');
   }
-  if (premise.postGlut) add('post_glut_seniority', seniority, 'internalFairness');
+  if (premise.postGlut) add('post_glut_seniority', seniority * lifetime, 'internalFairness');
   return out;
 }
 
