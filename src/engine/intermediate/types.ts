@@ -7,6 +7,8 @@
  */
 import type { RngStreamsState } from '../rng';
 import type { CompanyProfile, CompanyStatus, Employee, HiringState, MarketState, PolicySet } from '../types';
+import type { DetailedPolicies } from './detailedPolicy';
+import type { Mismatch, Premise } from './fit';
 
 /** 始める時に選ぶ難易度（§15.2） */
 export const DIFFICULTIES = ['beginner', 'intermediate'] as const;
@@ -32,6 +34,7 @@ export type YearRecord = {
   laborCostRatio: number;
   operatingProfit: number;
   hires: number;
+  promotions: number;
   /** 自己都合の退職（定年・出向の帰任を除く） */
   leavers: number;
   retirees: number;
@@ -43,6 +46,11 @@ export type YearRecord = {
   /** 年の平均の残業時間（月あたり） */
   overtimeHours: number;
   cash: number;
+  /** その年の前提と、合わなかった組み合わせ（画面には出さない。社員の声・振り返りに使う） */
+  premise: Premise;
+  mismatches: Mismatch[];
+  /** その年の連鎖の段（0〜4） */
+  chainStage: number;
 };
 
 /** 中級の会社の状態。セーブデータの本体になる */
@@ -54,7 +62,12 @@ export type IntermediateState = {
   maxYears: number;
   status: CompanyStatus;
   profile: CompanyProfile;
+  /** 初級の制度に読み替えたもの（初級の効果を使うため。報酬の核4つは detail から決まる） */
   policies: PolicySet;
+  /** 中級の細かい制度（報酬の核4つ。§15.5） */
+  detail: DetailedPolicies;
+  /** 合わない制度による連鎖の段（0〜4。§15.6） */
+  chainStage: number;
   cash: number;
   negativeCashMonths: number;
   market: MarketState;

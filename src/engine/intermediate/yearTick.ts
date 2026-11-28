@@ -31,6 +31,9 @@ import {
   toLayers,
   totalHeadcount,
 } from './layers';
+import { annualHr, bonusMonthly, defaultDetailedPolicies, levelsOf, toBasePolicies } from './detailedPolicy';
+import { computePremise, findMismatches, fitEffects, nextChainStage, totalMismatch } from './fit';
+import { applySalaryTransitions } from './regroup';
 import type { IntermediateState, YearRecord } from './types';
 
 function variantOf(state: Pick<IntermediateState, 'profile'>) {
@@ -42,6 +45,14 @@ function variantOf(state: Pick<IntermediateState, 'profile'>) {
 
 /** 初級の会社（生成した直後）を中級の状態に変える */
 export function fromCompany(c: CompanyState): IntermediateState {
+  const detail = defaultDetailedPolicies();
+  const industry = getIndustry(c.profile.industryId);
+  // 等級は細かい制度の段階に収め、賞与は細かい制度で決め直す（会社業績は標準とみなす）
+  const employees = c.employees.map((e) => {
+    const x = { ...e, grade: Math.min(e.grade, levelsOf(detail) - 1) };
+    x.bonusMonthly = bonusMonthly(x, detail, industry, 1);
+    return x;
+  });
   return {
     difficulty: 'intermediate',
     seed: c.seed,
@@ -49,12 +60,14 @@ export function fromCompany(c: CompanyState): IntermediateState {
     maxYears: Math.round(c.maxMonths / MONTHS_PER_YEAR),
     status: 'running',
     profile: c.profile,
-    policies: c.policies,
+    policies: toBasePolicies(detail, c.policies),
+    detail,
+    chainStage: 0,
     cash: c.cash,
     negativeCashMonths: 0,
     market: structuredClone(c.market),
     hiring: { ...c.hiring },
-    layers: toLayers(c.employees),
+    layers: toLayers(employees),
     nextEmployeeId: c.nextEmployeeId,
     history: [],
     rng: c.rng,
@@ -81,6 +94,18 @@ export function yearTickInPlace(state: IntermediateState): IntermediateState {
   const location = getLocation(state.profile.locationId);
   const startHeadcount = totalHeadcount(state.layers);
 
+  // 前提（会社の状態から）と、合わない組み合わせ。連鎖は、ずれが基準以上なら1段進み、下回れば1段戻る
+  const premise = computePremise({
+    layers: state.layers,
+    history: state.history,
+    detail: state.detail,
+    economy: state.market.economy,
+  });
+  const mismatches = findMismatches(premise, state.detail);
+  state.chainStage = nextChainStage(state.chainStage, totalMismatch(mismatches));
+  const effects = fitEffects(mismatches, state.chainStage);
+  applySalaryTransitions(state.layers);
+
   // 納得感の「雇用の安定」「成長の機会」は直近の月の記録を見るので、その年の月の記録を簡単な形で持つ
   const monthly: Pick<MonthlyRecord, 'month' | 'headcount' | 'operatingProfit'>[] = [];
   const hires: Employee[] = [];
@@ -99,7 +124,7 @@ export function yearTickInPlace(state: IntermediateState): IntermediateState {
     const demand = demandAt(state.market, state.profile, industry, month);
 
     const employees = [...expand(state.layers), ...hires];
-    const perf = computePerformance(employees, industry, variant, state.policies);
+    const perf = computePerformance(employees, industry, variant, state.policies, { spanMult: 1, capacityMult: effects.capacityMult });
     const ot = computeOvertime(demand, perf, overtimeCap(state.policies.overtime));
     for (const e of employees) e.overtimeHours = ot.hours;
     overtimeSum += ot.hours;
@@ -147,6 +172,17 @@ export function yearTickInPlace(state: IntermediateState): IntermediateState {
   // 年の途中で入った人を層に合流させる
   mergeInto(state.layers, hires);
 
+  // 年末の人事：評価 → 昇格 → 昇給 → 賞与（§15.5）
+  const hr = annualHr({
+    layers: state.layers,
+    detail: state.detail,
+    policies: state.policies,
+    industry,
+    profitMargin: revenue > 0 ? operatingProfit / revenue : 0,
+    rng: streams.evaluation,
+  });
+  state.layers = hr.layers;
+
   // 納得感：層の代表者ごとに、月の更新を12回くり返す（毎月少しずつ目標に近づくのと同じ）
   const reps = state.layers.map((l) => l.rep);
   const ctx: EngagementContext = {
@@ -157,6 +193,7 @@ export function yearTickInPlace(state: IntermediateState): IntermediateState {
     history: monthly as unknown as MonthlyRecord[],
     cash: state.cash,
     headcount: totalHeadcount(state.layers),
+    orgBonus: effects.orgBonus,
   };
   for (let m = 0; m < MONTHS_PER_YEAR; m++) updateEngagement(reps, ctx);
 
@@ -172,7 +209,9 @@ export function yearTickInPlace(state: IntermediateState): IntermediateState {
       continue;
     }
     const p = resignationProbability(l.rep, { industry, location, policies: state.policies });
-    const annual = 1 - Math.pow(1 - Math.min(1, p.unrelated + p.related), MONTHS_PER_YEAR);
+    // 連鎖2段目：優秀層（実力が基準以上）の退職が増える
+    const highMult = l.rep.ability >= coef('intermediate.chain.stage2_high_ability') ? effects.highAbilityAttritionMult : 1;
+    const annual = 1 - Math.pow(1 - Math.min(1, p.unrelated + p.related * highMult), MONTHS_PER_YEAR);
     const n = binomial(l.headcount, annual, streams.attrition);
     l.headcount -= n;
     leavers += n;
@@ -193,6 +232,7 @@ export function yearTickInPlace(state: IntermediateState): IntermediateState {
     laborCostRatio: revenue > 0 ? laborCost / revenue : 0,
     operatingProfit,
     hires: hires.length,
+    promotions: hr.promotions,
     leavers,
     retirees: aged.retirees,
     secondmentReturns,
@@ -200,6 +240,9 @@ export function yearTickInPlace(state: IntermediateState): IntermediateState {
     engagement: meanEngagement(state),
     overtimeHours: overtimeSum / MONTHS_PER_YEAR,
     cash: state.cash,
+    premise,
+    mismatches,
+    chainStage: state.chainStage,
   };
   state.history.push(record);
   state.year += 1;

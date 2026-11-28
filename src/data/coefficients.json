@@ -2234,5 +2234,201 @@
     "unit": "歳",
     "basis": "assumption",
     "source": "DESIGN.md §15.4。中級の層の年代の幅（ユーザーと決定）。毎年およそ 1/幅 の人が次の年代へ移る"
+  },
+  {
+    "id": "intermediate.promotion.seniority_rate",
+    "value": 0.25,
+    "unit": "年あたりの確率",
+    "basis": "assumption",
+    "source": "年次で上がれる範囲の昇格の確率（4年に1段ほど）。DESIGN.md §15.5〜15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.promotion.selective_rate",
+    "value": 0.08,
+    "unit": "年あたりの確率",
+    "basis": "assumption",
+    "source": "選抜で上がる範囲の昇格の確率（実力が標準の人）。DESIGN.md §15.5〜15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.grade.pay_step",
+    "value": 0.08,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "選抜で等級が1段上がると基本給が上がる割合（年次で上がる昇格は相場の年齢カーブに含まれるとみなし、上乗せしない）。等級の組み直しで下がるときも1段あたりこの割合。DESIGN.md §15.5（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.bonus.expected_margin",
+    "value": 0.02,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "会社業績連動の賞与で「標準」とみなす営業利益率（商社の薄い利益率に合わせた）。DESIGN.md §15.5〜15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.bonus.profit_factor_max",
+    "value": 2,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "会社業績連動の賞与の上限（標準の何倍まで）。DESIGN.md §15.5〜15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.bonus.progressive_slope",
+    "value": 0.15,
+    "unit": "比",
+    "basis": "assumption",
+    "source": "上位の等級ほど変動を大きくするとき、1段あたりの上乗せ。DESIGN.md §15.5〜15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.premise.growth_rate",
+    "value": 0.1,
+    "unit": "年の伸び率",
+    "basis": "assumption",
+    "source": "社員数の年の伸びがこれ以上なら「成長期」。DESIGN.md §15.5〜15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.premise.aging_share",
+    "value": 0.35,
+    "unit": "割合",
+    "basis": "assumption",
+    "source": "50歳以上の割合がこれ以上なら「高齢化」。DESIGN.md §15.5〜15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.premise.aging_age",
+    "value": 50,
+    "unit": "歳",
+    "basis": "assumption",
+    "source": "「高齢化」を数える年齢。DESIGN.md §15.5〜15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.premise.post_glut_share",
+    "value": 0.3,
+    "unit": "割合",
+    "basis": "assumption",
+    "source": "上位の等級（上から2段）にいる人の割合がこれ以上なら「ポスト詰まり」。DESIGN.md §15.5〜15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.premise.large_headcount",
+    "value": 300,
+    "unit": "人",
+    "basis": "assumption",
+    "source": "これ以上なら「大きな会社」。DESIGN.md §15.5〜15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.premise.recession_economy",
+    "value": -0.08,
+    "unit": "景気の値",
+    "basis": "assumption",
+    "source": "年の平均の景気がこれ以下なら「不況」（ui.economy.slump_threshold と同じ値）。DESIGN.md §15.5〜15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.fit.seniority_share_high",
+    "value": 0.6,
+    "unit": "割合",
+    "basis": "assumption",
+    "source": "年次で上がれる範囲が等級の段階のこの割合以上なら「年功が強い」。DESIGN.md §15.5〜15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.fit.min_levels_large",
+    "value": 4,
+    "unit": "段階",
+    "basis": "assumption",
+    "source": "大きな会社でこれより段階が少ないと「次の段階が見えない」（三菱商事 人的資本レポート P.13 の2006年の見直しを参考）。DESIGN.md §15.5〜15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.fit.variable_share_high",
+    "value": 0.25,
+    "unit": "割合",
+    "basis": "assumption",
+    "source": "変動部分がこれ以上なら「成果主義が強い」。DESIGN.md §15.5〜15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.fit.company_risk_high",
+    "value": 0.15,
+    "unit": "割合",
+    "basis": "assumption",
+    "source": "年収のうち会社業績で決まる割合（変動部分×会社業績の割合）がこれ以上だと、不況で収入が大きく揺れる。DESIGN.md §15.5〜15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.fit.merit_spread_high",
+    "value": 0.03,
+    "unit": "年あたりの比",
+    "basis": "assumption",
+    "source": "評価による昇給の差がこれ以上なら「差をつける」。DESIGN.md §15.5〜15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.mismatch.factor_penalty",
+    "value": 15,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "合わない組み合わせ1つで、対応する要因から引く点（ずれが最大のとき）。初級の制度の効果（数点）より大きい。DESIGN.md §15.5〜15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.chain.threshold",
+    "value": 0.5,
+    "unit": "ずれの合計",
+    "basis": "assumption",
+    "source": "ずれの合計がこれ以上の年は、連鎖が1段進む。下回る年は1段戻る。DESIGN.md §15.5〜15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.chain.stage1_penalty",
+    "value": 4,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "連鎖1段目（不満の表面化）：全員のすべての要因から引く点。DESIGN.md §15.5〜15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.chain.stage2_high_ability",
+    "value": 60,
+    "unit": "実力",
+    "basis": "assumption",
+    "source": "連鎖2段目（優秀層の離職）：この実力以上の層の退職が増える。DESIGN.md §15.5〜15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.chain.stage2_attrition_mult",
+    "value": 1.8,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "連鎖2段目：優秀層の退職確率に掛ける倍率。DESIGN.md §15.5〜15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.chain.stage3_workload_penalty",
+    "value": 10,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "連鎖3段目（残った人の負荷の増加）：「働く負荷」から引く点。DESIGN.md §15.5〜15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.chain.stage4_capacity_mult",
+    "value": 0.85,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "連鎖4段目（業績の低下）：売れる上限に掛ける倍率。DESIGN.md §15.5〜15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.regroup.cut_penalty",
+    "value": 30,
+    "unit": "点",
+    "basis": "assumption",
+    "source": "等級の組み直しで給与が100%下がる場合に、その層の「社内公平性」「雇用の安定」から引く点（下がる割合に比例。激変緩和の年数+1で割る）。DESIGN.md §15.5〜15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.fit.top_share_low",
+    "value": 0.15,
+    "unit": "割合",
+    "basis": "assumption",
+    "source": "上位評価の割合がこれより少ないと、成果主義が強いときに多数の士気が下がる（三菱商事 人的資本レポート P.8 の2000年の懸念「一部の人材のみを励まし、多数の士気を下げる」を参考）。DESIGN.md §15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.fit.merit_weight",
+    "value": 0.5,
+    "unit": "倍",
+    "basis": "assumption",
+    "source": "「評価で差をつけるのに、評価と育成の対話を分けない」ずれの重み（ほかのずれより軽い）。DESIGN.md §15.6（ステップ21）。仮置き"
+  },
+  {
+    "id": "intermediate.fit.duty_mitigation",
+    "value": 0.5,
+    "unit": "割合",
+    "basis": "assumption",
+    "source": "職責による基本給の振れ幅を最大にしたとき、「次の段階が見えない」ずれを減らす割合。DESIGN.md §15.6（ステップ21）。仮置き"
   }
 ]

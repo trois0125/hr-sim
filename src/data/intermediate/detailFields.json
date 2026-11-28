@@ -1,0 +1,166 @@
+{
+  "note": "中級の制度の細かい選択肢と数値（DESIGN.md §15.5、ステップ21）。報酬の核4制度だけ。残り5制度は初級の選択肢のまま。画面（ステップ22）でもこの一覧を使う。値はすべて仮置き",
+  "choices": [
+    {
+      "id": "grade.system",
+      "label": "等級の仕組み",
+      "options": [
+        "none",
+        "skill",
+        "job",
+        "role"
+      ],
+      "default": "skill",
+      "basis": "assumption",
+      "source": "初級の等級制度（§5）と同じ選択肢"
+    },
+    {
+      "id": "evaluation.system",
+      "label": "評価者・評価の仕方",
+      "options": [
+        "ceo",
+        "mbo",
+        "competency",
+        "multi_rater"
+      ],
+      "default": "mbo",
+      "basis": "assumption",
+      "source": "初級の評価制度（§5）と同じ選択肢"
+    },
+    {
+      "id": "evaluation.separateGrowthTalk",
+      "label": "評価と育成の対話を分ける",
+      "options": [
+        false,
+        true
+      ],
+      "default": false,
+      "basis": "assumption",
+      "source": "三菱商事 人的資本レポート P.14（2019年の成長対話）を参考にした選択肢"
+    },
+    {
+      "id": "pay.basis",
+      "label": "給与の決め方",
+      "options": [
+        "seniority",
+        "performance",
+        "market"
+      ],
+      "default": "seniority",
+      "basis": "assumption",
+      "source": "初級の給与（§5）と同じ選択肢"
+    },
+    {
+      "id": "bonus.progressive",
+      "label": "上位の等級ほど変動部分を大きくする",
+      "options": [
+        false,
+        true
+      ],
+      "default": false,
+      "basis": "assumption",
+      "source": "三菱商事 人的資本レポート P.13（2000年の変動費割合の拡大）を参考にした選択肢"
+    }
+  ],
+  "numbers": [
+    {
+      "id": "grade.levels",
+      "label": "等級の段階の数",
+      "min": 1,
+      "max": 10,
+      "step": 1,
+      "default": 6,
+      "unit": "段階",
+      "basis": "assumption",
+      "source": "仮置き。1段階は等級なしと同じ"
+    },
+    {
+      "id": "grade.seniorityCap",
+      "label": "年次で上がれる上限（これより上は選抜）",
+      "min": 0,
+      "max": 9,
+      "step": 1,
+      "default": 2,
+      "unit": "段階目",
+      "basis": "assumption",
+      "source": "三菱商事 人的資本レポート P.11（1971年：一定等級までは勤続で昇格、それ以上は選抜）を参考に仮置き"
+    },
+    {
+      "id": "grade.dutySpread",
+      "label": "職責による基本給の振れ幅",
+      "min": 0,
+      "max": 0.2,
+      "step": 0.05,
+      "default": 0,
+      "unit": "±比",
+      "basis": "assumption",
+      "source": "三菱商事 人的資本レポート P.13（2000年：職責が一段重いと基本給110%）を参考にした範囲"
+    },
+    {
+      "id": "evaluation.topShare",
+      "label": "上位評価の割合",
+      "min": 0.05,
+      "max": 0.5,
+      "step": 0.05,
+      "default": 0.2,
+      "unit": "割合",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    {
+      "id": "pay.raiseRate",
+      "label": "昇給率（相場の年齢カーブへの上乗せ）",
+      "min": -0.02,
+      "max": 0.04,
+      "step": 0.005,
+      "default": 0,
+      "unit": "年あたりの比",
+      "basis": "assumption",
+      "source": "仮置き。0なら相場の年齢カーブどおり"
+    },
+    {
+      "id": "pay.meritSpread",
+      "label": "評価による昇給の差",
+      "min": 0,
+      "max": 0.06,
+      "step": 0.01,
+      "default": 0.01,
+      "unit": "年あたりの比（評価が最上位と最下位の差の半分）",
+      "basis": "assumption",
+      "source": "仮置き"
+    },
+    {
+      "id": "bonus.baseMonths",
+      "label": "固定の賞与（相場の月数に対する比）",
+      "min": 0,
+      "max": 1.5,
+      "step": 0.25,
+      "default": 1,
+      "unit": "倍",
+      "basis": "assumption",
+      "source": "仮置き。1なら業種の相場の月数（industries/*.json の marketBonusMonths）"
+    },
+    {
+      "id": "bonus.variableShare",
+      "label": "年収に占める変動部分",
+      "min": 0,
+      "max": 0.5,
+      "step": 0.05,
+      "default": 0,
+      "unit": "割合",
+      "basis": "assumption",
+      "source": "仮置き。役員報酬の変動は最大8割程度（三菱商事 人的資本レポート P.25）だが、社員はそれより小さい範囲にした"
+    },
+    {
+      "id": "bonus.companyWeight",
+      "label": "変動部分のうち会社業績で決まる割合",
+      "min": 0,
+      "max": 1,
+      "step": 0.1,
+      "default": 0.5,
+      "unit": "割合",
+      "basis": "assumption",
+      "source": "仮置き（残りは個人の成績）"
+    }
+  ]
+}

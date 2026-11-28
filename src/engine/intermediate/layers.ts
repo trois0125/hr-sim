@@ -53,11 +53,19 @@ const NUMERIC_FIELDS = [
 function absorb(a: IntermediateLayer, b: Employee, nb: number): void {
   const na = a.headcount;
   const rep = a.rep;
+  const salaryA = rep.salaryMonthly;
   for (const f of NUMERIC_FIELDS) rep[f] = wavg(rep[f], na, b[f], nb);
   const values = { ...rep.values };
   for (const k of Object.keys(values) as (keyof Values)[]) values[k] = wavg(rep.values[k], na, b.values[k], nb);
   rep.values = values;
   rep.factorScores = null;
+  // 給与を段階的に下げている途中なら、残りの引き下げ額と1か月の引き下げ額を人数で平均する
+  const remaining = (e: Employee, salaryBefore: number) => (e.salaryTransition ? Math.max(0, salaryBefore - e.salaryTransition.target) : 0);
+  const remA = remaining(rep, salaryA);
+  const remB = remaining(b, b.salaryMonthly);
+  const step = wavg(rep.salaryTransition?.stepPerMonth ?? 0, na, b.salaryTransition?.stepPerMonth ?? 0, nb);
+  const rem = wavg(remA, na, remB, nb);
+  rep.salaryTransition = rem > 0 && step > 0 ? { target: rep.salaryMonthly - rem, stepPerMonth: step } : null;
   a.headcount = na + nb;
 }
 
@@ -70,7 +78,7 @@ function newLayer(key: string, e: Employee, n: number): IntermediateLayer {
     name: key,
     age,
     isKeyPerson: false,
-    salaryTransition: null,
+    salaryTransition: e.salaryTransition ? { ...e.salaryTransition } : null,
     secondmentEndsAt: null,
     leave: null,
     values: { ...e.values },

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { defaultPolicies } from '../data';
-import { generateCompany, setFoundingPolicies } from '../generate';
+import { generateCompany } from '../generate';
+import { changeDetailedPolicies } from './regroup';
 import { createRng } from '../rng';
 import { getIndustry } from '../data';
 import { ageBandOf, ageLayers, bandWidth, expand, layerKey, toLayers, totalHeadcount } from './layers';
@@ -74,16 +74,17 @@ describe('中級の1年ごとの進行（§15.3）', () => {
 });
 
 describe('制度を変えたときの向き（中級でも初級と同じ向きになる）', () => {
-  const run = (bonus: 'none' | 'fixed_months', seed: number) => {
-    const c = setFoundingPolicies(company(seed), { ...defaultPolicies, bonus });
-    return runIntermediateToEnd({ ...fromCompany(c), maxYears: 8 });
+  const run = (baseMonths: number, seed: number) => {
+    const s = fromCompany(company(seed));
+    changeDetailedPolicies(s, { ...s.detail, bonus: { ...s.detail.bonus, baseMonths } });
+    return runIntermediateToEnd({ ...s, maxYears: 8 });
   };
   it('賞与をなくすと、納得感が下がり離職が増える', () => {
     let engDiff = 0;
     let toDiff = 0;
     for (const seed of [1, 2, 3, 4, 5, 6]) {
-      const none = run('none', seed);
-      const std = run('fixed_months', seed);
+      const none = run(0, seed);
+      const std = run(1, seed);
       engDiff += meanEngagement(none) - meanEngagement(std);
       const to = (s: typeof none) => s.history.reduce((a, r) => a + r.turnoverRate, 0) / s.history.length;
       toDiff += to(none) - to(std);

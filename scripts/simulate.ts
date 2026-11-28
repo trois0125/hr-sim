@@ -277,7 +277,7 @@ function intermediateSingle(): void {
   );
   const oku = (x: number) => (x / 1e8).toFixed(2);
   console.log(`中級（自由）：${state.profile.name}（${getIndustry(state.profile.industryId).name}・${getFoundingPattern(state.profile.foundingPatternId).name}）`);
-  console.log('年\t社員\t層\t売上(億)\t人件費(億)\t人件費率\t利益(億)\t入社\t退職\t定年\t帰任\t離職率\t納得感\t残業h');
+  console.log('年\t社員\t層\t売上(億)\t人件費(億)\t人件費率\t利益(億)\t入社\t昇格\t退職\t定年\t帰任\t離職率\t納得感\t残業h\t連鎖\tずれ');
   for (const r of state.history) {
     console.log(
       [
@@ -289,12 +289,15 @@ function intermediateSingle(): void {
         `${(r.laborCostRatio * 100).toFixed(1)}%`,
         oku(r.operatingProfit),
         r.hires,
+        r.promotions,
         r.leavers,
         r.retirees,
         r.secondmentReturns,
         `${(r.turnoverRate * 100).toFixed(1)}%`,
         r.engagement.toFixed(1),
         r.overtimeHours.toFixed(1),
+        r.chainStage,
+        r.mismatches.map((m) => `${m.id}:${m.severity.toFixed(2)}`).join(' '),
       ].join('\t'),
     );
   }
