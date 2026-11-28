@@ -17,10 +17,12 @@ import { InitiativeMenu, ProgramsPanel } from '../parts/Initiatives';
 import { BusinessView, OrgView } from '../parts/Dashboard';
 import { HelpButton } from '../parts/Guide';
 import { PolicyEditor } from '../parts/PolicyEditor';
+import { DesignModal } from '../parts/DesignModal';
 import { actions, useGame } from '../useGame';
 import {
   dashboardStrings,
   decisionStrings,
+  intermediateStrings,
   eventStrings,
   evidenceStrings,
   guideStrings,
@@ -66,6 +68,7 @@ function TopBar({ company }: { company: CompanyState }) {
   const speed = useGame((s) => s.speed);
   const stepMonths = useGame((s) => s.stepMonths);
   const cycle = useGame((s) => s.cycle);
+  const intermediate = useGame((s) => s.intermediate !== null);
   const speeds = [...SPEEDS, ...DEV_SPEEDS];
   return (
     <header className="topbar">
@@ -81,13 +84,13 @@ function TopBar({ company }: { company: CompanyState }) {
           </button>
         ))}
       </div>
-      <div className="speed step-toggle" role="group" aria-label={t.stepLabel}>
+      {!intermediate && <div className="speed step-toggle" role="group" aria-label={t.stepLabel}>
         {([1, 3] as const).map((m) => (
           <button key={m} aria-pressed={stepMonths === m} onClick={() => actions().setStepMonths(m)}>
             {t.stepOptions[m]}
           </button>
         ))}
-      </div>
+      </div>}
       <span className="topbar-cash num">
         {t.cash} <strong className={company.cash < 0 ? 'loss' : ''}>{yen(company.cash)}</strong>
       </span>
@@ -326,6 +329,7 @@ function Feed() {
 }
 
 function Policies({ company }: { company: CompanyState }) {
+  const intermediate = useGame((s) => s.intermediate !== null);
   return (
     <section className="sheet" aria-labelledby="policies-title">
       <h2 id="policies-title" className="sheet-title">
@@ -350,8 +354,9 @@ function Policies({ company }: { company: CompanyState }) {
         </div>
       </dl>
       <button className="btn" onClick={() => actions().openEditor()}>
-        {t.reviewPolicies}
+        {intermediate ? intermediateStrings.openDesign : t.reviewPolicies}
       </button>
+      {intermediate && <p className="muted">{intermediateStrings.saveNote}</p>}
       <div className="side-links">
         <button className="btn" onClick={() => actions().openGuide()}>
           {guideStrings.open}
@@ -371,6 +376,7 @@ export function Main() {
   const saveFailed = useGame((s) => s.saveFailed);
   const view = useGame((s) => s.view);
   const decisionHidden = useGame((s) => s.decisionHidden);
+  const inter = useGame((s) => s.intermediate);
   if (!company) return null;
   const waiting = company.pendingDecisions.length > 0;
   return (
@@ -412,12 +418,20 @@ export function Main() {
         </div>
         <div className="side side-right">
           <Policies company={company} />
-          <ProgramsPanel company={company} />
+          {!inter && <ProgramsPanel company={company} />}
         </div>
         </main>
       )}
-      {editorOpen ? <PolicyEditor company={company} /> : !decisionHidden && <DecisionModal company={company} />}
-      {!waiting && !editorOpen && <InitiativeMenu company={company} />}
+      {inter ? (
+        (inter.pendingScene || editorOpen) && inter.status === 'running' && (
+          <DesignModal key={`${inter.year}-${inter.pendingScene?.kind ?? 'free'}`} state={inter} />
+        )
+      ) : editorOpen ? (
+        <PolicyEditor company={company} />
+      ) : (
+        !decisionHidden && <DecisionModal company={company} />
+      )}
+      {!inter && !waiting && !editorOpen && <InitiativeMenu company={company} />}
       {selected && !editorOpen && (!waiting || decisionHidden) && <EmployeeDetail company={company} id={selected} />}
       <Lesson />
     </>

@@ -1,0 +1,42 @@
+{
+  "note": "中級の場面で最初に選ぶ大きな方針（DESIGN.md §15.5、ステップ22）。選ぶと制度の設計画面に初期値が入り、そこから細かく直せる。patch は細かい制度（detailFields.json の項目）に上書きする値。年次で上がれる上限は等級の段階に収める。値はすべて仮置き（basis: assumption）",
+  "basis": "assumption",
+  "stances": [
+    {
+      "id": "keep",
+      "label": "今の制度のまま続ける",
+      "description": "制度は変えずに様子を見る。変えないことも判断のひとつ",
+      "patch": {}
+    },
+    {
+      "id": "reward",
+      "label": "成果で報いる",
+      "description": "年次で上がる範囲を狭め、評価と賞与で差をつける。成長期や若手を伸ばしたいときの考え方",
+      "patch": {
+        "grade": { "seniorityCap": 1 },
+        "evaluation": { "system": "mbo", "topShare": 0.2 },
+        "pay": { "basis": "performance", "meritSpread": 0.03 },
+        "bonus": { "variableShare": 0.2, "companyWeight": 0.3 }
+      }
+    },
+    {
+      "id": "nurture",
+      "label": "長く育てて報いる",
+      "description": "年次で上がる範囲を広めにし、評価と育成の対話を分ける。賞与は安定させる。人を長く育てたいときの考え方",
+      "patch": {
+        "grade": { "seniorityCap": 3 },
+        "evaluation": { "system": "competency", "separateGrowthTalk": true },
+        "pay": { "basis": "seniority", "meritSpread": 0.01 },
+        "bonus": { "variableShare": 0, "baseMonths": 1 }
+      }
+    },
+    {
+      "id": "lean",
+      "label": "業績に合わせて人件費を動かす",
+      "description": "賞与の多くを会社業績に連動させ、固定の賞与を減らす。業績の波に人件費を合わせたいときの考え方",
+      "patch": {
+        "bonus": { "baseMonths": 0.5, "variableShare": 0.25, "companyWeight": 0.8 }
+      }
+    }
+  ]
+}

@@ -17,7 +17,8 @@ import { generateCompany, type GenerateOptions } from '../generate';
 import { runHiring } from '../hiring';
 import { demandAt, stepEconomy, updateShareFactor } from '../market';
 import { computeOvertime, computePerformance, overtimeCap } from '../performance';
-import { resignationProbability } from '../attrition';
+import { REASON_OF, resignationProbability, toDeparture } from '../attrition';
+import { sampleDrag } from '../engagement';
 import { getStreamsState, restoreStreams } from '../rng';
 import type { CompanyState, Employee, MonthlyRecord } from '../types';
 import { MONTHS_PER_YEAR } from '../types';
@@ -34,6 +35,7 @@ import {
 import { annualHr, bonusMonthly, defaultDetailedPolicies, levelsOf, toBasePolicies } from './detailedPolicy';
 import { computePremise, findMismatches, fitEffects, nextChainStage, totalMismatch } from './fit';
 import { applySalaryTransitions } from './regroup';
+import { detectScene, foundingScene, isWaitingForScene } from './scenes';
 import type { IntermediateState, YearRecord } from './types';
 
 function variantOf(state: Pick<IntermediateState, 'profile'>) {
@@ -44,7 +46,7 @@ function variantOf(state: Pick<IntermediateState, 'profile'>) {
 }
 
 /** 初級の会社（生成した直後）を中級の状態に変える */
-export function fromCompany(c: CompanyState): IntermediateState {
+export function fromCompany(c: CompanyState, options: { autoScenes?: boolean } = {}): IntermediateState {
   const detail = defaultDetailedPolicies();
   const industry = getIndustry(c.profile.industryId);
   // 等級は細かい制度の段階に収め、賞与は細かい制度で決め直す（会社業績は標準とみなす）
@@ -53,7 +55,7 @@ export function fromCompany(c: CompanyState): IntermediateState {
     x.bonusMonthly = bonusMonthly(x, detail, industry, 1);
     return x;
   });
-  return {
+  const state: IntermediateState = {
     difficulty: 'intermediate',
     seed: c.seed,
     year: 0,
@@ -70,13 +72,21 @@ export function fromCompany(c: CompanyState): IntermediateState {
     layers: toLayers(employees),
     nextEmployeeId: c.nextEmployeeId,
     history: [],
+    monthly: [],
+    departures: [],
+    base: { ...structuredClone({ ...c, employees: [], history: [] }) },
+    pendingScene: null,
+    sceneLog: [],
+    autoScenes: options.autoScenes ?? true,
     rng: c.rng,
   };
+  state.pendingScene = foundingScene(state);
+  return state;
 }
 
 /** 中級（自由）：初級と同じく会社を生成して、創業から始める（§15.2） */
-export function startIntermediate(options: GenerateOptions): IntermediateState {
-  return fromCompany(generateCompany(options));
+export function startIntermediate(options: GenerateOptions & { autoScenes?: boolean }): IntermediateState {
+  return fromCompany(generateCompany(options), { autoScenes: options.autoScenes });
 }
 
 /** 人数で重み付けした納得感の平均 */
@@ -87,7 +97,12 @@ export function meanEngagement(state: Pick<IntermediateState, 'layers'>): number
 
 /** 1年進める（渡された状態を書き換える） */
 export function yearTickInPlace(state: IntermediateState): IntermediateState {
-  if (state.status !== 'running') return state;
+  if (state.status !== 'running' || isWaitingForScene(state)) return state;
+  // 自動で進めるときは、場面は「今の制度のまま」で閉じる
+  if (state.pendingScene) {
+    state.sceneLog.push({ year: state.pendingScene.year, kind: state.pendingScene.kind, stanceId: 'keep', regrouped: false });
+    state.pendingScene = null;
+  }
   const streams = restoreStreams(state.rng);
   const industry = getIndustry(state.profile.industryId);
   const variant = variantOf(state);
@@ -167,6 +182,32 @@ export function yearTickInPlace(state: IntermediateState): IntermediateState {
     laborCost += fin.labor.total;
     operatingProfit += fin.operatingProfit;
     monthly.push({ month, headcount: employees.length + hiring.hires.length, operatingProfit: fin.operatingProfit });
+    state.monthly.push({
+      month,
+      headcount: employees.length + hiring.hires.length,
+      hires: hiring.hires.length,
+      // 退職・定年・帰任は年末にまとめて決まるので、年の最後の月の記録に載せる（下で書き換える）
+      resignations: 0,
+      returns: 0,
+      retirements: 0,
+      avgEngagement: meanEngagement(state),
+      economy: state.market.economy,
+      demand,
+      capacity: perf.capacity,
+      overtimeHours: ot.hours,
+      revenue: fin.revenue,
+      grossProfit: fin.grossProfit,
+      labor: fin.labor,
+      otherFixedCost: fin.otherFixedCost,
+      hrSystemCost: fin.hrSystemCost,
+      legalCost: fin.legalCost,
+      programCost: fin.programCost,
+      operatingProfit: fin.operatingProfit,
+      extraordinaryCost: 0,
+      violations: 0,
+      cash: state.cash,
+      policies: state.policies,
+    });
   }
 
   // 年の途中で入った人を層に合流させる
@@ -201,18 +242,38 @@ export function yearTickInPlace(state: IntermediateState): IntermediateState {
   let leavers = 0;
   let secondmentReturns = 0;
   const returnRate = secondmentReturnRate();
+  const yearEndMonth = (state.year + 1) * MONTHS_PER_YEAR - 1;
   for (const l of state.layers) {
     if (l.rep.affiliation === 'secondee') {
       const n = binomial(l.headcount, returnRate, streams.attrition);
       l.headcount -= n;
       secondmentReturns += n;
+      for (let i = 0; i < n; i++) state.departures.push(toDeparture(l.rep, yearEndMonth, 'return', null));
       continue;
     }
     const p = resignationProbability(l.rep, { industry, location, policies: state.policies });
     // 連鎖2段目：優秀層（実力が基準以上）の退職が増える
     const highMult = l.rep.ability >= coef('intermediate.chain.stage2_high_ability') ? effects.highAbilityAttritionMult : 1;
-    const annual = 1 - Math.pow(1 - Math.min(1, p.unrelated + p.related * highMult), MONTHS_PER_YEAR);
-    const n = binomial(l.headcount, annual, streams.attrition);
+    const monthlyTotal = Math.min(1, p.unrelated + p.related * highMult);
+    const annual = 1 - Math.pow(1 - monthlyTotal, MONTHS_PER_YEAR);
+    // 制度と関係ない退職の割合（家庭の事情か人間関係）と、そうでない退職の理由（足を引っ張る要因）を、初級と同じ考え方で決める
+    const unrelatedShare = monthlyTotal > 0 ? p.unrelated / monthlyTotal : 0;
+    let n = 0;
+    for (let i = 0; i < l.headcount; i++) {
+      const roll = streams.attrition.next();
+      const reasonRoll = streams.attrition.next();
+      if (roll >= annual) continue;
+      n++;
+      const reason =
+        roll < annual * unrelatedShare
+          ? reasonRoll < coef('attrition.unrelated.family_share')
+            ? 'family'
+            : 'relationships'
+          : l.rep.factorScores
+            ? REASON_OF[sampleDrag(l.rep.factorScores, l.rep.values, reasonRoll)]
+            : 'growth';
+      state.departures.push(toDeparture(l.rep, yearEndMonth, 'resignation', reason));
+    }
     l.headcount -= n;
     leavers += n;
   }
@@ -221,6 +282,7 @@ export function yearTickInPlace(state: IntermediateState): IntermediateState {
   // 加齢と定年
   const aged = ageLayers(state.layers, industry, streams.attrition);
   state.layers = aged.layers;
+  for (const r of aged.retired) state.departures.push(toDeparture(r, yearEndMonth, 'retirement', null));
 
   const headcount = totalHeadcount(state.layers);
   const record: YearRecord = {
@@ -245,9 +307,29 @@ export function yearTickInPlace(state: IntermediateState): IntermediateState {
     chainStage: state.chainStage,
   };
   state.history.push(record);
+  const lastMonth = state.monthly[state.monthly.length - 1];
+  if (lastMonth) {
+    lastMonth.resignations = leavers;
+    lastMonth.returns = secondmentReturns;
+    lastMonth.retirements = aged.retirees;
+    lastMonth.headcount = headcount;
+    lastMonth.avgEngagement = record.engagement;
+  }
   state.year += 1;
   state.rng = getStreamsState(streams);
   state.status = checkEndYear(state);
+  // 次の年の初めに出す場面（前提が変わった、連鎖が進んだ）
+  if (state.status === 'running') {
+    const next = computePremise({ layers: state.layers, history: state.history, detail: state.detail, economy: state.market.economy });
+    const old = state.layers.filter((l) => l.rep.age >= coef('intermediate.premise.aging_age')).reduce((a, l) => a + l.headcount, 0);
+    state.pendingScene = detectScene({
+      state,
+      previous: premise,
+      next,
+      previousStage: state.history[state.history.length - 2]?.chainStage ?? 0,
+      agingShare: headcount > 0 ? old / headcount : 0,
+    });
+  }
   return state;
 }
 

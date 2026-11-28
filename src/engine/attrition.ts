@@ -68,7 +68,7 @@ export function marketGapMultiplier(ratio: number): number {
 }
 
 /** 要因と退職理由の対応 */
-const REASON_OF: Record<EngagementFactor, AttritionReason> = {
+export const REASON_OF: Record<EngagementFactor, AttritionReason> = {
   externalPay: 'pay',
   internalFairness: 'pay',
   evaluation: 'evaluation',

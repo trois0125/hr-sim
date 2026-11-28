@@ -4,12 +4,13 @@ import { coef } from '../../engine/coefficients';
 /** 選べるゲームの長さ（係数台帳の end.length.*） */
 const GAME_LENGTH_IDS = ['short', 'medium', 'long', 'full'] as const;
 import { actions, useGame } from '../useGame';
-import { generateStrings, strings, unitStrings } from '../strings';
+import { generateStrings, intermediateStrings, strings, unitStrings } from '../strings';
 import { pct, yen } from '../format';
 
 export function Generate() {
   const c = useGame((s) => s.candidate);
   const years = useGame((s) => s.gameYears);
+  const difficulty = useGame((s) => s.difficulty);
   const lengths = GAME_LENGTH_IDS.map((id) => coef(`end.length.${id}`));
   const industries = availableIndustries();
   if (!c) return null;
@@ -72,8 +73,25 @@ export function Generate() {
         </div>
       </fieldset>
 
+      <fieldset className="policy-field length-field">
+        <legend>{intermediateStrings.difficultyTitle}</legend>
+        <p className="muted">{intermediateStrings.difficultyLead}</p>
+        <div className="policy-options">
+          {(['beginner', 'intermediate'] as const).map((d) => (
+            <label key={d} className="policy-option">
+              <input type="radio" name="difficulty" checked={difficulty === d} onChange={() => actions().setDifficulty(d)} />
+              <span>{intermediateStrings.difficulties[d].label}</span>
+              <span className="desc">{intermediateStrings.difficulties[d].description}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
       <div className="page-actions">
-        <button className="btn btn-primary" onClick={() => actions().goto('policies')}>
+        <button
+          className="btn btn-primary"
+          onClick={() => (difficulty === 'intermediate' ? actions().startIntermediateGame() : actions().goto('policies'))}
+        >
           {strings.next}
         </button>
         <button className="btn" onClick={() => actions().newCandidate(p.industryId)}>

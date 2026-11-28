@@ -6,9 +6,10 @@
  * 代表者（rep）1人の属性に人数を掛けて計算する。初級のエンジンの関数は代表者に対して使い回す。
  */
 import type { RngStreamsState } from '../rng';
-import type { CompanyProfile, CompanyStatus, Employee, HiringState, MarketState, PolicySet } from '../types';
+import type { CompanyProfile, CompanyState, CompanyStatus, Departure, Employee, HiringState, MarketState, MonthlyRecord, PolicySet } from '../types';
 import type { DetailedPolicies } from './detailedPolicy';
 import type { Mismatch, Premise } from './fit';
+import type { Scene, SceneKind } from './scenes';
 
 /** 始める時に選ぶ難易度（§15.2） */
 export const DIFFICULTIES = ['beginner', 'intermediate'] as const;
@@ -75,5 +76,17 @@ export type IntermediateState = {
   layers: IntermediateLayer[];
   nextEmployeeId: number;
   history: YearRecord[];
+  /** 去った人の記録（初級と同じ形。年末にまとめて決まるので、その年の最後の月の日付で残す） */
+  departures: Departure[];
+  /** 月の記録（初級と同じ形。初級の画面（事業タブ・組織タブ・終了画面）で使う。§15 ステップ22） */
+  monthly: MonthlyRecord[];
+  /** 生成したときの会社（社員は空）。中級で扱わない部分（組織・法令など）を画面に出すときに使う */
+  base: CompanyState;
+  /** 判断を待っている場面（なければ null） */
+  pendingScene: Scene | null;
+  /** 場面で選んだ方針の記録（振り返りに使う） */
+  sceneLog: { year: number; kind: SceneKind; stanceId: string; regrouped: boolean }[];
+  /** 場面を自動で（今の制度のまま）進めるか。画面で遊ぶときは false */
+  autoScenes: boolean;
   rng: RngStreamsState;
 };

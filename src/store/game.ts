@@ -21,6 +21,13 @@ import { changePolicies, type ChangeOptions } from '../engine/policyChange';
 import { isWaitingForDecision, tick } from '../engine/tick';
 import type { CompanyState, IndustryId, LegalResponse, OrgForm, PolicySet, ReorgMethod, VoiceTone } from '../engine/types';
 import { MONTHS_PER_YEAR } from '../engine/types';
+import type { DetailedPolicies } from '../engine/intermediate/detailedPolicy';
+import type { ChangeOptions as DetailChangeOptions } from '../engine/intermediate/regroup';
+import { changeDetailedPolicies } from '../engine/intermediate/regroup';
+import { isWaitingForScene, resolveScene } from '../engine/intermediate/scenes';
+import type { Difficulty, IntermediateState } from '../engine/intermediate/types';
+import { toCompanyView } from '../engine/intermediate/view';
+import { fromCompany, yearTick } from '../engine/intermediate/yearTick';
 import { yen } from '../ui/format';
 import { browserStorage, readSave, writeSave, type SaveStorage } from './persist';
 import { feedStrings, orgStrings, policyStrings } from '../ui/strings';
@@ -79,6 +86,9 @@ export type GameState = {
   stepMonths: StepMonths;
   /** 会社の生成の画面で選んだゲームの長さ（年） */
   gameYears: number;
+  /** 難易度（§15.2）。中級なら intermediate に中級の状態を持ち、company はその表示用の形 */
+  difficulty: Difficulty;
+  intermediate: IntermediateState | null;
 };
 
 export type MainView = 'floor' | 'business' | 'org';
@@ -128,6 +138,13 @@ export type GameActions = {
   setStepMonths(months: StepMonths): void;
   /** ゲームの長さ（年）を選ぶ（会社の生成の画面） */
   setGameYears(years: number): void;
+  setDifficulty(d: Difficulty): void;
+  /** 中級：生成した会社で始める（最初の制度は創業の場面で決める） */
+  startIntermediateGame(): void;
+  /** 中級：場面で制度を決める */
+  answerScene(stanceId: string, detail: DetailedPolicies, options?: DetailChangeOptions): void;
+  /** 中級：場面の外で制度を設計し直す */
+  redesign(detail: DetailedPolicies, options?: DetailChangeOptions): void;
 };
 
 export type GameStore = GameState & GameActions;
@@ -154,6 +171,8 @@ const initial: GameState = {
   gameYears: 25,
   guide: null,
   decisionHidden: false,
+  difficulty: 'beginner',
+  intermediate: null,
 };
 
 let seedCounter = 0;
@@ -258,14 +277,15 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
       if (saveTimer) clearTimeout(saveTimer);
       saveTimer = null;
       const c = get().company;
-      if (!c || !storage) return;
+      // 中級はまだ保存しない（初級の自動セーブを上書きしないように）
+      if (!c || !storage || get().intermediate) return;
       lastSaveAt = Date.now();
       const ok = writeSave(storage, c, { feed: get().feed, stepMonths: get().stepMonths });
       set({ saveFailed: !ok, savedGame: ok ? { name: c.profile.name, month: c.month, status: c.status } : get().savedGame });
     };
     /** 保存する。直前に保存したばかりなら少し待ってから（最後の状態は必ず書く） */
     const save = () => {
-      if (!storage) return;
+      if (!storage || get().intermediate) return;
       const wait = SAVE_INTERVAL_MS - (Date.now() - lastSaveAt);
       if (!useTimers || wait <= 0) {
         saveNow();
@@ -302,6 +322,11 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
       f(next);
       commit(next, extra);
     };
+    /** 中級の状態を新しくし、表示用の会社を作り直す */
+    const commitIntermediate = (next: IntermediateState, extra: Partial<GameState> = {}) => {
+      set({ intermediate: next });
+      commit(toCompanyView(next), extra);
+    };
     const stopTimer = () => {
       if (timer) clearTimeout(timer);
       timer = null;
@@ -315,6 +340,7 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
         !!company &&
         company.status === 'running' &&
         !isWaitingForDecision(company) &&
+        !(get().intermediate && isWaitingForScene(get().intermediate as IntermediateState)) &&
         !editorOpen &&
         !evidenceOpen && // 数字の根拠を読んでいる間は止める
         !initiativesOpen &&
@@ -341,7 +367,7 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
         if (screen === 'title') {
           stopTimer();
           if (saveTimer) saveNow(); // 書きかけの保存を先に書く
-          set({ ...initial, savedGame: get().savedGame, saveProblem: get().saveProblem, saveFailed: get().saveFailed, canSave: get().canSave });
+          set({ ...initial, savedGame: get().savedGame, saveProblem: get().saveProblem, saveFailed: get().saveFailed, canSave: get().canSave, difficulty: get().difficulty });
           return;
         }
         set({ screen });
@@ -396,6 +422,34 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
       setGameYears(gameYears) {
         set({ gameYears });
       },
+      setDifficulty(difficulty) {
+        set({ difficulty });
+      },
+      startIntermediateGame() {
+        const cand = get().candidate;
+        if (!cand) return;
+        const c = structuredClone(cand);
+        c.maxMonths = get().gameYears * MONTHS_PER_YEAR;
+        const inter = fromCompany(c, { autoScenes: false });
+        set({ ...initial, canSave: get().canSave, gameYears: get().gameYears, difficulty: 'intermediate', screen: 'main', intermediate: inter, company: toCompanyView(inter), speed: 1 });
+        schedule();
+      },
+      answerScene(stanceId, detail, opts) {
+        const inter = get().intermediate;
+        if (!inter?.pendingScene) return;
+        const next = structuredClone(inter);
+        resolveScene(next, { stanceId, detail, options: opts });
+        commitIntermediate(next, { editorOpen: false });
+        schedule();
+      },
+      redesign(detail, opts) {
+        const inter = get().intermediate;
+        if (!inter) return;
+        const next = structuredClone(inter);
+        changeDetailedPolicies(next, detail, opts);
+        commitIntermediate(next, { editorOpen: false });
+        schedule();
+      },
       openInitiatives() {
         set({ initiativesOpen: true });
         schedule();
@@ -433,11 +487,19 @@ export function createGameStore(options: { timers?: boolean; storage?: SaveStora
         const company = setFoundingPolicies(structuredClone(cand), policies);
         company.maxMonths = get().gameYears * MONTHS_PER_YEAR; // 会社の生成の画面で選んだ長さ
         // 新しく始めると、自動セーブはこの会社で上書きされる（画面で先に確かめている）
-        set({ ...initial, canSave: get().canSave, gameYears: get().gameYears, screen: 'main', company, speed: 1 });
+        set({ ...initial, canSave: get().canSave, gameYears: get().gameYears, difficulty: 'beginner', screen: 'main', company, speed: 1 });
         saveNow();
         schedule();
       },
       step() {
+        const inter = get().intermediate;
+        if (inter) {
+          // 中級：1年ずつ進める（場面で待っている間と、設計の画面を開いている間は進めない）
+          if (inter.status !== 'running' || isWaitingForScene(inter) || get().editorOpen) return;
+          commitIntermediate(yearTick(inter));
+          schedule();
+          return;
+        }
         const c = get().company;
         // 判断待ちと、制度の見直しの画面を開いている間は進めない
         if (!c || c.status !== 'running' || isWaitingForDecision(c) || get().editorOpen) return;

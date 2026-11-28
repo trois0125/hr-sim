@@ -138,7 +138,11 @@ export function pruneEmpty(layers: IntermediateLayer[]): IntermediateLayer[] {
  * - 年代の幅が w 歳なので、毎年およそ 1/w の人が次の年代へ移る。移った人の給与は相場の年齢カーブに沿って上げ下げする
  * - 次の年代が定年（retirement.age）以上になる人は退職する
  */
-export function ageLayers(layers: IntermediateLayer[], industry: IndustryData, rng: Rng): { layers: IntermediateLayer[]; retirees: number } {
+export function ageLayers(
+  layers: IntermediateLayer[],
+  industry: IndustryData,
+  rng: Rng,
+): { layers: IntermediateLayer[]; retirees: number; retired: Employee[] } {
   const w = bandWidth();
   const retireAge = coef('retirement.age');
   const movers: { from: IntermediateLayer; n: number }[] = [];
@@ -148,12 +152,15 @@ export function ageLayers(layers: IntermediateLayer[], industry: IndustryData, r
     if (n > 0) movers.push({ from: l, n });
   }
   let retirees = 0;
+  const retired: Employee[] = [];
   const moved: Employee[] = [];
   for (const { from, n } of movers) {
     from.headcount -= n;
     const nextBand = ageBandOf(from.rep.age) + w;
     if (nextBand >= retireAge && from.rep.affiliation === 'proper') {
       retirees += n;
+      const person: Employee = { ...from.rep, age: retireAge };
+      for (let i = 0; i < n; i++) retired.push(person);
       continue;
     }
     const age = bandRepresentativeAge(nextBand);
@@ -163,7 +170,7 @@ export function ageLayers(layers: IntermediateLayer[], industry: IndustryData, r
   }
   const kept = pruneEmpty(layers);
   mergeInto(kept, moved);
-  return { layers: kept, retirees };
+  return { layers: kept, retirees, retired };
 }
 
 /** 出向者が親会社に戻る年の確率（任期の平均の逆数） */

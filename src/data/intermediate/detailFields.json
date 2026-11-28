@@ -162,5 +162,16 @@
       "basis": "assumption",
       "source": "仮置き（残りは個人の成績）"
     }
-  ]
+  ],
+  "transition": {
+    "id": "regroup.transitionYears",
+    "label": "給与が下がる人の激変緩和の年数",
+    "min": 0,
+    "max": 5,
+    "step": 1,
+    "default": 2,
+    "unit": "年",
+    "basis": "assumption",
+    "source": "仮置き。0年ならすぐ下げる。等級の組み直しで給与が下がる人に使う（DESIGN.md §15.4）"
+  }
 }

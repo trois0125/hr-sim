@@ -742,3 +742,59 @@ export const orgStrings = {
   more: (n: number) => `ほか${n}`,
   people: (n: number) => `${n}人`,
 } as const;
+
+/** 中級（DESIGN.md §15。ステップ22） */
+export const intermediateStrings = {
+  difficultyTitle: '難易度',
+  difficultyLead: '中級は1年ずつ進み、場面に合わせて報酬の制度（等級・評価・給与・賞与）を細かく設計します。',
+  difficulties: {
+    beginner: { label: '初級', description: '1か月ずつ進み、9つの制度を選択式で選ぶ' },
+    intermediate: { label: '中級', description: '1年ずつ進み、場面を読んで報酬の制度を細かく設計する' },
+  },
+  saveNote: '中級はまだ途中から再開できません（自動セーブは初級だけ）。',
+  openDesign: '制度を設計する',
+  sceneTitle: {
+    founding: '創業：最初の報酬制度を決める',
+    premise: '会社の様子が変わってきた',
+    chain: '社員の様子が気になる',
+    free: '制度を設計する',
+  },
+  foundingBody: (headcount: number) =>
+    `創業メンバーは${headcount}人。これから人を増やしていくにあたり、等級・評価・給与・賞与の仕組みを決めます。`,
+  premiseOn: {
+    growth: (pct: string) => `社員がこの1年で${pct}増えた。新しく入った若手が多く、仕事も次々に増えている。`,
+    aging: (pct: string) => `50歳以上の社員が${pct}になった。ベテランが厚くなる一方、若手の上が詰まり始めている。`,
+    postGlut: () => '上位の等級にいる人が多くなった。上に上がる道が狭く、役割と処遇が合わない人も出てきた。',
+    recession: () => '景気が落ち込み、取引先からの注文が減っている。今年の利益は見通しにくい。',
+    large: (headcount: number) => `社員が${headcount}人を超え、社長が一人ひとりを見ることはできなくなった。`,
+  },
+  premiseOff: {
+    growth: '人の増え方は落ち着いてきた。',
+    aging: '社員の年齢の偏りは落ち着いてきた。',
+    postGlut: '上位の等級の詰まりは解けてきた。',
+    recession: '景気は持ち直してきた。',
+    large: '社員の数は減ってきた。',
+  },
+  chainVoices: {
+    1: ['「最近、職場の空気が重い気がします」', '「頑張っても何が変わるのか分からなくて」'],
+    2: ['「隣の課のエースが辞めるそうです。あんなに仕事ができたのに」', '「できる人から辞めていく気がします」'],
+    3: ['「辞めた人の仕事がこっちに回ってきて、手が回りません」', '「残業が増えて、家族に心配されています」'],
+    4: ['「取引先から、対応が遅くなったと言われました」', '「人が足りなくて、受けられない仕事が出ています」'],
+  } as Record<number, string[]>,
+  chainLead: '原因ははっきりしません。社員の声から考えてみましょう。',
+  stanceTitle: '大きな方針',
+  stanceLead: '方針を選ぶと、下の設計に初期値が入ります。そこから細かく直せます。',
+  designTitle: '制度の設計',
+  categories: { grade: '等級', evaluation: '評価', pay: '給与', bonus: '賞与' },
+  yes: 'する',
+  no: 'しない',
+  gradeLabel: (g: number) => `${g + 1}段目`,
+  regroupTitle: '等級の組み直し',
+  regroupLead: '等級の仕組みか段階の数が変わるので、今の等級の人を新しい等級へ移します。下がる人は給与も下がります。',
+  mappingFrom: (g: number) => `今の${g + 1}段目 →`,
+  decide: 'この制度で決める',
+  close: '閉じる',
+  invalid: '設計に合わないところがあります：',
+  perYear: '／年',
+  times: '倍',
+};

@@ -2060,3 +2060,27 @@ body::before {
   margin: 0;
   font-size: var(--step--1);
 }
+
+/* 中級の制度の設計（ステップ22） */
+.design-row {
+  display: grid;
+  grid-template-columns: minmax(10em, 1fr) minmax(8em, 1.2fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 0;
+}
+.design-row .num {
+  min-width: 5em;
+  text-align: right;
+}
+.voice-line {
+  font-style: italic;
+}
+@media (max-width: 600px) {
+  .design-row {
+    grid-template-columns: 1fr;
+  }
+  .design-row .num {
+    text-align: left;
+  }
+}

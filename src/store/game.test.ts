@@ -420,3 +420,33 @@ describe('四半期ずつ進める・ゲームの長さ（ステップ18）', ()
     expect(again.getState().company!.maxMonths).toBe(120);
   });
 });
+
+describe('中級（ステップ22）', () => {
+  it('難易度で中級を選ぶと、創業の場面から始まり、場面に答えながら最後まで進められる', () => {
+    const store = createGameStore({ timers: false, storage: null });
+    const a = store.getState();
+    a.newCandidate('trading');
+    a.setGameYears(10);
+    a.setDifficulty('intermediate');
+    a.startIntermediateGame();
+    let s = store.getState();
+    expect(s.screen).toBe('main');
+    expect(s.intermediate?.pendingScene?.kind).toBe('founding');
+    // 場面が出ている間は進まない
+    s.step();
+    expect(store.getState().intermediate?.year).toBe(0);
+    let scenes = 0;
+    for (let i = 0; i < 40 && store.getState().screen === 'main'; i++) {
+      s = store.getState();
+      if (s.intermediate?.pendingScene) {
+        scenes++;
+        s.answerScene('keep', s.intermediate.detail);
+      } else s.step();
+    }
+    s = store.getState();
+    expect(s.screen).toBe('end');
+    expect(s.intermediate?.status).not.toBe('running');
+    expect(scenes).toBeGreaterThanOrEqual(1);
+    expect(s.company?.history.length).toBe((s.intermediate?.year ?? 0) * 12);
+  });
+});
