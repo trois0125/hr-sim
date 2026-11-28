@@ -13,6 +13,9 @@
 //   npx tsx scripts/simulate.ts --industry all --runs 1000
 //     4業種を回して比べる（業種ごとに最も良い制度が違うか）
 //     標準の制度から1カテゴリだけ変えた組み合わせを、それぞれ同じ100社で回す
+//
+// 中級（DESIGN.md §15。1年ごと・層で計算）の1社を見る：
+//   npx tsx scripts/simulate.ts --mode intermediate --seed 42 --industry trading --founding carveout --years 25
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { Worker } from 'node:worker_threads';
 import { availableParallelism } from 'node:os';
@@ -20,6 +23,7 @@ import { defaultPolicies, getFoundingPattern, getIndustry, getLocation } from '.
 import { generateCompany, setFoundingPolicies } from '../src/engine/generate';
 import { createRng } from '../src/engine/rng';
 import { runToEnd } from '../src/engine/tick';
+import { runIntermediateToEnd, startIntermediate } from '../src/engine/intermediate/yearTick';
 import {
   ENGAGEMENT_FACTORS,
   INDUSTRY_IDS,
@@ -259,7 +263,47 @@ function single(): void {
 
 }
 
-if (arg('runs')) {
+/** 中級の1社を終わりまで回し、年ごとの数字を表示する */
+function intermediateSingle(): void {
+  const start = Date.now();
+  const state = runIntermediateToEnd(
+    startIntermediate({
+      seed: Number(arg('seed') ?? 42),
+      industryId: (arg('industry') ?? 'trading') as IndustryId,
+      foundingPatternId: arg('founding') as FoundingPatternId | undefined,
+      locationId: arg('location'),
+      lengthYears: arg('years') ? Number(arg('years')) : undefined,
+    }),
+  );
+  const oku = (x: number) => (x / 1e8).toFixed(2);
+  console.log(`中級（自由）：${state.profile.name}（${getIndustry(state.profile.industryId).name}・${getFoundingPattern(state.profile.foundingPatternId).name}）`);
+  console.log('年\t社員\t層\t売上(億)\t人件費(億)\t人件費率\t利益(億)\t入社\t退職\t定年\t帰任\t離職率\t納得感\t残業h');
+  for (const r of state.history) {
+    console.log(
+      [
+        r.year + 1,
+        r.headcount,
+        r.layerCount,
+        oku(r.revenue),
+        oku(r.laborCost),
+        `${(r.laborCostRatio * 100).toFixed(1)}%`,
+        oku(r.operatingProfit),
+        r.hires,
+        r.leavers,
+        r.retirees,
+        r.secondmentReturns,
+        `${(r.turnoverRate * 100).toFixed(1)}%`,
+        r.engagement.toFixed(1),
+        r.overtimeHours.toFixed(1),
+      ].join('\t'),
+    );
+  }
+  console.log(`終了：${state.status}（${state.year}年、${((Date.now() - start) / 1000).toFixed(2)}秒）`);
+}
+
+if (arg('mode') === 'intermediate' && !arg('runs')) {
+  intermediateSingle();
+} else if (arg('runs')) {
   if (arg('industry') === 'all') await batchAll();
   else await batch((arg('industry') ?? 'trading') as IndustryId);
 } else {

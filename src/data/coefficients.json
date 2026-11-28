@@ -2227,5 +2227,12 @@
     "unit": "比",
     "basis": "assumption",
     "source": "仮置き。今月の売れる上限（残業なし）が直近の平均よりこの割合以上少ないと「繁忙」（退職や休職で人手が減ったとき）（はじめ0.05にしたら繁忙が多すぎたので上げた）"
+  },
+  {
+    "id": "intermediate.layer.age_band_years",
+    "value": 5,
+    "unit": "歳",
+    "basis": "assumption",
+    "source": "DESIGN.md §15.4。中級の層の年代の幅（ユーザーと決定）。毎年およそ 1/幅 の人が次の年代へ移る"
   }
 ]
